@@ -5,8 +5,6 @@
 **Author:** Quinn · Solo project
 **Date:** June 2026
 
-> _Personalization note: Sections 2 (Why) and 3 (Your Takeaway) are written in first person as strong starting drafts. Replace the bracketed prompts with your own voice before submitting — these two sections are explicitly meant to sound like you._
-
 ---
 
 ## 1. What?
@@ -21,17 +19,13 @@ This is explicitly **not** a diagnostic system. It does not decide whether a tum
 
 ## 2. Why?
 
-[Write 3–5 sentences in your own voice. A strong draft to adapt:]
-
-I chose this project because it sits exactly where I want to grow — at the intersection of deep learning and real, messy, three-dimensional data instead of clean toy datasets. Medical imaging is intimidating in a way I find motivating: the data is large, the labels are hard-won, and getting it wrong is obvious, so it forces a level of rigor I want to build into my own habits. Pancreatic cancer is also one of the deadliest and hardest cancers to catch early, and while this project is a segmentation tool and not a diagnostic one, working with data aimed at that problem makes the technical work feel like it matters. [Add your personal hook — what specifically pulled you toward this dataset or 3D imaging.]
+I chose this project because it genuinely fascinates me. When I read the paper Johns Hopkins published on the PanTS dataset, it struck me as something I would happily spend a large amount of time on — and a big part of the appeal is precisely that it is *hard*. The fact that even PhD researchers have not pushed accuracy very high tells me this is a genuinely complex problem, which means there is a lot I can learn by working somewhere the ceiling clearly has not been reached. I am also drawn to the fact that the target is, in a sense, invisible: pancreatic lesions are often something the human eye cannot pick out on a scan, so building a model that can surface what a person would miss feels like exactly the kind of problem worth chasing. I have loved my previous work with CNNs, and moving from 2D into 3D medical imaging is the next step I most want to take. On a personal level, Johns Hopkins is a school I would love to attend, and someone in their admissions office suggested that working with a dataset they have made public is one of the stronger ways to show I can contribute — so this project sits right at the intersection of what excites me technically and where I want to go next.
 
 ---
 
 ## 3. Your Takeaway
 
-[Write 3–5 sentences in your own voice. A strong draft to adapt:]
-
-What I most want to prove to myself is that I can stand up a **complete 3D deep-learning pipeline end to end** — not just call `model.fit()` on a tutorial dataset, but handle real volumetric medical data: loading NIfTI volumes, fixing orientation and voxel spacing, windowing CT intensities, sampling 3D patches, training a memory-constrained 3D U-Net, and running sliding-window inference over full scans. The specific gap I want to close is **3D medical imaging and the MONAI framework**, which I have not used before. I also want to get genuinely comfortable with **class-imbalanced segmentation** — learning how to make a model find a tiny lesion instead of trivially predicting "all background." [Add the one capability you'd be proudest to walk away with.]
+My main goal is to learn how to set up a **3D image-processing pipeline end to end** — stepping up from the 2D CNN work I have already done and enjoyed into volumetric data, which is the capability I most want to add next. I will be genuinely thrilled if the result has *any* real ability to flag cancer, even modestly, because that would mean the pipeline works on a problem that actually matters. Just as important to me is proving I can build something that performs on **real-world data**: these are scans of actual, living people, not the clean, pre-organized datasets I cut my teeth on, and getting a model to hold up against that messiness is much harder and a skill I really want to own. If I walk away able to stand up a 3D pipeline that survives real data — and points, even roughly, at where a tumor might be — I will consider this a success.
 
 ---
 

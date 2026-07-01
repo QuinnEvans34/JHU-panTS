@@ -2,7 +2,7 @@
 
 **Living document — updated weekly.** This file states *how* I intend to use Claude and other AI tools on this project, and which tasks stay manual. It satisfies the proposal's "Agent plan" criterion: AI-assisted tasks are distinguished from manual tasks with specific, realistic examples.
 
-> _Note on filenames: the assignment deliverables list calls this file `Claude.md`, while the rubric refers to an "agent-plan.md." This single file serves both roles. If the instructor wants them split, `agent-plan.md` can be a copy of the plan below and `Claude.md` the living usage log._
+> _Note on filenames: the deliverables list calls this file `Claude.md`; the rubric names `agent-plan.md`. Both now exist — `agent-plan.md` holds the focused AI-vs-manual task split for the rubric; this file is the living usage plan/record. They share content intentionally._
 
 ---
 
