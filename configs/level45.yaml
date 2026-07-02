@@ -1,0 +1,138 @@
+# =============================================================================
+# Level 4.5 — 3D pancreas + lesion segmentation (PRIMARY TARGET)
+# Encodes the locked Track-A recipe (docs/training.md §0).
+# Level 4 (lesion-only) and Level 5 (multi-structure) reuse this file with
+# `project_level`, `label_mode`, and `model.out_channels` changed.
+# =============================================================================
+
+project_level: level45
+seed: 42
+device: mps                      # Apple Silicon; set PYTORCH_ENABLE_MPS_FALLBACK=1
+
+# ---- Paths (override with env vars, never hardcode elsewhere) ----
+paths:
+  pants_root: /Volumes/JHU-PanTS/PanTS/data   # external drive
+  images_train: ImageTr
+  images_test: ImageTe
+  labels: LabelAll                            # per-case <id>/segmentations/*.nii.gz
+  metadata: metadata.xlsx
+  manifest: outputs/manifest.csv
+  splits_dir: outputs/splits
+  output_dir: outputs
+  pretrained_weights: pretrained_weights/supervised_suprem_segresnet_2100.pth
+
+# ---- Label space & source-mask mapping ----
+# Composed from segmentations/*.nii.gz; lesion WINS on overlap (paint last).
+labels:
+  background: 0
+  pancreas: 1
+  lesion: 2
+label_mode: pancreas_lesion
+source_masks:
+  pancreas: [pancreas.nii.gz]                 # -> 1
+  lesion: [pancreatic_lesion.nii.gz]          # -> 2 (overrides pancreas)
+
+# ---- Splits ----
+split:
+  test_source: ImageTe                        # official held-out 901; touched once at the end
+  val_fraction: 0.20                           # carved from the 9,000 training pool
+  by_patient: true                             # group by patient id (confirm in metadata)
+  stratify_on: has_lesion                      # StratifiedGroupKFold
+  dev_subset:
+    enabled: true
+    n_cases: 100
+    positive_fraction: 0.5
+
+# ---- Preprocessing ----
+preprocessing:
+  orientation: RAS
+  target_spacing: [1.5, 1.5, 1.5]             # mm; match SuPreM on transfer arm (confirm)
+  hu_window: [-100, 300]                       # clip -> scale [0,1]; confirm SuPreM's norm
+  scale_range: [0.0, 1.0]
+
+# ---- Patch sampling (the class-imbalance fix) ----
+sampling:
+  patch_size: [96, 96, 96]
+  num_samples: 4                               # crops per volume per step
+  pos: 2                                        # pos:neg = 2:1  (~67% foreground)
+  neg: 1
+  crop_foreground: true                        # trim air/table first
+
+augment:                                        # light for the clean ablation (Track A)
+  flip_prob: 0.2
+  rot90_prob: 0.2
+  scale_intensity_prob: 0.15
+  scale_intensity_factor: 0.10
+  shift_intensity_prob: 0.15
+  shift_intensity_offset: 0.10
+
+# ---- Model: SegResNet (match SuPreM config; verify from checkpoint keys) ----
+model:
+  name: segresnet
+  in_channels: 1
+  out_channels: 3                               # bg / pancreas / lesion
+  init_filters: 16
+  norm: group                                   # GroupNorm (NOT batchnorm)
+  dropout_prob: 0.0
+  deep_supervision: false                       # Track A only; Track B may enable
+
+transfer:
+  use_pretrained: true                          # false = from-scratch baseline arm
+  reinit_head: true                             # final conv -> 3 channels
+  freeze_encoder_epochs: 3                      # warm up head, then unfreeze
+  encoder_lr_scale: 0.3                         # optional differential LR
+
+# ---- Loss ----
+loss:
+  name: dice_ce                                 # DiceCELoss
+  softmax: true
+  to_onehot_y: true
+  include_background: true                      # try false for lesion emphasis
+  lambda_dice: 1.0
+  lambda_ce: 1.0
+
+# ---- Optimizer & schedule ----
+optimizer:
+  name: adamw
+  lr_scratch: 0.0002                            # 2e-4
+  lr_transfer: 0.0001                           # 1e-4
+  weight_decay: 0.00001                         # 1e-5
+scheduler:
+  warmup_epochs: 2
+  type: cosine
+  min_lr: 0.000001                              # 1e-6
+
+# ---- Training loop ----
+training:
+  epoch_iters: 250                              # 1 epoch = 250 iterations
+  max_epochs: 100
+  batch_size: 1                                 # volumes; effective batch = 1 * num_samples
+  amp: false                                    # fp32 on MPS initially
+  cache: ram                                    # CacheDataset for the dev subset
+  num_workers: 4
+  grad_accum_steps: 1
+
+# ---- Validation ----
+validation:
+  interval_epochs: 5
+  best_metric: dice_lesion                      # select best checkpoint by LESION Dice
+  patience: 10                                  # early stop (in # of validations)
+  report_separately: [dice_pancreas, dice_lesion]
+
+# ---- Inference (full-volume) ----
+inference:
+  sw_roi_size: [96, 96, 96]
+  sw_batch_size: 2
+  overlap: 0.5
+  blend_mode: gaussian
+  stitch_device: cpu                            # relieve MPS memory
+  tta: false                                    # flips at test time (Track B)
+  postprocess:
+    pancreas_largest_cc: true
+    lesion_min_volume_mm3: 50                   # drop tiny false-positive blobs
+
+# ---- Experiment tracking (MLflow, required) ----
+mlflow:
+  tracking_uri: sqlite:///outputs/mlflow.db
+  experiment: pants-level45
+  log_overlays: true

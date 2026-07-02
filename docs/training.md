@@ -4,6 +4,56 @@
 
 ---
 
+## 0. Locked starting recipe (Track A — clean ablation) · 2026-07-01
+
+The disciplined baseline recipe. Plain `SegResNet`, identical on both arms (scratch vs SuPreM-init). Track B may deviate (deep supervision, focal loss, bigger patch) — separately.
+
+| Knob | Value | Note |
+|---|---|---|
+| Orientation | RAS (canonical) | — |
+| Target spacing | **1.5 × 1.5 × 1.5 mm** | isotropic; **match SuPreM's spacing** on transfer arm (confirm) |
+| Intensity | clip HU **[-100, 300] → [0,1]** | soft-tissue window; **confirm SuPreM's normalization** on transfer arm |
+| Patch / ROI | **96 × 96 × 96** | start here; try 128³ later |
+| Model | SegResNet, `init_filters=16`, GroupNorm, `out_channels=3` | **match SuPreM's exact config from checkpoint keys**; re-init 3-class head |
+| Sampling | `RandCropByPosNegLabeld`, `num_samples=4`, `pos:neg=2:1` | ~67% foreground patches |
+| Batch | 1 volume × 4 samples = **effective 4** | raise if MPS memory allows |
+| Loss | `DiceCELoss(softmax=True, to_onehot_y=True, include_background=True)` | try `include_background=False` for lesion emphasis |
+| Optimizer | **AdamW**, weight_decay `1e-5` | — |
+| LR (scratch) | `2e-4` | baseline arm |
+| LR (transfer) | `1e-4`, freeze encoder 2–3 epochs then unfreeze (optionally encoder @ 0.3× LR) | let head settle first |
+| Schedule | linear warmup (2 epochs) → cosine to `1e-6` | — |
+| Precision | **fp32** (AMP off) initially | MPS autocast is partial — validate first |
+| Seed | 42 | reproducibility |
+| Augments | flip p=0.2/axis · rot90 p=0.2 · scale-int ±10% p=0.15 · shift-int ±10% p=0.15 | light for the clean ablation |
+| Sliding window | ROI 96³ · `overlap=0.5` · `mode="gaussian"` · `sw_batch_size=2` · **stitch on CPU** | full-volume eval |
+
+**Bookkeeping:** 1 epoch = **250 iterations**; validate every **5 epochs**; keep **best checkpoint by lesion Dice**; early-stop patience ~10 validations.
+
+### Stage budgets & gates
+
+| Stage | What | Budget | Target / gate |
+|---|---|---|---|
+| 0 | Overfit 1–2 cases | ~500 iters (2 ep) | train Dice > 0.95 — *proves the pipeline* |
+| 1 | Pancreas-only, dev subset | 20–30 ep (5–7.5k iters) | pancreas Dice ~0.75–0.85 |
+| 2 | Pancreas + lesion (L4.5), dev subset | 60–100 ep (15–25k iters) | the main result |
+| 3 | Lesion-focused (bias sampling to lesion, tune loss) | continue from Stage 2 | lift lesion Dice |
+| 4 | Full-volume sliding-window eval + CADe metrics | eval | honest numbers |
+
+Wall-clock: **measure 50 steps on day one** — that sets all estimates. Expect single-digit minutes/epoch; transfer converges faster. Full-scale (9,000 cases) = capstone, ~50–100k iters, multi-day.
+
+### Confirm against SuPreM at code time
+1. Exact SegResNet config (`init_filters`, `blocks_down/up`, norm) — from checkpoint keys, so weights load.
+2. Spacing SuPreM pretrained at — match on transfer arm.
+3. Intensity normalization SuPreM expects — match, or transfer benefit drops.
+
+### Debug signals
+- Stage 0 won't overfit → pipeline bug (labels/sampling/loss), not the model. Stop and fix.
+- Lesion Dice stuck at 0 while pancreas trains → sampling/imbalance; raise pos ratio or switch to DiceFocal.
+- Val ≫ train → leakage (check patient-level splits) or over-aggressive aug.
+- Loss NaN on MPS → lower LR, confirm fp32, guard empty patches.
+
+---
+
 ## 1. Training stages (recap)
 
 | Stage | Target | Purpose |

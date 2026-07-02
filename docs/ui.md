@@ -2,64 +2,80 @@
 
 **Living doc.** The front-end a user actually touches. Framing: radiologist / imaging-annotator **annotation-assist** + **CADe** presentation ("there could be a tumor here"). Not a diagnostic device — a human accepts / edits / rejects.
 
+> **Stack decision (2026-07-01):** **React + NiiVue** (dropped Streamlit — too prototype-looking). Build in **Week 5**, after the model works, from *saved predictions* — so UI effort can never sink the ML core.
+
 ---
 
-## 1. Framework
+## 1. Stack
 
-**Streamlit.** Single-page app, Python-native (no JS build), fast to stand up. Heavy 3D rendering delegated to plotly / optional WebGL components.
+- **React** (Vite) — the app shell, clean and fully custom.
+- **NiiVue** (`@niivue/niivue`) — a WebGL medical-image viewer built for **NIfTI** (our exact format): tri-planar slices, 3D volume rendering, colored mask overlays, opacity/colormap control — all out of the box. This is the piece that makes the React path realistic; we don't hand-roll volume rendering.
+- **Tailwind + shadcn/ui** — the surrounding UI (CADe panel, case picker, controls, buttons) in a clean clinical dark theme.
 
-## 2. The three things the user sees
+## 2. Architecture — static first, backend optional
 
-The page tells one story, top to bottom:
+**The key move that keeps effort sane:** the UI is a *consumer of saved predictions*, not a live model host.
 
-1. **CADe summary panel** — the headline. "Possible lesion detected · head of pancreas · ~1.8 cm (volume mm³) · confidence 0.7" or "No lesion detected." Plus the honest disclaimer banner: *segmentation tool, not a diagnosis; a clinician decides.*
-2. **3D render — "what we found"** — a rotatable 3D model of the pancreas (translucent) with the lesion (solid red) sitting inside it. Built by running **marching cubes** (`skimage.measure.marching_cubes`) on the **masks** (not the raw CT) → plotly `Mesh3d`. Cheap because it meshes the small segmentation, not a 300 MB volume.
-3. **Tri-planar slice viewer** — axial / coronal / sagittal panes, a slider to scroll, pancreas (green) + lesion (red) overlays with a toggle, and window/level control. This is how radiologists actually read, and it always works.
+- **Core (static, no backend):** the training pipeline pre-computes predictions for a set of showcase cases → saved as **predicted-mask NIfTI** + a small **`results.json`** (per case: lesion present, location, volume mm³, confidence). NiiVue loads the CT + predicted mask from static files; React renders the panels from the JSON. Deploys anywhere (Vercel/Netlify), no server. Perfect for the presentation.
+- **Stretch (live inference):** add a small **FastAPI** service — upload a scan → sliding-window inference (MONAI) → return the predicted mask + CADe JSON. Capstone-friendly; not required for the course.
 
-## 3. Tiers of 3D visualization
+This split is why the model pipeline must **write predictions to disk in a clean, documented format** (see §5) — the same discipline that makes the model submittable to JHU later.
 
-| Tier | Approach | Cost | Status |
-|------|----------|------|--------|
-| 1 | Tri-planar slices + mask overlays | Cheap | **Core** |
-| 2 | Marching-cubes mesh of masks → plotly `Mesh3d` (rotatable organ + tumor) | Cheap (meshes masks only) | **Core "wow"** |
-| 3 | Volumetric render (CT + overlays) via **NiiVue** (WebGL) or **stpyvista** (VTK) | Heavier | Stretch |
+## 3. What the user sees
 
-Optional polish: a **confidence / probability heatmap** overlay on the slices, so the user sees *where* the model is unsure.
+One page, clinical dark theme, top to bottom:
 
-## 4. Inputs & the accept/edit/reject loop
+1. **Disclaimer banner** — *segmentation tool, not a diagnosis; a clinician decides.*
+2. **CADe summary panel** — the headline: "Possible lesion · head of pancreas · ~1.8 cm · confidence 0.7" or "No lesion detected."
+3. **NiiVue viewer** — the centerpiece: tri-planar CT with pancreas (green) + lesion (red) overlays, scrollable slices, **and a 3D mode** (rotatable volume / organ-with-tumor). Layer toggles + opacity.
+4. **Actions** — case picker, **export predicted mask (NIfTI)** for editing in a real tool (3D Slicer) — the accept / edit / reject step.
 
-- **Load a case** from the test set (dropdown over the manifest) or **upload a NIfTI**.
-- Run inference → display results.
-- **Export the predicted mask (NIfTI)** so the user can open it in a real tool (e.g. 3D Slicer) and edit — this is the actual accept/correct/reject action the framing promises.
-
-## 5. Inference handling (performance reality)
-
-Sliding-window inference on MPS is slow, so the demo **pre-computes predictions for a set of showcase cases** and loads them instantly; live upload is supported but shows a progress spinner and a wait. This keeps the demo snappy for the pitch/presentation while still proving the end-to-end path works.
-
-## 6. Layout sketch
+## 4. Layout sketch
 
 ```
-┌────────────────────────────────────────────┐
-│  ⚠ Segmentation tool — not a diagnosis      │
-│  CADe summary: possible lesion · location · │
-│                volume · confidence          │
-├──────────────────────┬─────────────────────┤
-│   3D mesh (rotatable) │  Case picker /      │
-│   pancreas + lesion   │  upload · export    │
-├──────────────────────┴─────────────────────┤
-│  Axial   |   Coronal   |   Sagittal         │
-│  [slice slider]  [overlay toggle] [W/L]     │
-└────────────────────────────────────────────┘
+┌───────────────────────────────────────────────┐
+│  ⚠ Segmentation tool — not a diagnosis          │
+├──────────────────────────────┬──────────────────┤
+│                              │  CADe summary     │
+│      NiiVue viewer           │  • possible lesion│
+│  (tri-planar + 3D, overlays) │  • location/volume│
+│   [2D/3D] [layers] [opacity] │  • confidence     │
+│                              │  Case: [picker ▾] │
+│                              │  [Export mask]    │
+└──────────────────────────────┴──────────────────┘
 ```
 
-## 7. Libraries
+## 5. Data contract (UI ↔ pipeline)
 
-- `streamlit`, `plotly` (Mesh3d + slice display), `scikit-image` (marching_cubes), `nibabel` (NIfTI I/O), `monai` (sliding-window inference), `numpy`.
-- Optional stretch: `niivue` (WebGL viewer), `stpyvista` (VTK).
+The model side produces, per showcase case:
 
-## 8. Open questions
+- `ct.nii.gz` (or a link to it) — the input volume.
+- `pred.nii.gz` — predicted mask (0 bg / 1 pancreas / 2 lesion).
+- an entry in `results.json`: `{case_id, has_lesion, location, lesion_volume_mm3, confidence, dice_pancreas?, dice_lesion?}`.
 
-- Live inference vs precomputed-only for the demo (lean precomputed + optional live).
-- Handling an uploaded scan with an unexpected field of view / spacing (run full preprocessing first).
-- Whether to ship the 3D mesh as a saved interactive HTML artifact (also useful for MLflow demo runs).
-- How much editing to support in-app vs. export-to-Slicer (default: export, since real annotation tools already exist).
+Optional: a surface **mesh** (marching cubes → `.mz3`/`.obj`) for a crisp 3D organ+tumor render in NiiVue.
+
+## 6. Tiers
+
+| Tier | Scope | Status |
+|------|-------|--------|
+| Core | Static React + NiiVue over precomputed predictions | Week 5 target |
+| Stretch | Live inference via FastAPI backend | Capstone |
+| Stretch | Surface-mesh 3D render + confidence heatmap overlay | Capstone |
+| Fallback | The `peek_case.py` PNGs / a barebones viewer | Always available |
+
+## 7. Timing & risk
+
+Build in **Week 5**, after the model is trained and evaluated. The pipeline is designed so the UI just reads saved predictions, so a rough patch on the frontend can't block the graded ML work. The `scripts/peek_case.py` overlays already exist as a zero-risk fallback if the React build runs short on time.
+
+## 8. Libraries
+
+- `react`, `vite`, `tailwindcss`, `shadcn/ui`, `@niivue/niivue`.
+- Stretch (live): `fastapi`, `uvicorn`, plus the existing MONAI/PyTorch inference code.
+
+## 9. Open questions
+
+- NiiVue overlay styling: label volume overlay vs. surface mesh for the 3D view (start with the label volume; add mesh if time).
+- Confidence heatmap: render the probability map as a NiiVue overlay?
+- Hosting for the static demo (Vercel/Netlify/GitHub Pages).
+- How many showcase cases to precompute (mix of tumor-positive and healthy).

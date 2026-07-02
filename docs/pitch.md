@@ -4,6 +4,10 @@
 
 ---
 
+
+python scripts/peek_case.py --case PanTS_00000003
+
+open outputs/peek/PanTS_00000003/triplanar.png  
 ## 5-minute pitch (target ~1 min per beat)
 
 **1. Problem & business user (~1 min)**
@@ -16,7 +20,7 @@ Outlining the pancreas and a pancreatic lesion on a 3D CT scan is slow, manual w
 This is **3D semantic segmentation** — a patch-based **3D U-Net** in MONAI/PyTorch. Primary target (Level 4.5): predict **background / pancreas / lesion**. The hard part is class imbalance — the lesion is tiny — so I use **Dice+CE loss** and **tumor-positive patch sampling**. Output: a 3D mask of pancreas and lesion, evaluated with full-volume sliding-window inference and Dice reported *separately* for pancreas and lesion.
 
 **4. Front-end / how the user consumes it (~1 min)**
-A **Streamlit viewer**: load a scan, see CT with pancreas (green) and lesion (red) overlays in axial/coronal/sagittal, scroll slices, toggle masks, read the predicted **lesion volume in mm³**, and export the mask to edit in a real tool. The user *accepts or corrects* — they don't draw from a blank screen.
+A clean **React web app** (built on NiiVue, a WebGL medical viewer): load a scan, see CT with pancreas (green) and lesion (red) overlays in axial/coronal/sagittal plus a rotatable 3D view, scroll slices, toggle masks, read the predicted **lesion volume in mm³**, and export the mask to edit in a real tool. The user *accepts or corrects* — they don't draw from a blank screen.
 
 **5. What I'm excited to learn (~30 sec)**
 Standing up a **complete 3D medical-imaging pipeline** end to end — MONAI, volumetric data, and class-imbalanced segmentation are all new to me, and that's exactly the gap I want to close.

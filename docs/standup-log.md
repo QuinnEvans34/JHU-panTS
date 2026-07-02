@@ -33,5 +33,15 @@ Daily check-ins (Mon–Fri), added chronologically. Brief and honest — 3–5 s
 **Up next:** Download the PanTS data + SuPreM weights to the external drive, then (before class at 1:30) look at the real files, confirm label filenames + whether case == patient, finalize `data-pipeline.md`, and move into environment setup + a minimal scaffold. Goal for the weekend: get something training on MPS.
 **Blockers:** None.
 
+## [Week 1 — 1-on-1 Retrospective] — 2026-07-01
+<!-- draft — reword in my own voice before submitting -->
+**What we discussed:** Walked the instructor through the overall project outline and its feasibility — what the system will look like end-to-end, whether it's realistically achievable in the 5-week window, and how the model actually works. We also talked about why this project genuinely interests me, and the possibility of carrying it forward as my capstone project.
+
+**Feedback received:** Mostly positive. The instructor engaged with good, probing questions — how the project will actually work, the type of model I chose (fine-tuning SuPreM's SegResNet), how large the dataset is, and how the CT scans are stored on my laptop / external drive. A highlight: he asked whether I could use **3D images in the UI**, which was exactly my own plan — I told him I'm building the GUI around 3D visualization of the pancreas and the lesion/cancer detection, so it was great to already be aligned on that.
+
+**Action items:** Go much deeper on the model — how it works, how it learns, and the specific ins and outs of the SuPreM SegResNet I'm using — so I can clearly explain and defend *why it's the best choice* to both my classmates and the instructor. The model is the most complex part of the project and the area where I most need to level up my understanding.
+
+**Reflection:** A couple of things surprised me. First, how good the dataset is — the quality of the pancreas annotations/labels genuinely impressed me. Second, how much storage it takes — about **410 GB** on my drive. My main takeaway is that the model itself is the hardest, most complex piece, so that's where I'll focus my learning next.
+
 <!-- Add the next daily entry below. -->
 

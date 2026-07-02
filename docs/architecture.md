@@ -6,7 +6,7 @@
 
 > This document is the technical contract the code scaffold follows. It records *what* we're building and *why*, the decisions made, and the open questions still to resolve.
 
-**Companion design docs:** [`data-pipeline.md`](data-pipeline.md) *(planned — finalize after first download)* · [`training.md`](training.md) · [`experiment-tracking.md`](experiment-tracking.md) (MLflow) · [`ui.md`](ui.md).
+**Companion design docs:** [`data-pipeline.md`](data-pipeline.md) · [`training.md`](training.md) · [`experiment-tracking.md`](experiment-tracking.md) (MLflow) · [`ui.md`](ui.md).
 
 ---
 
@@ -152,7 +152,7 @@ Full-volume **sliding-window inference** → lesion probability map → threshol
 
 ## 10. Front-end (business layer)
 
-**Streamlit viewer** (full design in [`ui.md`](ui.md)). One-page story: **CADe summary** (possible lesion · location · volume · confidence) → **rotatable 3D mesh** of pancreas (translucent) + lesion (red), built by marching-cubes on the *masks* → **tri-planar slice viewer** with green/red overlays, scroll, toggle. Plus **mask export (NIfTI)** so the user accepts/edits/rejects in a real tool (e.g. 3D Slicer). Demo uses **pre-computed predictions** for showcase cases (MPS inference is slow), with optional live upload. Stretch: NiiVue/stpyvista volumetric render, confidence heatmap.
+**React + NiiVue viewer** (full design in [`ui.md`](ui.md); Streamlit dropped — too prototype-looking). Clean React app with **NiiVue** (WebGL medical viewer) rendering the CT + pancreas/lesion overlays in tri-planar **and 3D**, a **CADe summary** panel (possible lesion · location · volume · confidence), and **mask export (NIfTI)** for the accept/edit/reject step in 3D Slicer. **Static-first architecture:** the pipeline pre-computes predictions (NIfTI + `results.json`) and the UI just reads them — no backend needed for the demo; a small FastAPI service for live inference is a capstone stretch. Built in **Week 5** after the model works, so UI effort can't block the ML core.
 
 ---
 

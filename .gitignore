@@ -1,0 +1,39 @@
+# ---- Raw data — NEVER commit (hard constraint; lives on the external drive) ----
+data/
+*.nii
+*.nii.gz
+*.tar.gz
+*.xlsx
+
+# ---- Pretrained weights & checkpoints (large) ----
+pretrained_weights/
+*.pth
+*.pt
+*.ckpt
+
+# ---- Outputs: predictions, figures, checkpoints, logs, peek images ----
+outputs/
+
+# ---- Experiment tracking ----
+mlruns/
+mlflow.db
+*.mlflow
+
+# ---- Python ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# ---- Node / React UI (Week 5) ----
+node_modules/
+dist/
+build/
+.next/
+
+# ---- Env & OS ----
+.env
+.DS_Store

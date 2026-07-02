@@ -70,7 +70,7 @@ Weeks 1–2 are setup and data validation; meaningful technical milestones begin
 **Goal:** Polished results, a working demo, and a final report/presentation.
 
 - Failure-case analysis (false negatives, over-segmentation), visual overlays in all 3 planes.
-- **Streamlit demo:** load case → overlays + toggles + predicted lesion volume + mask export.
+- **React + NiiVue demo:** load case → tri-planar + 3D overlays + CADe summary + mask export (static app reading precomputed predictions).
 - Final report: methods, metrics tables, visuals, limitations, honest "not diagnostic" framing.
 - Presentation prep.
 - _Week 5 1-on-1 retrospective (UI/business layer readiness, final prep)._

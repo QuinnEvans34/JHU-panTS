@@ -46,7 +46,7 @@ Annotated below — each item marked **[Familiar]** or **[New]**, with a get-up-
 | **Visualization** | Matplotlib | **[Familiar]** | Axial/coronal/sagittal overlays, failure cases. |
 | **Experiment tracking** | TensorBoard | **[Familiar]** | Loss/Dice curves. (Optional: Weights & Biases.) |
 | **Config** | PyYAML | **[Familiar]** | Config-driven Level 4 / 4.5 / 5 switching. |
-| **Front-end (demo)** | Streamlit | **[New]** | Simple viewer for overlays + lesion volume. Learn via Streamlit docs; scope kept minimal. |
+| **Front-end** | React + **NiiVue** (WebGL NIfTI viewer) + Tailwind/shadcn | **[New]** | Clean web UI: tri-planar + 3D CT with mask overlays, CADe summary, mask export. Static-first (reads precomputed predictions — no backend). Built Week 5. Ramp via NiiVue + React docs. |
 | **Compute** | 14" MacBook Pro, Apple **M5 Pro** (20-core GPU, 64 GB unified memory) | **[Familiar / New]** | Training runs on PyTorch's **MPS** backend (Apple Silicon, not CUDA). 64 GB unified memory is shared CPU/GPU, so patch size is bounded by total memory + MPS stability rather than a fixed VRAM number. New: MPS quirks (some ops fall back to CPU; partial mixed-precision). |
 | **Storage** | External drive (~340 GB) | **[Familiar]** | Full PanTS Mini lives on an external drive — kept off the laptop SSD and out of the repo. Data path set via config, never hardcoded. |
 | **Version control** | Git / GitHub | **[Familiar]** | Branch → PR → merge to main, per course workflow. |
@@ -84,7 +84,7 @@ PanTS NIfTI (CT + masks)
   → DiceCE / DiceFocal loss, AdamW
   → validation via SLIDING-WINDOW inference over full volumes
   → metrics: per-class Dice + IoU, lesion sensitivity/precision (report pancreas & lesion SEPARATELY)
-  → Streamlit viewer: 3-view overlays, toggle masks, predicted lesion volume, export mask
+  → React + NiiVue viewer: tri-planar + 3D overlays, CADe summary, predicted lesion volume, export mask
 ```
 
 **Validation discipline (built into the plan):** patient-level splits, full-volume sliding-window evaluation (never patch-only scoring), pancreas and lesion Dice reported separately (a high average hides poor tumor performance), and a Stage-0 "overfit one case" check to prove the pipeline is wired correctly before real training.
@@ -99,7 +99,7 @@ PanTS NIfTI (CT + masks)
 
 ## 7. Business-Facing Layer
 
-The deliverable a user touches is a lightweight **Streamlit viewer** (no clinical-device claims). For a given CT case the user can:
+The deliverable a user touches is a clean **React web app** built on **NiiVue** (a WebGL medical-image viewer) — no clinical-device claims. For a given CT case the user can:
 
 - **See** the CT with predicted **pancreas (e.g. green)** and **lesion (e.g. red)** overlays in **axial, coronal, and sagittal** views.
 - **Scroll** through slices and **toggle** each mask on/off to inspect the model's outline against the scan.

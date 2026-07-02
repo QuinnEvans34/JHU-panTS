@@ -1,0 +1,33 @@
+# 3D Pancreatic Lesion Segmentation (PanTS) — Python dependencies
+# Target: macOS / Apple Silicon (PyTorch MPS backend, NOT CUDA)
+# Install into a venv:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+
+# --- Deep learning ---
+torch>=2.2            # MPS backend for Apple Silicon
+torchvision>=0.17
+monai>=1.3.0          # 3D medical imaging: SegResNet, transforms, sliding-window, metrics
+
+# --- Medical image I/O ---
+nibabel>=5.1          # NIfTI read/write
+SimpleITK>=2.3        # resampling / IO fallback
+
+# --- Data & numerics ---
+numpy>=1.24
+pandas>=2.0
+openpyxl>=3.1         # read metadata.xlsx
+scikit-learn>=1.3     # StratifiedGroupKFold (patient-level, tumor-balanced splits)
+scikit-image>=0.22    # marching cubes (3D mesh), connected components (CADe)
+
+# --- Experiment tracking & config ---
+mlflow>=2.9           # required experiment tracker
+pyyaml>=6.0           # config files
+tqdm>=4.66
+
+# --- Visualization ---
+matplotlib>=3.7       # slice overlays, montages (peek_case.py)
+
+# --- Optional: interactive local 3D viewing (not needed for training) ---
+# napari[pyqt5]>=0.4.19   # `python scripts/view3d.py`
+# einops>=0.7             # only if experimenting with Swin UNETR (Track B)
