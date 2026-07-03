@@ -162,6 +162,12 @@ def main():
     else:
         print("no patient-id column detected -> treat each case as its own patient (confirm from columns above)")
 
+    # canonical patient_id for split grouping (fallback: one case == one patient)
+    if pid_col and pid_col in df.columns:
+        df["patient_id"] = df[pid_col].astype(str)
+    else:
+        df["patient_id"] = df["case_id"].astype(str)
+
     df.to_csv(out, index=False)
     print(f"\nwrote {out}   ({len(df)} rows, {df.shape[1]} columns)")
 

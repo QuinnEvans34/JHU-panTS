@@ -4,10 +4,6 @@
 
 ---
 
-
-python scripts/peek_case.py --case PanTS_00000003
-
-open outputs/peek/PanTS_00000003/triplanar.png  
 ## 5-minute pitch (target ~1 min per beat)
 
 **1. Problem & business user (~1 min)**

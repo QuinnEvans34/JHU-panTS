@@ -33,6 +33,11 @@ Daily check-ins (Mon–Fri), added chronologically. Brief and honest — 3–5 s
 **Up next:** Download the PanTS data + SuPreM weights to the external drive, then (before class at 1:30) look at the real files, confirm label filenames + whether case == patient, finalize `data-pipeline.md`, and move into environment setup + a minimal scaffold. Goal for the weekend: get something training on MPS.
 **Blockers:** None.
 
+## [Week 1 — Wednesday] — 2026-07-01
+**Worked on:** Finished the full **data ingestion** — downloaded all 9,000 training + 901 test CT scans plus every label set to the external drive (~410 GB), working through a macOS `tar` incompatibility and a mid-download drive disconnect, then verified the dataset is complete and intact. Delivered my Week 1 **project pitch** to the class and submitted my **audience notes** on the other presentations. Did a lot of **research on the model I chose** (SuPreM SegResNet) using ChatGPT beforehand so I could explain and defend it during the pitch. Also started the actual code — the config/seed/paths utilities and the manifest builder that pairs each CT with its masks.
+**Up next:** Run the manifest on the full dataset (confirm one-case-per-patient + the real tumor prevalence), then build the patient-level train/validation splits — and keep going deeper on how the model learns.
+**Blockers:** Needed `openpyxl` to read the metadata sheet (installed). On Python 3.14, so I need to confirm PyTorch installs before training (may recreate the venv on 3.12).
+
 ## [Week 1 — 1-on-1 Retrospective] — 2026-07-01
 <!-- draft — reword in my own voice before submitting -->
 **What we discussed:** Walked the instructor through the overall project outline and its feasibility — what the system will look like end-to-end, whether it's realistically achievable in the 5-week window, and how the model actually works. We also talked about why this project genuinely interests me, and the possibility of carrying it forward as my capstone project.
