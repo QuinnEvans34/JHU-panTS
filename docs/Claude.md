@@ -1,8 +1,12 @@
 # Claude / AI Usage Plan
 
-**Living document — updated weekly.** This file states *how* I intend to use Claude and other AI tools on this project, and which tasks stay manual. It satisfies the proposal's "Agent plan" criterion: AI-assisted tasks are distinguished from manual tasks with specific, realistic examples.
+**Living document — updated weekly.** This file states *how* I intend to use Claude and other AI tools on this project, and which tasks stay manual. It is the M1A1 `Claude.md` deliverable (mirrors the proposal's AI section).
 
-> _Note on filenames: the deliverables list calls this file `Claude.md`; the rubric names `agent-plan.md`. Both now exist — `agent-plan.md` holds the focused AI-vs-manual task split for the rubric; this file is the living usage plan/record. They share content intentionally._
+> **The AI files and their distinct roles:**
+> - **`Claude.md`** (this file) — the high-level *plan / intent* for using AI.
+> - **`agent-plan.md`** — the *rules for the coding agent* (how it must behave) plus the AI-vs-manual task split the rubric grades.
+> - **`AI-usage.md`** — the weekly *record* of what the AI actually did, prompts that worked, and corrections.
+> - **`CLAUDE.md`** (repo root) — the *project context/state* an agent reads to get up to speed.
 
 ---
 

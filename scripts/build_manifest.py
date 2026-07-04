@@ -104,7 +104,10 @@ def join_metadata(df: pd.DataFrame, meta_path: Path):
     case_ids = set(df["case_id"].astype(str))
     id_col = None
     for c in md.columns:
-        if md[c].astype(str).isin(case_ids).mean() > 0.5:  # majority of values match our ids
+        col_vals = set(md[c].astype(str))
+        # detect the join column as the one containing most of OUR case ids
+        # (robust to --limit runs where the manifest is a small subset of the metadata)
+        if len(case_ids & col_vals) / max(1, len(case_ids)) > 0.5:
             id_col = c
             break
     pid_col = next((c for c in md.columns

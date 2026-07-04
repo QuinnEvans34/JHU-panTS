@@ -71,8 +71,11 @@ model:
   name: segresnet
   in_channels: 1
   out_channels: 3                               # bg / pancreas / lesion
-  init_filters: 16
+  init_filters: 16                              # matches SuPreM checkpoint (verified)
+  blocks_down: [1, 2, 2, 4]                     # SegResNet default; matches SuPreM
+  blocks_up: [1, 1, 1]
   norm: group                                   # GroupNorm (NOT batchnorm)
+  num_groups: 8                                 # matches SuPreM
   dropout_prob: 0.0
   deep_supervision: false                       # Track A only; Track B may enable
 
@@ -84,10 +87,10 @@ transfer:
 
 # ---- Loss ----
 loss:
-  name: dice_ce                                 # DiceCELoss
+  name: dice_focal                              # DiceFocalLoss — focal term forces attention on the rare lesion
   softmax: true
   to_onehot_y: true
-  include_background: true                      # try false for lesion emphasis
+  include_background: false                     # exclude bg from Dice so the tiny lesion gets real gradient
   lambda_dice: 1.0
   lambda_ce: 1.0
 

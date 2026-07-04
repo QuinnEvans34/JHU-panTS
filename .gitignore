@@ -19,9 +19,15 @@ mlruns/
 mlflow.db
 *.mlflow
 
-# ---- Python ----
+# ---- Python virtual environments (this was the 30k-file problem) ----
+# .venv*/ catches .venv, .venv312, and any other venv folder
 .venv/
+.venv*/
 venv/
+env/
+ENV/
+
+# ---- Python ----
 __pycache__/
 *.py[cod]
 *.egg-info/

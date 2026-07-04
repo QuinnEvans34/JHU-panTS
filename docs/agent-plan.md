@@ -1,37 +1,46 @@
-# Agent Plan
+# Agent Plan — Coding-Agent Operating Guide
 
-**Purpose:** the M1A1 "Agent plan" deliverable — a clear distinction between AI-assisted and manual tasks, with specific, realistic examples. (Companion to `Claude.md`, which is the living week-by-week AI-usage record, and `AI-usage.md`, the weekly log.)
+**Purpose.** This file tells any AI coding agent (Claude, etc.) how it is expected to work on this project, and it distinguishes which tasks are AI-assisted versus human-owned. It satisfies the M1A1 "Agent plan" deliverable.
 
-> Filename note: the assignment deliverables list names `Claude.md`; the rubric criterion names `agent-plan.md`. This file exists so the rubric's named artifact is present and unambiguous. The two share content intentionally.
-
----
-
-## Guiding principle
-
-AI accelerates **boilerplate, syntax, and debugging**; the human owns **every decision that affects correctness, methodology, or interpretation**. In a medical-imaging segmentation project the dangerous failures are silent — misaligned masks, slice-level data leakage, a metric that looks great while hiding zero lesion detection — so AI output is reviewed against that risk, not for style.
+**How the three AI files relate (so there's no overlap):**
+- **`agent-plan.md`** (this file) — the *rules*: how the agent should behave + which tasks are AI vs manual.
+- **`AI-usage.md`** — the *record*: a weekly log of what the AI actually did, prompts that worked, and corrections.
+- **`Claude.md`** — the higher-level *usage plan* / intent (mirrors the proposal's AI section).
+- **`CLAUDE.md`** (repo root) — the *project context*: current state, decisions, and guardrails an agent reads to get up to speed.
 
 ---
 
-## AI-assisted tasks (specific examples)
+## Who is in charge
 
-- **Boilerplate code** — MONAI transform chains, YAML config loaders, argparse, repo scaffolding. *e.g. "Write a MONAI `Compose`: LoadImaged → EnsureChannelFirstd → Orientationd(RAS) → Spacingd → ScaleIntensityRanged for a [-100,300] HU window."*
-- **Debugging** — interpreting MPS/CUDA errors, tensor shape mismatches between CT and mask, NaN losses. *e.g. paste a traceback, ask it to localize a channel-order bug.*
-- **Documentation** — drafting README sections, docstrings, design docs, and the final report's methods section from my notes.
-- **Library lookup** — how a specific MONAI transform or `sliding_window_inference` argument behaves.
-- **Refactoring** — turning a working notebook cell into a clean, config-driven module.
-- **Research/verification** — confirming dataset facts (license, scale, pretrained checkpoints) before they go into the proposal.
+**Quinn (the developer) directs the project and makes the decisions.** The agent's job is to advise, propose, and execute *when asked* — not to run ahead. When something is ambiguous or a decision has real tradeoffs, the agent defers to Quinn.
 
-## Manual / human-owned tasks (specific examples)
+## Operating rules (what the agent must do)
 
-- **Methodology decisions** — Level 4.5 as the target, patient-level splitting, the 70/30 positive-sampling ratio, loss choice, single-stage vs cascade. I decide and can defend these.
-- **Verifying data correctness** — personally inspecting sanity-check overlays to confirm masks sit on the pancreas. AI can't see whether the green outline is right.
-- **Interpreting results** — judging whether a lesion Dice of 0.4 is acceptable; reading failure cases.
-- **Scientific honesty** — the "not a diagnostic system" framing, stated limitations, no overclaiming. Non-negotiable, human-owned.
-- **Scope calls** — what ships in the 5-week course vs. the capstone.
+1. **Do not write code unless explicitly asked.** Default to discussing the approach first, and wait for a clear go-ahead before creating or editing code.
+2. **Ask questions whenever anything is unclear or ambiguous** instead of guessing. A clarifying question is always better than a wrong assumption.
+3. **Propose before implementing.** For any non-trivial change, briefly explain the plan and the tradeoffs, then implement after approval.
+4. **Keep changes small and reviewable** — one logical change at a time, with a short explanation of what changed and why.
+5. **Test what can be tested.** Validate pure logic on small synthetic data before handing work off, and provide short "run and verify" instructions, since the real dataset and GPU live on Quinn's machine.
+6. **Keep the docs current.** Update `CLAUDE.md` and the design docs whenever a decision or the project state changes, so context never drifts between sessions.
+7. **Respect the guardrails** (below) at all times.
+8. **Be honest about uncertainty.** Do not overclaim results; surface risks, unknowns, and anything that needs verification.
+
+## AI-assisted tasks (specific, realistic examples)
+
+- **Boilerplate & config code** — MONAI transform chains, argument parsing, YAML config loaders, repo scaffolding. *e.g. "Write the manifest builder that pairs each `ct.nii.gz` with its masks and flags `has_lesion`."*
+- **Debugging** — interpreting tracebacks and shape/dtype/MPS errors. *e.g. pasting the `GroupNorm missing num_groups` error and getting the one-line fix.*
+- **Documentation** — design docs, docstrings, the README, and the final report's methods section from my notes.
+- **Research & verification** — confirming dataset facts, pretrained-checkpoint availability, and library APIs *before* they go into the work.
+- **Refactoring** — turning a working script into a clean, config-driven module.
+
+## Manual / human-owned tasks (specific, realistic examples)
+
+- **Methodology decisions** — the Level 4.5 scope, patient-level splitting, the pos/neg sampling ratio, loss choice, single-stage vs. cascade. I decide these and can defend them.
+- **Verifying data correctness** — personally inspecting the sanity-check overlays to confirm the masks sit on the right anatomy. The AI can't see whether the outline is actually on the pancreas.
+- **Interpreting results** — judging whether a given lesion Dice is acceptable and reading the failure cases.
+- **Scientific honesty** — the "segmentation tool, not a diagnosis" framing, the stated limitations, and never overclaiming.
+- **Final scope and priority calls** — what ships in the 5-week course vs. the 10-week capstone.
 
 ## Guardrails
 
-- Review every AI-generated block before committing — especially anything touching data splits, masks, or metrics.
-- Never trust AI-generated metric numbers; verify against MONAI's own outputs and spot-check by hand.
-- Log notable AI interactions weekly in `AI-usage.md` (what worked, what needed correction).
-- Keep the agent context file (`CLAUDE.md` at repo root) current so assistance stays aligned with project constraints (config-driven, no committing raw data, no clinical claims).
+Never commit raw data · split by **patient**, not slice · full-volume sliding-window evaluation (never patch-only) · report pancreas and lesion Dice **separately** · tumor-positive patch sampling is required · **no clinical or diagnostic claims** · keep the pipeline config-driven · the dataset path comes from config, never hardcoded.
