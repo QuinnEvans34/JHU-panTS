@@ -54,7 +54,7 @@ preprocessing:
 sampling:
   patch_size: [96, 96, 96]
   num_samples: 4                               # crops per volume per step
-  pos: 2                                        # pos:neg = 2:1  (~67% foreground)
+  pos: 1                                        # pos:neg = 1:1 (~50%) — calm the false positives
   neg: 1
   crop_foreground: true                        # trim air/table first
 

@@ -48,10 +48,3 @@ I think he came up with a really cool project, and I thought it was cool to watc
 There are a few things that I think are a little unclear, I am not sure exactly how he is going to go about feature extraction, and how he is going to feed quantifiable features to a ML model. I am not completely sure how he is going to use natural language, and come up with a way to predict measurements specifically from unstructured data like language. 
 
 ---
-
-<!-- Duplicate the block above for each additional presenter. -->
-
-## Self-check before submitting
-- [ ] A block for every presenter I observed.
-- [ ] At least 2 substantive questions recorded (and actually asked in class).
-- [ ] Each block has a specific strength AND a specific risk — not generic praise.
