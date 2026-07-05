@@ -1,116 +1,91 @@
 # Project Proposal
 
-**Project:** 3D Pancreas-Aware Pancreatic Lesion Segmentation in Abdominal CT
-**Dataset:** PanTS — The Pancreatic Tumor Segmentation Dataset (Johns Hopkins University)
-**Author:** Quinn · Solo project
-**Date:** June 2026
+Project: 3D Pancreas-Aware Pancreatic Lesion Segmentation in Abdominal CT
+Dataset: PanTS (The Pancreatic Tumor Segmentation Dataset), Johns Hopkins University
+Author: Quinn (solo project)
+Date: July 2026
 
 ---
 
 ## 1. What?
 
-Radiologists and medical-imaging annotators routinely need to outline the pancreas and any pancreatic lesion on 3D CT scans — tracing the organ and tumor slice by slice through a volume that can be hundreds of images thick. Done by hand, delineating the pancreas alone takes a trained reader tens of minutes per case because the pancreas is small, soft-edged, and easy to confuse with neighboring organs; the lesion is smaller still. This project builds a tool that does the first pass automatically: it takes an abdominal CT volume and produces a 3D outline (a "segmentation mask") of the pancreas and any pancreatic lesion, which the annotator then reviews, accepts, or corrects rather than drawing from a blank screen. **In machine-learning terms, this is a supervised 3D semantic-segmentation problem solved with a patch-based 3D U-Net (MONAI/PyTorch); the business-facing output is an editable, color-coded 3D overlay of the predicted pancreas and lesion, plus a measured lesion volume, delivered through a simple slice-by-slice viewer.**
+Radiologists and medical imaging annotators regularly have to outline the pancreas and any pancreatic tumor on 3D CT scans, tracing the organ and the tumor slice by slice through a volume that can be hundreds of images thick. Doing this by hand is slow. Just outlining the pancreas can take a trained reader tens of minutes per case, because the pancreas is small, soft edged, and easy to confuse with the organs around it, and the tumor is smaller still. My project builds a tool that does the first pass of that work automatically. It takes an abdominal CT scan and produces a 3D outline (a segmentation mask) of the pancreas and any lesion, and the annotator then reviews it and either accepts, edits, or rejects it instead of drawing everything from a blank screen. In machine learning terms, this is a supervised 3D image segmentation problem, and I am solving it with a patch based 3D U-Net using MONAI and PyTorch. The output the user actually sees is a color coded 3D overlay of the predicted pancreas and lesion, along with a measured lesion volume, shown in a simple viewer they can scroll through.
 
-This is explicitly **not** a diagnostic system. It does not decide whether a tumor is cancerous, stage disease, or make any clinical determination. A human reader remains fully in the loop and makes every clinical call; the model only accelerates the manual contouring step that precedes that work.
+I want to be clear that this is not a diagnostic system. It does not decide whether a tumor is cancerous, stage disease, or make any clinical call. A human stays fully in the loop and makes every medical decision. The model only speeds up the manual outlining step that comes before that.
 
-**Business user.** The named user is a **medical-imaging annotator / radiologist working in a research or clinical-imaging pipeline** who must produce pancreas and lesion contours — for research dataset curation, tumor-volume measurement, or pre-review preparation. **The decision the system supports:** for each case, the user accepts, edits, or rejects the model's proposed contour. The value is reduced manual contouring time and more consistent outlines, while a qualified human retains final judgment.
+The specific user I have in mind is a medical imaging annotator or radiologist working in a research or clinical imaging pipeline, someone who has to produce pancreas and lesion contours for things like research dataset curation, tumor volume measurement, or preparing a case for review. The decision the system supports is simple: for each scan, the user accepts, edits, or rejects the outline the model proposes. The value is that it saves a lot of manual tracing time and gives more consistent outlines, while a qualified person still has the final say.
 
 ---
 
 ## 2. Why?
 
-I chose this project because it genuinely fascinates me. When I read the paper Johns Hopkins published on the PanTS dataset, it struck me as something I would happily spend a large amount of time on — and a big part of the appeal is precisely that it is *hard*. The fact that even PhD researchers have not pushed accuracy very high tells me this is a genuinely complex problem, which means there is a lot I can learn by working somewhere the ceiling clearly has not been reached. I am also drawn to the fact that the target is, in a sense, invisible: pancreatic lesions are often something the human eye cannot pick out on a scan, so building a model that can surface what a person would miss feels like exactly the kind of problem worth chasing. I have loved my previous work with CNNs, and moving from 2D into 3D medical imaging is the next step I most want to take. On a personal level, Johns Hopkins is a school I would love to attend, and someone in their admissions office suggested that working with a dataset they have made public is one of the stronger ways to show I can contribute — so this project sits right at the intersection of what excites me technically and where I want to go next.
+I chose this project because it genuinely fascinates me. When I read the paper Johns Hopkins published on the PanTS dataset, it struck me as something I would happily spend a lot of time on, and a big part of the appeal is exactly that it is hard. The fact that even PhD researchers have not been able to push the accuracy very high tells me this is a genuinely difficult problem, which means there is a lot I can learn by working on something where the ceiling clearly has not been reached yet. I am also drawn to the fact that the target is, in a way, invisible. Pancreatic tumors are often something the human eye cannot pick out on a scan, so building a model that can surface something a person would miss feels like exactly the kind of problem worth chasing. I have really enjoyed my previous work with CNNs, and moving from 2D into 3D medical imaging is the next step I most want to take. On a more personal level, Johns Hopkins is a school I would love to attend, and someone in their admissions office told me that working with a dataset they have made public is one of the stronger ways to show I can contribute. So this project sits right at the intersection of what excites me technically and where I want to go next.
 
 ---
 
 ## 3. Your Takeaway
 
-My main goal is to learn how to set up a **3D image-processing pipeline end to end** — stepping up from the 2D CNN work I have already done and enjoyed into volumetric data, which is the capability I most want to add next. I will be genuinely thrilled if the result has *any* real ability to flag cancer, even modestly, because that would mean the pipeline works on a problem that actually matters. Just as important to me is proving I can build something that performs on **real-world data**: these are scans of actual, living people, not the clean, pre-organized datasets I cut my teeth on, and getting a model to hold up against that messiness is much harder and a skill I really want to own. If I walk away able to stand up a 3D pipeline that survives real data — and points, even roughly, at where a tumor might be — I will consider this a success.
+My main goal is to learn how to set up a 3D image processing pipeline from end to end, stepping up from the 2D CNN work I have already done and enjoyed into volumetric data, which is the capability I most want to add. I would be genuinely thrilled if the result has any real ability to flag cancer, even a modest one, because that would mean the pipeline actually works on a problem that matters. Just as important to me is proving that I can build something that holds up on real world data. These are scans of actual, living people, not the clean, pre organized datasets I first learned on, and getting a model to perform against that kind of messiness is much harder and a skill I really want to own. If I come out of this able to stand up a 3D pipeline that survives real data and points, even roughly, at where a tumor might be, I will consider it a success.
 
 ---
 
 ## 4. Tech Stack
 
-Annotated below — each item marked **[Familiar]** or **[New]**, with a get-up-to-speed plan for new items.
+Here is everything I plan to use, from the data all the way to the interface, with a note on whether it is familiar to me or new, and how I plan to get up to speed on the new pieces.
 
-| Layer | Technology | Status | Notes / ramp-up plan |
-|-------|-----------|--------|----------------------|
-| **Data source** | PanTS dataset (NIfTI CT volumes + masks) | **[New]** | Read the PanTS paper (arXiv 2507.01291) and GitHub README; download a small subset first via the provided scripts. |
-| **Language** | Python 3.10+ | **[Familiar]** | — |
-| **Medical-image I/O** | NiBabel, SimpleITK | **[New]** | Use for loading NIfTI, reading affine/spacing. Learn via MONAI tutorials + library quickstarts. |
-| **3D DL framework** | MONAI | **[New]** | Core ramp-up: MONAI's official 3D segmentation tutorials and transform docs. This is my main learning target. |
-| **DL backend** | PyTorch (torch, torchvision) | **[Familiar / partly New]** | Comfortable with 2D PyTorch; 3D volumes + mixed precision are new. |
-| **Model** | 3D U-Net / SegResNet (via MONAI) | **[New]** | Standard volumetric architectures; instantiate from MONAI, study the reference implementations. |
-| **Numerics / data** | NumPy, pandas | **[Familiar]** | Manifest building, metrics tables. |
-| **Metrics / splits** | scikit-learn, MONAI metrics | **[Familiar / New]** | Dice/IoU come from MONAI; splitting logic from sklearn. |
-| **Visualization** | Matplotlib | **[Familiar]** | Axial/coronal/sagittal overlays, failure cases. |
-| **Experiment tracking** | TensorBoard | **[Familiar]** | Loss/Dice curves. (Optional: Weights & Biases.) |
-| **Config** | PyYAML | **[Familiar]** | Config-driven Level 4 / 4.5 / 5 switching. |
-| **Front-end** | React + **NiiVue** (WebGL NIfTI viewer) + Tailwind/shadcn | **[New]** | Clean web UI: tri-planar + 3D CT with mask overlays, CADe summary, mask export. Static-first (reads precomputed predictions — no backend). Built Week 5. Ramp via NiiVue + React docs. |
-| **Compute** | 14" MacBook Pro, Apple **M5 Pro** (20-core GPU, 64 GB unified memory) | **[Familiar / New]** | Training runs on PyTorch's **MPS** backend (Apple Silicon, not CUDA). 64 GB unified memory is shared CPU/GPU, so patch size is bounded by total memory + MPS stability rather than a fixed VRAM number. New: MPS quirks (some ops fall back to CPU; partial mixed-precision). |
-| **Storage** | External drive (~340 GB) | **[Familiar]** | Full PanTS Mini lives on an external drive — kept off the laptop SSD and out of the repo. Data path set via config, never hardcoded. |
-| **Version control** | Git / GitHub | **[Familiar]** | Branch → PR → merge to main, per course workflow. |
+- Python is my main language, and I am comfortable with it.
+- The data is the PanTS dataset, which comes as NIfTI CT volumes and masks. This format is new to me, so I am reading the PanTS paper and GitHub README and starting with a small subset.
+- For reading the medical images I am using NiBabel and SimpleITK, both new to me. I am learning them through the MONAI tutorials and each library's quickstart.
+- MONAI is my main 3D deep learning framework, and it is the biggest new thing I am learning. I am working through its official 3D segmentation tutorials and transform documentation.
+- PyTorch is the backend underneath it. I am comfortable with it in 2D, but working in 3D is new to me.
+- The model is a 3D U-Net, specifically the SegResNet variant, built through MONAI. The architecture is new to me, so I am studying the reference implementations.
+- NumPy and pandas handle the numbers and the manifest of cases, and I am comfortable with both.
+- scikit-learn handles the train, validation, and test splitting, and MONAI provides the Dice and IoU metrics.
+- Matplotlib is for the slice overlays and failure cases, which I have used plenty before.
+- MLflow is my experiment tracker for the loss and accuracy curves. It is new to me but straightforward to pick up.
+- PyYAML drives the config, which lets the same code run the different levels of the project.
+- For the front end I am building a clean web app with React and NiiVue, a WebGL viewer made for medical images, styled with Tailwind. This is new to me and I plan to build it in Week 5, learning from the NiiVue and React docs. It reads predictions that were computed ahead of time, so it does not need a live backend for the demo.
+- I am training on my 14 inch MacBook Pro with the Apple M5 Pro chip, which has a 20 core GPU and 64 GB of shared memory. Training runs on PyTorch's MPS backend instead of CUDA, which is a little new to me since some operations behave differently on Apple Silicon.
+- The full dataset lives on an external drive, which keeps it off my laptop and out of the repo, and the path is set through config.
+- For version control I am using Git and GitHub with a branch and merge workflow.
 
 ---
 
 ## 5. Dataset Validity
 
-- **Name:** PanTS — The Pancreatic Tumor Segmentation Dataset (Johns Hopkins University; NeurIPS 2025).
-- **Open source:** Yes. License **CC-BY-NC-SA-4.0** (non-commercial, share-alike). This project is academic and non-commercial, which is compatible; no commercial product claims are made.
-- **Source URLs:** GitHub `https://github.com/MrGiovanni/PanTS` · Hugging Face `https://huggingface.co/datasets/BodyMaps/PanTSMini` · Paper `https://arxiv.org/abs/2507.01291`.
-- **Real-time?** **No — and confirmed as such.** PanTS is a static, versioned research benchmark, not a daily/weekly live feed. There is no real-time ingestion requirement; the dataset is downloaded once and used as a fixed corpus.
-- **Scale:** Full dataset is 36,390 CT volumes from 145 centers with voxel-wise masks for pancreatic tumors, pancreas head/body/tail, and 24 surrounding structures. The public Mini release provides PanTS-tr (n=9,000) and PanTS-te (n=901), totaling ~346 GB.
-- **Access method:** `git clone` the PanTS repo, then run the provided `download_PanTS_data.sh` / `download_PanTS_label.sh` scripts. Because the full Mini set is ~346 GB, this project uses **partial download + a local subset** for development, with patch-based training. Raw data is **never committed** to the repo (enforced via `.gitignore`).
-- **Labels used:** CT volume → multi-class mask. Level 4.5 target uses 3 classes: `0=background`, `1=pancreas`, `2=pancreatic lesion`.
+- The dataset is PanTS, the Pancreatic Tumor Segmentation Dataset, created by Johns Hopkins University and published at NeurIPS 2025.
+- It is open source, released under the CC-BY-NC-SA-4.0 license, which is non commercial and share alike. My project is academic and non commercial, so that fits, and I am not making any commercial product claims.
+- The sources are the GitHub repo at https://github.com/MrGiovanni/PanTS, the Hugging Face page at https://huggingface.co/datasets/BodyMaps/PanTSMini, and the paper at https://arxiv.org/abs/2507.01291.
+- It is not a real time dataset, and I confirmed that directly. PanTS is a static, versioned research benchmark, not a daily or weekly feed, so there is no live ingestion. I download it once and use it as a fixed set.
+- The full dataset has 36,390 CT volumes from 145 medical centers, with voxel level masks for pancreatic tumors, the pancreas head, body, and tail, and 24 surrounding structures. The public mini release that I am using has 9,000 training and 901 test volumes, which comes to about 346 GB.
+- To access it, I clone the PanTS repo and run the provided download scripts. Because the full set is so large, I develop on a local subset with patch based training, and I never commit the raw data to the repo (my .gitignore enforces that).
+- For my main target, each CT volume maps to a three class mask: 0 for background, 1 for pancreas, and 2 for the lesion.
 
 ---
 
-## 6. ML Approach & Pipeline Plan
+## 6. ML Approach and Pipeline Plan
 
-**ML problem type.** Supervised **3D semantic segmentation** — voxel-wise multi-class classification of an abdominal CT volume into background / pancreas / lesion. (Not detection, not whole-image classification.)
+This is a supervised 3D image segmentation problem. For every voxel in the CT volume, the model classifies it as background, pancreas, or lesion. It is not detection, and it is not whole image classification.
 
-**Why this approach / model family.** The 3D U-Net (and the residual SegResNet variant) is the established standard for volumetric medical segmentation: the encoder–decoder with skip connections preserves fine spatial detail needed to outline small structures, and MONAI provides battle-tested implementations, transforms, and sliding-window inference. The central difficulty is **extreme class imbalance** — lesion voxels are a tiny fraction of the volume — which is addressed with (a) a **Dice + Cross-Entropy (or Dice-Focal) loss** that is robust to imbalance, and (b) **positive/negative patch sampling** (≈70% lesion-positive patches) so the model actually sees tumor voxels during training. Training the pancreas *and* lesion jointly (Level 4.5) rather than the lesion alone gives the model anatomical context, which is why pancreas-aware segmentation is the primary target rather than tumor-only.
+I chose the 3D U-Net, and specifically the SegResNet variant, because it is the established standard for this kind of volumetric medical segmentation. Its encoder and decoder design with skip connections keeps the fine spatial detail you need to outline small structures, and MONAI gives me well tested implementations along with the transforms and sliding window inference I need. The hardest part of this problem is the extreme class imbalance, since the lesion is such a tiny fraction of the whole volume. I handle that in two ways: a Dice based loss (Dice combined with cross entropy, or a Dice Focal loss) that holds up under imbalance, and patch sampling that deliberately pulls a high fraction of patches that actually contain a lesion, so the model sees enough tumor during training. I also train the pancreas and the lesion together rather than the lesion alone, because segmenting the pancreas gives the model anatomical context, and that is why the pancreas aware version is my main target instead of a tumor only model.
 
-**End-to-end data flow:**
+The end to end flow goes like this. I start from the PanTS NIfTI files, which are the CT volumes and their masks, and build a manifest that pairs each scan with its label files and records whether it has a lesion. From there the data goes through MONAI preprocessing, which loads it, reorients it to a standard orientation, resamples it to a common voxel spacing, and windows the CT intensities into a soft tissue range before scaling everything to a 0 to 1 range. I split the cases by patient into training, validation, and test sets, and I am careful never to split by slice, which would leak information between them. Training happens on 3D patches with the positive and negative sampling and some light augmentation. Those patches go into the SegResNet, which is optimized with a Dice based loss and the AdamW optimizer. For evaluation I run sliding window inference across the full volume rather than scoring on patches, and I report the pancreas and lesion accuracy separately, because a single average would hide poor tumor performance. Finally, the saved predictions feed the viewer, where the user sees the outlines and the measured lesion volume.
 
-```
-PanTS NIfTI (CT + masks)
-  → build_manifest.py  (scan folders → manifest.csv: case_id, ct_path, mask paths, has_lesion)
-  → MONAI preprocessing (load, channel-first, RAS orientation, spacing resample,
-                          HU window [-100, 300] → normalize to [0, 1])
-  → patient-level train/val/test split (never split by slice)
-  → patch-based training (RandCropByPosNegLabel 70/30, flips/rotations/intensity jitter)
-  → 3D U-Net / SegResNet (MONAI), mixed precision
-  → DiceCE / DiceFocal loss, AdamW
-  → validation via SLIDING-WINDOW inference over full volumes
-  → metrics: per-class Dice + IoU, lesion sensitivity/precision (report pancreas & lesion SEPARATELY)
-  → React + NiiVue viewer: tri-planar + 3D overlays, CADe summary, predicted lesion volume, export mask
-```
+The whole thing is config driven, so the same code can run three levels of the project. Level 4 is a lesion only mask with two classes, which is a riskier baseline that I build but is not my focus. Level 4.5 is the pancreas plus lesion version with three classes, and that is my primary target. Level 5 is the full multi structure version, with the pancreas subregions and the surrounding structures, at around 28 classes, and that is a stretch goal I can turn on by changing a config file once 4.5 is working.
 
-**Validation discipline (built into the plan):** patient-level splits, full-volume sliding-window evaluation (never patch-only scoring), pancreas and lesion Dice reported separately (a high average hides poor tumor performance), and a Stage-0 "overfit one case" check to prove the pipeline is wired correctly before real training.
-
-**Project levels (config-driven, same codebase):**
-
-- **Level 4** — lesion-only mask (2 classes). Higher-risk baseline; built but not the main target.
-- **Level 4.5 — pancreas + lesion (3 classes). ← primary target.**
-- **Level 5** — full multi-structure (pancreas subregions + 24 surrounding structures, ~28 classes). Stretch goal, enabled by swapping a YAML config — not started until 4.5 works.
+One thing I built into the plan from the start is a discipline around how I evaluate. I use patient level splits, I always evaluate on full volumes with sliding window inference, I report the pancreas and lesion separately, and before any real training I run an overfit test on a single case to prove the pipeline is wired correctly.
 
 ---
 
 ## 7. Business-Facing Layer
 
-The deliverable a user touches is a clean **React web app** built on **NiiVue** (a WebGL medical-image viewer) — no clinical-device claims. For a given CT case the user can:
+The thing the user actually touches is a clean web app I am building with React and NiiVue, which is a WebGL viewer made for medical images. It makes no clinical device claims. For a given CT case, the user can do a few things. They can see the CT with the predicted pancreas and lesion overlaid in color across the axial, coronal, and sagittal views. They can scroll through the slices and toggle each mask on and off to compare the model's outline against the actual scan. They can read a short summary panel that shows the predicted lesion volume in cubic millimeters, whether a lesion was detected at all, and a confidence flag for cases the model is unsure about. And they can export the predicted mask so it can be opened in a real annotation tool like 3D Slicer and edited, which is the actual accept, correct, or reject step.
 
-- **See** the CT with predicted **pancreas (e.g. green)** and **lesion (e.g. red)** overlays in **axial, coronal, and sagittal** views.
-- **Scroll** through slices and **toggle** each mask on/off to inspect the model's outline against the scan.
-- **Read** a summary panel: predicted **lesion volume (mm³)**, whether a lesion was detected, and a confidence/uncertainty flag for low-confidence cases.
-- **Export** the predicted mask (NIfTI) so it can be loaded into a real annotation tool (e.g. 3D Slicer) and **edited** — the actual "accept / correct / reject" action the user performs.
-
-In one sentence: **the user loads a scan, sees the model's proposed pancreas-and-lesion outline from three angles with a measured lesion volume, and accepts or corrects it instead of drawing it from scratch.**
+Put simply, the user loads a scan, sees the proposed pancreas and lesion outline from three angles with a measured lesion volume, and accepts or corrects it instead of drawing it from scratch.
 
 ---
 
-## Open items to confirm
+## Open Items I Am Still Settling
 
-- **Patch size on MPS:** start moderate (≈96×128×128) and tune against unified-memory headroom and MPS stability — no fixed VRAM ceiling on Apple Silicon, but MPS behavior is validated empirically before scaling up.
-- **Subset size** to download to the external drive for development (proposed: ~50–150 cases with a healthy lesion-positive fraction).
+- The patch size, which I plan to tune to whatever my laptop's memory and the MPS backend can handle well, rather than fixing a number up front.
+- The exact size of the development subset I download, which I am aiming somewhere around 50 to 150 cases with a healthy fraction of tumor cases.
