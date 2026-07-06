@@ -30,4 +30,26 @@
 
 ---
 
-<!-- Add Week 2, 3, 4, 5 sections below as the project progresses. -->
+## Week 2 — Jul 6 – Jul 12
+
+Tasks I used AI assistance for:
+
+- Building the Week 2 EDA notebook from the real manifest. I directed what to profile; the AI wrote the notebook cells, executed them against the actual 9,901-case manifest, and embedded the real charts, so every number in it is reproducible rather than made up.
+- Writing the data understanding report around those real numbers, including the honest Airflow framing (a static dataset does not need a scheduled ingestion DAG) and the real Dataset and DataLoader code snippet.
+- Generating the overfit-a-single-batch figure by pulling the actual training curves out of the MLflow run database instead of drawing a fake one.
+- Setting up the evaluation properly and interpreting the results. This was the important one: the AI helped me build evaluate.py so it scores lesion accuracy only on tumor-positive cases and measures specificity separately on tumor-free cases, which is what exposed the real behavior of the model.
+- Turning the evaluation numbers into a concrete tuning plan for Weeks 3 and 4.
+
+Prompts and context that worked well:
+
+- Asking the AI to locate the manifest by walking up the folder tree rather than hardcoding a path, so the notebook runs no matter where it is opened from.
+- Pasting the raw terminal output of the evaluation run and asking what it actually means for the model, instead of asking for a generic interpretation.
+- Keeping the CLAUDE.md context file current so a fresh session picks up the exact state, including the latest metrics.
+
+Cases where AI output needed correction or specific instruction:
+
+- The first overfit figure it generated was the noisy full dev-subset run, not the clean single-batch overfit. I had it go back into the MLflow database, find the actual Stage 0 run (loss 1.87 to 0.54), and build a two-panel figure that also shows the tumor-positive overfit where the lesion reaches about 0.85.
+- It initially left em dashes in the notebook headers. I have it strip every em dash and asterisk from anything written in my voice, and I verify that before accepting a draft.
+- I directed the interpretation of the specificity result. The model scores 8 percent specificity and post-processing did not improve it, and the takeaway (that the false positives are large connected regions, not prunable specks, so the fix is retraining with balanced sampling and an anatomical constraint, not more cleanup) is my read of the data, not something I accepted blindly.
+
+<!-- Add Week 3, 4, 5 sections below as the project progresses. -->

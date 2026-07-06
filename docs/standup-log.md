@@ -57,3 +57,8 @@ All daily stand up entries were written by myself, and then cleaned up by AI for
 
 
 
+
+## [Week 2 — Monday] — 2026-07-06
+**Worked on:** I moved from setup into really understanding the data and the model this week, and today was a big one. I built the Week 2 EDA notebook straight from my real manifest of 9,901 cases, so every chart in it is the actual data, not a placeholder. The findings that matter: only about 10 percent of scans have a tumor, lesion size spans five orders of magnitude with a median around 4,700 cubic millimeters, and the scans are wildly inconsistent in geometry (8 to over 1,000 slices), which is exactly why I resample everything to a common grid. My label also agrees with the dataset's own tumor flag 99.6 percent of the time, which gave me confidence the pipeline is wired right. I wrote the full data understanding report around those numbers, and I ran a proper evaluation of my current model.
+**Up next:** Draft the Week 2 presentation and audience notes, and kick off a retrain with balanced patch sampling so I open Week 3 with fresh numbers.
+**Blockers:** The evaluation exposed the real problem: my model finds tumors (pancreas Dice 0.72, lesion 0.17) but it over-predicts badly, with only 8 percent specificity on healthy scans, and my post-processing did not fix it. That is not really a blocker, it is the main thing I now have to solve, and I have a concrete plan for it in the implementation plan.
