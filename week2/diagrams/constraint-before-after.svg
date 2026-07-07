@@ -1,0 +1,51 @@
+<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>Anatomical constraint before and after</title>
+  <desc>Requiring lesions to sit near the pancreas raised specificity from 8 to 42 percent, at a small cost of lesion Dice dropping from 0.169 to 0.139.</desc>
+
+  <text x="360" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text-primary,#0f172a)">Anatomical constraint: specificity up, small Dice cost</text>
+  <text x="360" y="47" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#64748b)">lesion must sit within 10mm of the predicted pancreas · no retraining · same on both models</text>
+
+  <!-- legend -->
+  <rect x="250" y="60" width="12" height="12" rx="2" fill="var(--muted,#cbd5e1)"/>
+  <text x="268" y="70" font-size="11" fill="var(--text-secondary,#64748b)">before (raw)</text>
+  <rect x="360" y="60" width="12" height="12" rx="2" fill="var(--accent,#3b82f6)"/>
+  <text x="378" y="70" font-size="11" fill="var(--text-secondary,#64748b)">after (cleaned)</text>
+
+  <!-- baseline -->
+  <line x1="70" y1="300" x2="650" y2="300" stroke="var(--border,#cbd5e1)" stroke-width="1.5"/>
+
+  <!-- PANEL A: specificity (scale 0-50% over 200px => 4px/%) -->
+  <text x="190" y="97" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-primary,#0f172a)">Specificity (healthy scans cleared)</text>
+  <!-- raw 8% => 32px -->
+  <rect x="120" y="268" width="80" height="32" fill="var(--muted,#cbd5e1)"/>
+  <text x="160" y="260" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#0f172a)">8%</text>
+  <text x="160" y="316" text-anchor="middle" font-size="10.5" fill="var(--text-secondary,#64748b)">1 / 12</text>
+  <!-- after 42% => 168px -->
+  <rect x="230" y="132" width="80" height="168" fill="var(--accent,#3b82f6)"/>
+  <text x="270" y="124" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#0f172a)">42%</text>
+  <text x="270" y="316" text-anchor="middle" font-size="10.5" fill="var(--text-secondary,#64748b)">5 / 12</text>
+  <!-- gain arrow -->
+  <path d="M330 250 L330 150" stroke="var(--accent,#3b82f6)" stroke-width="2" fill="none" marker-end="url(#up)"/>
+  <text x="338" y="205" font-size="12" font-weight="700" fill="var(--accent,#3b82f6)">+34 pts</text>
+
+  <!-- divider -->
+  <line x1="400" y1="90" x2="400" y2="300" stroke="var(--border,#e2e8f0)" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <!-- PANEL B: lesion Dice (scale 0-0.30 over 200px => 666px/unit) -->
+  <text x="540" y="97" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-primary,#0f172a)">Lesion Dice (tumor cases)</text>
+  <!-- raw 0.169 => 113px -->
+  <rect x="470" y="187" width="80" height="113" fill="var(--muted,#cbd5e1)"/>
+  <text x="510" y="179" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#0f172a)">0.169</text>
+  <!-- cleaned 0.139 => 93px -->
+  <rect x="580" y="207" width="80" height="93" fill="var(--accent,#3b82f6)"/>
+  <text x="620" y="199" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#0f172a)">0.139</text>
+  <text x="565" y="330" text-anchor="middle" font-size="11" fill="var(--text-secondary,#64748b)">small cost: −0.03, the sensitivity-for-specificity trade</text>
+
+  <defs>
+    <marker id="up" viewBox="0 0 10 10" refX="5" refY="2" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,8 L5,0 L10,8 z" fill="var(--accent,#3b82f6)"/>
+    </marker>
+  </defs>
+
+  <text x="360" y="366" text-anchor="middle" font-size="10.5" fill="var(--text-secondary,#64748b)">The false positives were large regions near the organ, so geometry removed them where a probability cutoff could not.</text>
+</svg>

@@ -54,8 +54,10 @@ preprocessing:
 sampling:
   patch_size: [96, 96, 96]
   num_samples: 4                               # crops per volume per step
-  pos: 1                                        # pos:neg = 1:1 (~50%) — calm the false positives
+  strategy: posneg                             # posneg (RandCropByPosNegLabeld) | classes (RandCropByLabelClassesd)
+  pos: 1                                        # pos:neg = 1:1 (~50%) — calm the false positives (posneg only)
   neg: 1
+  class_ratios: [1, 1, 2]                       # bg : pancreas : lesion — used when strategy=classes (harder negatives near pancreas)
   crop_foreground: true                        # trim air/table first
 
 augment:                                        # light for the clean ablation (Track A)
@@ -86,13 +88,20 @@ transfer:
   encoder_lr_scale: 0.3                         # optional differential LR
 
 # ---- Loss ----
+# EXPERIMENT 2026-07-07: over-prediction was NOT fixed by balanced sampling (null result),
+# so attack it at the loss. include_background flipped false->true so the model is now
+# penalized for false lesion calls on healthy tissue. Single variable vs the balanced run.
+# The focal term (gamma) still protects the rare lesion from being buried by background.
 loss:
   name: dice_focal                              # DiceFocalLoss — focal term forces attention on the rare lesion
   softmax: true
   to_onehot_y: true
-  include_background: false                     # exclude bg from Dice so the tiny lesion gets real gradient
-  lambda_dice: 1.0
-  lambda_ce: 1.0
+  include_background: true                       # was false; TRUE gives the model a reason to predict background (cut false positives)
+  focal_gamma: 2.0                               # focal focusing; raise toward 3-4 if lesion gets buried again
+  lambda_dice: 1.0                               # down-weight (e.g. 0.5) if lesion under-predicts after the flip
+  lambda_focal: 1.0
+  lambda_ce: 1.0                                 # DiceCE only
+  # class_weights: [1, 1, 3]                     # optional [bg, pancreas, lesion]; uncomment to up-weight lesion if it collapses
 
 # ---- Optimizer & schedule ----
 optimizer:

@@ -1,0 +1,88 @@
+<svg viewBox="0 0 700 830" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, sans-serif">
+  <title>PanTS data pipeline from drive to model</title>
+  <desc>Compressed NIfTI scans on the external drive are decompressed into memory by nibabel, standardized, cached, cut into patches, and fed to SegResNet on the MPS GPU.</desc>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--text-secondary,#64748b)"/>
+    </marker>
+  </defs>
+
+  <!-- flow arrows -->
+  <g stroke="var(--text-secondary,#64748b)" stroke-width="2" marker-end="url(#ar)">
+    <line x1="210" y1="82"  x2="210" y2="104"/>
+    <line x1="210" y1="172" x2="210" y2="194"/>
+    <line x1="210" y1="262" x2="210" y2="284"/>
+    <line x1="210" y1="352" x2="210" y2="374"/>
+    <line x1="210" y1="442" x2="210" y2="464"/>
+    <line x1="210" y1="532" x2="210" y2="554"/>
+    <line x1="210" y1="622" x2="210" y2="644"/>
+    <line x1="210" y1="712" x2="210" y2="734"/>
+  </g>
+
+  <!-- boxes -->
+  <g>
+    <!-- 1 -->
+    <rect x="50" y="22" width="320" height="60" rx="10" fill="var(--background-secondary,#eef2f7)" stroke="var(--border,#cbd5e1)" stroke-width="1.5"/>
+    <text x="210" y="47" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">External drive</text>
+    <text x="210" y="66" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#64748b)">ct.nii.gz + masks (compressed)</text>
+
+    <!-- 2 -->
+    <rect x="50" y="112" width="320" height="60" rx="10" fill="var(--background-secondary,#eef2f7)" stroke="var(--border,#cbd5e1)" stroke-width="1.5"/>
+    <text x="210" y="137" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">Manifest + splits</text>
+    <text x="210" y="156" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#64748b)">pair cases, read headers</text>
+
+    <!-- 3 accent -->
+    <rect x="50" y="202" width="320" height="60" rx="10" fill="var(--accent-subtle,#dbeafe)" stroke="var(--accent,#3b82f6)" stroke-width="2"/>
+    <text x="210" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">Load (nibabel)</text>
+    <text x="210" y="246" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#334155)">decompress into RAM array</text>
+
+    <!-- 4 -->
+    <rect x="50" y="292" width="320" height="60" rx="10" fill="var(--background-secondary,#eef2f7)" stroke="var(--border,#cbd5e1)" stroke-width="1.5"/>
+    <text x="210" y="317" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">Preprocess</text>
+    <text x="210" y="336" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#64748b)">reorient, resample, window, label</text>
+
+    <!-- 5 -->
+    <rect x="50" y="382" width="320" height="60" rx="10" fill="var(--background-secondary,#eef2f7)" stroke="var(--border,#cbd5e1)" stroke-width="1.5"/>
+    <text x="210" y="407" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">CacheDataset</text>
+    <text x="210" y="426" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#64748b)">preprocessed volumes in RAM</text>
+
+    <!-- 6 -->
+    <rect x="50" y="472" width="320" height="60" rx="10" fill="var(--background-secondary,#eef2f7)" stroke="var(--border,#cbd5e1)" stroke-width="1.5"/>
+    <text x="210" y="497" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">Random crop</text>
+    <text x="210" y="516" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#64748b)">4 tumor-biased 96³ patches</text>
+
+    <!-- 7 -->
+    <rect x="50" y="562" width="320" height="60" rx="10" fill="var(--background-secondary,#eef2f7)" stroke="var(--border,#cbd5e1)" stroke-width="1.5"/>
+    <text x="210" y="587" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">DataLoader</text>
+    <text x="210" y="606" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#64748b)">batch [4,1,96,96,96]</text>
+
+    <!-- 8 accent -->
+    <rect x="50" y="652" width="320" height="60" rx="10" fill="var(--accent-subtle,#dbeafe)" stroke="var(--accent,#3b82f6)" stroke-width="2"/>
+    <text x="210" y="677" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">SegResNet on MPS</text>
+    <text x="210" y="696" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#334155)">predict every voxel</text>
+
+    <!-- 9 -->
+    <rect x="50" y="742" width="320" height="60" rx="10" fill="var(--background-secondary,#eef2f7)" stroke="var(--border,#cbd5e1)" stroke-width="1.5"/>
+    <text x="210" y="767" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary,#0f172a)">Prediction</text>
+    <text x="210" y="786" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#64748b)">loss + backprop / stitch</text>
+  </g>
+
+  <!-- side annotations -->
+  <g font-size="11.5" fill="var(--text-secondary,#64748b)">
+    <line x1="370" y1="52"  x2="410" y2="52"  stroke="var(--border,#cbd5e1)" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <text x="416" y="49">stays gzip-compressed</text>
+    <text x="416" y="63">on the drive</text>
+
+    <line x1="370" y1="232" x2="410" y2="232" stroke="var(--accent,#3b82f6)" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <text x="416" y="229" fill="var(--text-primary,#0f172a)" font-weight="600">the only decompression</text>
+    <text x="416" y="243">happens here, in memory</text>
+
+    <line x1="370" y1="502" x2="410" y2="502" stroke="var(--border,#cbd5e1)" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <text x="416" y="499">one big volume becomes</text>
+    <text x="416" y="513">many small cubes</text>
+
+    <line x1="370" y1="682" x2="410" y2="682" stroke="var(--accent,#3b82f6)" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <text x="416" y="679">3×3×3 kernels slide</text>
+    <text x="416" y="693">through the cube</text>
+  </g>
+</svg>

@@ -38,7 +38,7 @@ Tasks I used AI assistance for:
 - Writing the data understanding report around those real numbers, including the honest Airflow framing (a static dataset does not need a scheduled ingestion DAG) and the real Dataset and DataLoader code snippet.
 - Generating the overfit-a-single-batch figure by pulling the actual training curves out of the MLflow run database instead of drawing a fake one.
 - Setting up the evaluation properly and interpreting the results. This was the important one: the AI helped me build evaluate.py so it scores lesion accuracy only on tumor-positive cases and measures specificity separately on tumor-free cases, which is what exposed the real behavior of the model.
-- Turning the evaluation numbers into a concrete tuning plan for Weeks 3 and 4.
+- Turning the evaluation numbers into a concrete tuning plan for Weeks 3 and 4, then coding the first three levers of that plan ahead of time: a lesion probability-threshold sweep in evaluate.py, an anatomical constraint that demotes lesion predictions floating away from the pancreas, and a harder-negatives patch sampler. I had each one's logic unit-tested on synthetic volumes in a sandbox before trusting it, since I could not run the real model there.
 
 Prompts and context that worked well:
 

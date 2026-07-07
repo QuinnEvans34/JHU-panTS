@@ -47,6 +47,7 @@ def main():
     ap.add_argument("--log-every", type=int, default=25)
     ap.add_argument("--ckpt-every", type=int, default=200)
     ap.add_argument("--no-mlflow", action="store_true")
+    ap.add_argument("--run-name", default=None, help="MLflow run name (auto-built from the config if omitted)")
     ap.add_argument("--positive", action="store_true", help="draw overfit cases from tumor-positive cases only")
     ap.add_argument("--no-cache", action="store_true", help="disable CacheDataset (slower)")
     ap.add_argument("--val-split", default="val")
@@ -55,9 +56,22 @@ def main():
     ap.add_argument("--val-positive", action="store_true",
                     help="validate on tumor-positive cases only (meaningful lesion Dice)")
     ap.add_argument("--resume", default=None)
+    ap.add_argument("--patch", type=int, default=None,
+                    help="override cube patch size for training AND sliding-window eval (e.g. 128)")
+    ap.add_argument("--num-samples", type=int, default=None,
+                    help="override crops per volume per step (lower this if a bigger --patch runs out of memory)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
+    # experiment overrides: change field of view without editing the config file.
+    # patch drives both the training crop and the inference window so they always match.
+    if args.patch:
+        cfg["sampling"]["patch_size"] = [args.patch, args.patch, args.patch]
+        cfg["inference"]["sw_roi_size"] = [args.patch, args.patch, args.patch]
+        print(f"[override] patch/roi -> {args.patch}^3")
+    if args.num_samples:
+        cfg["sampling"]["num_samples"] = args.num_samples
+        print(f"[override] num_samples -> {args.num_samples}")
     set_seed(int(get(cfg, "seed", 42)))
     device = T.get_device(cfg)
     dp = P.data_paths(cfg)
@@ -134,13 +148,31 @@ def main():
             import mlflow
             mlflow.set_tracking_uri(get(cfg, "mlflow.tracking_uri", "sqlite:///outputs/mlflow.db"))
             mlflow.set_experiment(get(cfg, "mlflow.experiment", "pants-level45"))
-            mlflow.start_run()
+            loss_cfg = cfg.get("loss", {})
+            samp_cfg = cfg.get("sampling", {})
+            # a descriptive default name so runs aren't indistinguishable in the UI,
+            # e.g. transfer_dice_focal_bg1_posneg_6000i
+            patch_sz = (samp_cfg.get("patch_size") or [96])[0]
+            run_name = args.run_name or (
+                f"{'transfer' if use_pretrained else 'scratch'}_{loss_cfg.get('name', 'dice_ce')}"
+                f"_bg{int(bool(loss_cfg.get('include_background', True)))}"
+                f"_p{patch_sz}_{samp_cfg.get('strategy', 'posneg')}_{total_iters}i"
+            )
+            mlflow.start_run(run_name=run_name)
             mlflow.log_params({
                 "mode": "transfer" if use_pretrained else "scratch",
                 "split": args.split, "overfit": args.overfit, "total_iters": total_iters,
                 "lr": base_lr, "patch": get(cfg, "sampling.patch_size"),
-                "loss": get(cfg, "loss.name"),
+                "loss": loss_cfg.get("name"),
+                "loss.include_background": loss_cfg.get("include_background", True),
+                "loss.focal_gamma": loss_cfg.get("focal_gamma", 2.0),
+                "loss.lambda_dice": loss_cfg.get("lambda_dice", 1.0),
+                "loss.lambda_focal": loss_cfg.get("lambda_focal", 1.0),
+                "loss.class_weights": loss_cfg.get("class_weights"),
+                "sampling.strategy": samp_cfg.get("strategy", "posneg"),
+                "sampling.pos": samp_cfg.get("pos"), "sampling.neg": samp_cfg.get("neg"),
             })
+            print(f"[mlflow] run '{run_name}' -> {get(cfg, 'mlflow.tracking_uri')}")
             ml = mlflow
         except Exception as e:
             print(f"[mlflow disabled] {e}")
