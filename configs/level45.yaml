@@ -88,15 +88,16 @@ transfer:
   encoder_lr_scale: 0.3                         # optional differential LR
 
 # ---- Loss ----
-# EXPERIMENT 2026-07-07: over-prediction was NOT fixed by balanced sampling (null result),
-# so attack it at the loss. include_background flipped false->true so the model is now
-# penalized for false lesion calls on healthy tissue. Single variable vs the balanced run.
-# The focal term (gamma) still protects the rare lesion from being buried by background.
+# EXP-07 (2026-07-08): flipping include_background true was REJECTED. Raw specificity stayed
+# at 8%, lesion Dice dropped 0.169->0.149, cleaned specificity dropped 42%->33%. Two training
+# knobs now (sampling + loss-bg) have failed to move raw specificity -> it is a data-scale
+# problem, not a loss problem. Reverted to false (bg0), the best base. Specificity is handled
+# by post-processing (anatomical constraint = 42%) + more data at capstone.
 loss:
   name: dice_focal                              # DiceFocalLoss — focal term forces attention on the rare lesion
   softmax: true
   to_onehot_y: true
-  include_background: true                       # was false; TRUE gives the model a reason to predict background (cut false positives)
+  include_background: false                      # bg0 is the best base (EXP-07 rejected bg1); exclude bg so the tiny lesion keeps gradient
   focal_gamma: 2.0                               # focal focusing; raise toward 3-4 if lesion gets buried again
   lambda_dice: 1.0                               # down-weight (e.g. 0.5) if lesion under-predicts after the flip
   lambda_focal: 1.0

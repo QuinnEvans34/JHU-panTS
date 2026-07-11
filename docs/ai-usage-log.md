@@ -52,4 +52,14 @@ Cases where AI output needed correction or specific instruction:
 - It initially left em dashes in the notebook headers. I have it strip every em dash and asterisk from anything written in my voice, and I verify that before accepting a draft.
 - I directed the interpretation of the specificity result. The model scores 8 percent specificity and post-processing did not improve it, and the takeaway (that the false positives are large connected regions, not prunable specks, so the fix is retraining with balanced sampling and an anatomical constraint, not more cleanup) is my read of the data, not something I accepted blindly.
 
+Later in the week (Jul 7 to Jul 10) I ran a nightly experiment loop, and the AI usage shifted from writing code to running a disciplined scientific process:
+
+- Reframing every training run as a formal experiment with a hypothesis, a single variable, and an accept-or-reject bar, kept in a running experiments log. Each morning I pasted the raw evaluation output and had the AI help me decide accept or reject against the prior baseline, not just describe the numbers.
+- Catching a bug in my own evaluation script that would have wasted the whole week. A clarity run looked completely broken (pancreas Dice fell from 0.72 to 0.22). Rather than accept that, the AI and I traced it to the eval script accepting a crop flag but never applying it, so it was scoring the whole body against a model trained only on small crops. The tell was that a resolution change cannot move pancreas that far. We fixed it and re-ran.
+- Building my own idea into the pipeline: feeding the entire pancreas box to the model as one cube instead of random sub-patches. The AI wrote the transform and the CLI wiring, and I had it explain the resolution-versus-coverage tradeoff so I picked the cube size and spacing deliberately.
+- Using a second AI (Codex) as an independent reviewer before committing an overnight run. It ran a code audit that found a real train/eval mismatch bug plus two more fixes, then a design review that approved the plan and told me to validate on 20 cases instead of 12. I treated the two AIs as a check on each other rather than trusting either blindly.
+- Verifying a utility before letting it touch real files. When I needed to re-log a run into MLflow (the overnight run never logged because I launched it from the wrong virtualenv), the AI wrote the logging script and tested it against a throwaway database first, so my real tracking database was only touched once the script was proven.
+
+What this week reinforced: the AI is most useful when I make it defend a number or a change, and when I keep a second reviewer in the loop. The biggest win, the whole-box result that beat my previous best on lesion Dice, pancreas Dice, and specificity at once, came from my own idea, with the AI as the implementer and skeptic, not the author.
+
 <!-- Add Week 3, 4, 5 sections below as the project progresses. -->

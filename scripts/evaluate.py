@@ -72,12 +72,33 @@ def main():
                     help="if set, cleaned metrics also demote lesion components >this many mm from the pancreas")
     ap.add_argument("--roi", type=int, default=None,
                     help="sliding-window size; MUST match the patch the model was trained at (e.g. 128)")
+    ap.add_argument("--spacing", type=float, default=None,
+                    help="override target spacing in mm; MUST match what the model was trained at")
+    ap.add_argument("--crop-pancreas", type=float, default=None,
+                    help="oracle ROI: crop to ground-truth pancreas + margin mm; MUST match training")
+    ap.add_argument("--crop-native", type=int, default=None,
+                    help="crop pancreas in native space + native-voxel margin; MUST match training")
+    ap.add_argument("--whole-box", action="store_true",
+                    help="EXP-12: feed the whole pancreas box as one --roi cube; MUST match training")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
     if args.roi:
+        cfg["sampling"]["patch_size"] = [args.roi, args.roi, args.roi]
         cfg["inference"]["sw_roi_size"] = [args.roi, args.roi, args.roi]
-        print(f"[override] sliding-window roi -> {args.roi}^3")
+        print(f"[override] patch/roi -> {args.roi}^3")
+    if args.spacing:
+        cfg["preprocessing"]["target_spacing"] = [args.spacing, args.spacing, args.spacing]
+        print(f"[override] target_spacing -> {args.spacing}mm")
+    if args.crop_pancreas is not None:
+        cfg["preprocessing"]["crop_to_pancreas_margin_mm"] = args.crop_pancreas
+        print(f"[override] crop to pancreas ROI + {args.crop_pancreas}mm margin")
+    if args.crop_native is not None:
+        cfg["preprocessing"]["crop_native_margin_vox"] = args.crop_native
+        print(f"[override] crop to pancreas in NATIVE space + {args.crop_native}-voxel margin")
+    if args.whole_box:
+        cfg["preprocessing"]["whole_box"] = True
+        print(f"[override] WHOLE-BOX: feeding the entire pancreas box as one cube")
     set_seed(get(cfg, "seed", 42))
     device = T.get_device(cfg)
     dp = P.data_paths(cfg)

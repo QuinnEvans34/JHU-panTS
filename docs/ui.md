@@ -79,3 +79,27 @@ Build in **Week 5**, after the model is trained and evaluated. The pipeline is d
 - Confidence heatmap: render the probability map as a NiiVue overlay?
 - Hosting for the static demo (Vercel/Netlify/GitHub Pages).
 - How many showcase cases to precompute (mix of tumor-positive and healthy).
+
+---
+
+## Designing for the non-technical audience (radiologists)
+
+**The governing principle (from the professor, 2026-07-08):** complexity from the audience's own world is welcome; complexity from ours is not. A radiologist reasons fluently in 3D anatomy, millimeters, and organ sub-regions, so those are fair game and even expected. Dice, specificity, loss, and thresholds are complexity from the ML world, and to a clinician they are noise at best and misleading at worst. Every model output must be translated into clinical language and imagery before it reaches this UI.
+
+**Show (the clinician's language):**
+
+- The scan with the proposed outline overlaid, in the three standard planes plus a rotatable 3D view. The image is the interface; the outline is a suggestion drawn on it. The 3D reconstruction is genuinely complex, but it lives in their domain, so it communicates size and location instantly without a single number.
+- Lesion size in millimeters or centimeters, the unit they already use clinically, not voxel counts.
+- Anatomical location in words: head, body, or tail of the pancreas, and proximity to nearby structures.
+- A simple, qualitative suspicion level rather than a raw probability. A short band like lower / moderate / higher, or a visual cue such as overlay intensity, reads instantly. If a bare number ever appears, it needs a familiar anchor, never a naked decimal.
+- Human-in-the-loop controls: accept, edit, or reject the contour. The radiologist stays in charge; nothing is auto-committed or auto-hidden. This is annotation-assist, not automation.
+
+**Hide from the clinical view (belongs elsewhere):**
+
+- Dice, sensitivity, specificity, the sensitivity-specificity tradeoff, loss, probability thresholds, voxel counts, model confidence as a bare decimal. None of these help a clinician decide, and a big number they cannot interpret erodes trust.
+
+**Two audiences, two surfaces.** The ML metrics are not thrown away, they are moved. Dice, sensitivity, specificity, and the tradeoff curves belong in a separate validation or performance view (and in the written report) aimed at the technical and regulatory audience who need to judge whether the tool is trustworthy. The clinical UI and the validation report are different products for different readers, and mixing them serves neither.
+
+**Framing and safety.** The tool prompts a second look, it does not diagnose. Flags must be easy to dismiss, the disclaimer stays visible, and the language stays suggestive ("possible finding, please review") rather than declarative. The goal is to save the radiologist time on the outline while leaving every judgment to them.
+
+**Design test.** Before any element ships to the clinical view, ask: would this number or control mean something to a radiologist who has never taken a statistics course? If not, either translate it into anatomy, size, and location, or move it to the validation surface.

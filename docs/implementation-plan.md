@@ -57,16 +57,30 @@ Separate accuracy lever (field of view): the 96-cube patch at 1.5mm sees a 14.4c
 
 ---
 
+## Plan review and status, end of Week 2 (2026-07-11)
+
+I reviewed the whole plan at the end of the week to confirm it still holds. It does, and the review is worth recording because the week produced a real breakthrough.
+
+What happened after the 2026-07-07 null result, in order. The loss experiment (flip `include_background` to true) was rejected: it left raw specificity at 8 percent and hurt the deployable numbers, so I reverted it. A larger 128-patch experiment was rejected on accuracy once scored on matched cases. An oracle-ROI experiment (crop to the ground-truth pancreas, train at finer resolution) gave my best lesion Dice at the time, 0.234. Then the breakthrough: instead of taking random sub-patches out of the pancreas crop, feed the entire pancreas box to the model as one fixed cube every step (the whole-box change). That became the new best on every axis at once: pancreas Dice 0.807, lesion Dice 0.263, and specificity 55 percent, up from 8 percent, with the anatomical constraint now a near no-op because the model self-corrects. Full hypotheses and decisions for every run are in `docs/experiments.md` (EXP-07 through EXP-13).
+
+The scientific takeaway sharpened the plan rather than changing it. Two training knobs, sampling (EXP-05) and the loss (EXP-07), both failed to move raw specificity, which is strong evidence that over-prediction is a data-scale problem, not a training-knob problem. The thing that finally moved it was structural, giving the model the whole organ in context, not a hyperparameter. So the plan's existing routing of the real fix to more data (Week 4 and capstone) is confirmed, and the whole-box result is the first stage of the localize-then-segment cascade the plan already names as the capstone direction.
+
+What changed and what did not. The architecture and scope are unchanged from the Week 1 proposal: same SuPreM SegResNet, same Level 4.5 target, same data pipeline, same non-diagnostic CADe framing, same React and NiiVue delivery. Every change this week was a model-side improvement inside that outline. I also caught and fixed a measurement bug in the evaluation script (a crop flag that parsed but never applied), which had briefly made a good model look broken, a reminder that train-and-eval preprocessing must match exactly.
+
+Next levers (Week 3): (1) the clarity-curriculum experiment (EXP-13), suggested by my instructor, testing whether weighting training toward the sharpest scans helps; (2) scaling up the tumor data, which needs a switch from the RAM cache to a persistent or disk cache; (3) test-time augmentation at evaluation, which is free; (4) beginning the autonomous pancreas-detector stage in front of the whole-box segmenter, toward the capstone cascade.
+
+---
+
 ## Week-by-week execution log
 
 ### Week 1 (Jun 29 – Jul 5): setup and data validation. Done.
 Repo and design docs scaffolded. Full PanTS Mini downloaded to the external drive and verified. Manifest of 9,901 cases built, patient-level splits created, preprocessing and a single-case sanity check passed. Model, SuPreM transfer loader, loss, metrics, and training loop written. Overfit gate passed. Environment moved to a Python 3.12 virtual environment because 3.14 would not install MLflow.
 
-### Week 2 (Jul 6 – Jul 12): wired pipeline, EDA, and first honest evaluation. In progress.
-Planned: finish the EDA notebook and data understanding report from real data, run a proper evaluation, and set the tuning direction. Done so far: EDA notebook and report built from the real manifest; overfit figure pulled from MLflow; evaluation run and interpreted (the key finding above). Next in the week: draft the presentation and audience notes, keep the daily standup, and start the balanced retrain so Week 3 opens with fresh numbers.
+### Week 2 (Jul 6 – Jul 12): wired pipeline, EDA, and first honest evaluation. Done, and ran ahead.
+EDA notebook and data understanding report built from the real manifest; overfit figure pulled from MLflow; the first honest evaluation run and interpreted (the key finding above). The week then ran ahead of plan: I worked the full sensitivity-specificity program (sampling, loss, patch, oracle-ROI, and whole-box experiments), landed the whole-box result as the new best (pancreas 0.807, lesion 0.263, specificity 55 percent), delivered the M2P2 presentation, and kept the daily standup and audience notes. See the plan-review section above and `docs/experiments.md`.
 
-### Week 3 (Jul 13 – Jul 19): baseline training and the sensitivity-specificity work begins.
-Run a quick pancreas-only training as a fast pipeline check, then the balanced Level 4.5 retrain on the dev subset with MLflow tracking and validation curves for both classes. Apply levers 1 and 2 above (balanced sampling, then the threshold sweep) and produce a first sensitivity-specificity curve. Week 3 one-on-one check-in focuses on model choice reasoning and plan health.
+### Week 3 (Jul 13 – Jul 19): data scale and the clarity curriculum.
+Baseline training and the first pass of sensitivity-specificity levers already landed in Week 2, so Week 3 moves to the levers the null results pointed at. Run the clarity-curriculum experiment (EXP-13) to test whether training on the sharpest scans helps. Begin scaling the training pool past the 100-case dev subset, which requires switching from the RAM cache to a persistent or disk cache. Add test-time augmentation at evaluation (free, no retrain). Keep MLflow tracking and validation curves for both classes throughout. The Week 3 one-on-one check-in focuses on model-choice reasoning and plan health, and the whole-box result plus the experiment log are the evidence I will bring to it.
 
 ### Week 4 (Jul 20 – Jul 26): lesion-focused training and full-volume evaluation.
 Apply levers 3 and 4 (anatomical constraint, harder negatives). Evaluate with sliding-window inference across full volumes, reporting pancreas and lesion Dice separately plus patient-level sensitivity and specificity. Target a lesion Dice in the 0.35 to 0.50 range and a real, defensible specificity number.

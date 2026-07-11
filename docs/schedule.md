@@ -7,6 +7,12 @@ This is a solo project, and the dates below are approximate. I will line them up
 
 ---
 
+## Status and revision note (updated 2026-07-11)
+
+I reviewed this schedule at the end of Week 2 and it holds, so I did not rewrite it. Two updates. Weeks 1 and 2 are complete. Week 2 ran ahead of plan: the evaluation, the sensitivity-specificity tuning, and a structural whole-box improvement (pancreas Dice 0.807, lesion Dice 0.263, and specificity up from 8 to 55 percent) all landed early. Because of that, Week 3 shifts from "begin baseline training and tuning" to "scale up the tumor data and run the clarity-curriculum experiment," which is the lever the results pointed at. The architecture and scope are unchanged from the Week 1 proposal; every change so far has been a model-side improvement inside the same outline. The finalized, measurable Core Requirements (R1 through R7) and their current status live in `week2/data-understanding-report.md` Section 5, and the running decision log is `docs/implementation-plan.md`.
+
+---
+
 ## Week 1: Setup and Data Validation (around Jun 29 to Jul 5)
 
 What I want to get done:

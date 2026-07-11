@@ -1,0 +1,30 @@
+<svg viewBox="0 0 720 450" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>How the Dice score is computed</title>
+  <desc>Dice is twice the overlap between the predicted region and the true region, divided by the sum of their sizes. It penalizes both missed voxels and false alarms.</desc>
+  <rect x="-50" y="-50" width="200%" height="200%" fill="#0b0f17"/>
+
+  <text x="360" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#f1f5f9">How Dice measures overlap</text>
+  <text x="360" y="49" text-anchor="middle" font-size="11.5" fill="#94a3b8">the model's outline (prediction) versus what is really there (ground truth)</text>
+
+  <!-- two overlapping ellipses -->
+  <ellipse cx="300" cy="205" rx="140" ry="105" fill="#60a5fa" fill-opacity="0.30" stroke="#60a5fa" stroke-width="2"/>
+  <ellipse cx="430" cy="205" rx="140" ry="105" fill="#64748b" fill-opacity="0.30" stroke="#64748b" stroke-width="2"/>
+
+  <!-- region labels -->
+  <text x="230" y="150" text-anchor="middle" font-size="12.5" font-weight="700" fill="#60a5fa">Ground truth</text>
+  <text x="500" y="150" text-anchor="middle" font-size="12.5" font-weight="700" fill="#e2e8f0">Prediction</text>
+
+  <text x="205" y="212" text-anchor="middle" font-size="12" fill="#f1f5f9">missed</text>
+  <text x="205" y="228" text-anchor="middle" font-size="10.5" fill="#94a3b8">(false negatives)</text>
+
+  <text x="365" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#f1f5f9">overlap</text>
+  <text x="365" y="221" text-anchor="middle" font-size="10.5" fill="#cbd5e1">(true positives)</text>
+
+  <text x="525" y="212" text-anchor="middle" font-size="12" fill="#f1f5f9">false alarm</text>
+  <text x="525" y="228" text-anchor="middle" font-size="10.5" fill="#94a3b8">(false positives)</text>
+
+  <!-- formula -->
+  <text x="360" y="352" text-anchor="middle" font-size="15" font-weight="700" fill="#f1f5f9">Dice  =  2 × overlap  /  ( truth + prediction )</text>
+  <text x="360" y="386" text-anchor="middle" font-size="12.5" fill="#94a3b8">worked example: truth 100 voxels, prediction 100, overlap 50  →  2 × 50 / 200  =  0.50</text>
+  <text x="360" y="418" text-anchor="middle" font-size="11.5" fill="#94a3b8">0 = no overlap at all      1 = a perfect match      punishes both missing and over-painting</text>
+</svg>

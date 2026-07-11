@@ -1,0 +1,86 @@
+<svg viewBox="0 0 760 530" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>This project versus published pancreatic CT benchmarks</title>
+  <desc>Pancreas Dice 0.807 sits inside the published nnU-Net range 0.79 to 0.85. Lesion Dice 0.263 is about half of segmentation state of the art (0.40 to 0.53). Specificity 55 percent trails the roughly 93 percent of dedicated detection models, but the comparison is not like-for-like: this project uses 95 training cases, a provided ROI, and only 20 eval cases, versus fully automated models trained on thousands of scans.</desc>
+  <rect x="-50" y="-50" width="200%" height="200%" fill="#0b0f17"/>
+
+  <text x="380" y="30" text-anchor="middle" font-size="17" font-weight="700" fill="#f1f5f9">Where this project stands vs published work</text>
+  <text x="380" y="49" text-anchor="middle" font-size="11.5" fill="#94a3b8">Dice shown as percent (0.807 = 80.7%). Not like-for-like — read the note at the bottom.</text>
+
+  <!-- legend -->
+  <rect x="210" y="62" width="13" height="13" rx="2" fill="#60a5fa"/>
+  <text x="229" y="72.5" font-size="11" fill="#cbd5e1">This project — Week 2 (whole-box)</text>
+  <rect x="452" y="62" width="13" height="13" rx="2" fill="#475569"/>
+  <text x="471" y="72.5" font-size="11" fill="#cbd5e1">Published (bar = midpoint, whisker = range)</text>
+
+  <!-- gridlines 0/25/50/75/100 over x 210..690 (4.8 px per %) -->
+  <g stroke="#1f2937" stroke-width="1">
+    <line x1="210" y1="92" x2="210" y2="432"/>
+    <line x1="330" y1="92" x2="330" y2="432"/>
+    <line x1="450" y1="92" x2="450" y2="432"/>
+    <line x1="570" y1="92" x2="570" y2="432"/>
+    <line x1="690" y1="92" x2="690" y2="432"/>
+  </g>
+  <g font-size="10" fill="#64748b" text-anchor="middle">
+    <text x="210" y="448">0</text>
+    <text x="330" y="448">25</text>
+    <text x="450" y="448">50</text>
+    <text x="570" y="448">75</text>
+    <text x="690" y="448">100%</text>
+  </g>
+
+  <!-- ================= ROW 1: Pancreas Dice ================= -->
+  <text x="18" y="132" font-size="12.5" font-weight="700" fill="#f1f5f9">Pancreas Dice</text>
+  <text x="18" y="149" font-size="10" fill="#94a3b8">you 0.807 · pub 0.79-0.85</text>
+  <!-- mine 80.7 -> 597.4 -->
+  <rect x="210" y="120" width="387.4" height="16" rx="2" fill="#60a5fa"/>
+  <!-- pub mid 82 -> 603.6 -->
+  <rect x="210" y="143" width="393.6" height="16" rx="2" fill="#475569"/>
+  <!-- whisker 79..85 -->
+  <line x1="589.2" y1="151" x2="618" y2="151" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="589.2" y1="147" x2="589.2" y2="155" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="618" y1="147" x2="618" y2="155" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="625" y="139" font-size="11" font-weight="700" fill="#34d399">✓ on par</text>
+
+  <!-- ================= ROW 2: Lesion Dice ================= -->
+  <text x="18" y="220" font-size="12.5" font-weight="700" fill="#f1f5f9">Lesion (tumor) Dice</text>
+  <text x="18" y="237" font-size="10" fill="#94a3b8">you 0.263 · pub 0.40-0.53</text>
+  <!-- mine 26.3 -> 336.2 -->
+  <rect x="210" y="208" width="126.2" height="16" rx="2" fill="#60a5fa"/>
+  <!-- pub mid 46.5 -> 433.2 -->
+  <rect x="210" y="231" width="223.2" height="16" rx="2" fill="#475569"/>
+  <!-- whisker 40..53 -->
+  <line x1="402" y1="239" x2="464.4" y2="239" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="402" y1="235" x2="402" y2="243" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="464.4" y1="235" x2="464.4" y2="243" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="474" y="227" font-size="11" fill="#cbd5e1">≈ half of SOTA — expected at 95 cases</text>
+
+  <!-- ================= ROW 3: Specificity ================= -->
+  <text x="18" y="308" font-size="12.5" font-weight="700" fill="#f1f5f9">Specificity (healthy)</text>
+  <text x="18" y="325" font-size="10" fill="#94a3b8">you 55% · pub ~93%</text>
+  <!-- mine 55 -> 474 -->
+  <rect x="210" y="296" width="264" height="16" rx="2" fill="#60a5fa"/>
+  <text x="486" y="308" font-size="11" font-weight="700" fill="#f59e0b">gap = data scale (capstone)</text>
+  <!-- pub 93 -> 656.4, whisker 92.8..95.9 -->
+  <rect x="210" y="319" width="446.4" height="16" rx="2" fill="#475569"/>
+  <line x1="655.4" y1="327" x2="670.3" y2="327" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="655.4" y1="323" x2="655.4" y2="331" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="670.3" y1="323" x2="670.3" y2="331" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- ================= ROW 4: Sensitivity ================= -->
+  <text x="18" y="396" font-size="12.5" font-weight="700" fill="#f1f5f9">Sensitivity (detect)</text>
+  <text x="18" y="413" font-size="10" fill="#94a3b8">pub ~90% · you: not scored yet</text>
+  <!-- mine: dashed placeholder, over-predicts -> high, not formally scored -->
+  <rect x="210" y="384" width="432" height="16" rx="2" fill="none" stroke="#60a5fa" stroke-width="1.3" stroke-dasharray="4 3" opacity="0.7"/>
+  <text x="216" y="396" font-size="10" fill="#93c5fd" opacity="0.95">over-predicts → likely high, formal score pending</text>
+  <!-- pub 90 -> 642, whisker 89.7..92.9 -->
+  <rect x="210" y="407" width="432" height="16" rx="2" fill="#475569"/>
+  <line x1="640.6" y1="415" x2="655.9" y2="415" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="640.6" y1="411" x2="640.6" y2="419" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="655.9" y1="411" x2="655.9" y2="419" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- caveat box -->
+  <rect x="15" y="462" width="730" height="54" rx="8" fill="#111827" stroke="#334155" stroke-width="1"/>
+  <text x="28" y="482" font-size="11" font-weight="700" fill="#f1f5f9">Why this is not a head-to-head:</text>
+  <text x="28" y="498" font-size="10.5" fill="#94a3b8">This project = 95 training cases, radiologist-provided ROI (oracle), n=20 eval. Published = fully automated, patient-level,</text>
+  <text x="28" y="512" font-size="10.5" fill="#94a3b8">thousands+ scans. Pancreas Dice is genuinely on par; lesion Dice and specificity are on-trajectory, and the gap is data scale.</text>
+</svg>

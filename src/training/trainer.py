@@ -20,8 +20,12 @@ def build_optimizer(cfg: dict, model, transfer: bool):
     o = cfg["optimizer"]
     lr = float(o["lr_transfer"]) if transfer else float(o["lr_scratch"])
     wd = float(o.get("weight_decay", 1e-5))
-    return torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()),
-                             lr=lr, weight_decay=wd), lr
+    # Include ALL params (not just currently-trainable ones) so the optimizer's shape does
+    # not change when the encoder unfreezes. Frozen params have requires_grad=False, so their
+    # grad stays None and AdamW skips them; when unfrozen they simply start getting updates.
+    # This keeps checkpoints resume-compatible AND ensures the encoder actually trains after
+    # the warm-up freeze (it previously never entered the optimizer).
+    return torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd), lr
 
 
 def build_scheduler(optimizer, warmup_iters: int, total_iters: int, min_lr_ratio: float):
@@ -48,8 +52,17 @@ def save_checkpoint(path, model, optimizer, scheduler, step, best, extra=None):
 def load_checkpoint(path, model, optimizer=None, scheduler=None, map_location="cpu"):
     ck = torch.load(str(path), map_location=map_location, weights_only=False)
     model.load_state_dict(ck["model"])
+    # The model weights are the important part; optimizer/scheduler state is a nice-to-have.
+    # If they don't line up (e.g. a checkpoint from an older optimizer layout), warn and keep
+    # going with a fresh optimizer rather than hard-crashing the resume. AdamW re-warms fast.
     if optimizer and ck.get("optimizer"):
-        optimizer.load_state_dict(ck["optimizer"])
+        try:
+            optimizer.load_state_dict(ck["optimizer"])
+        except (ValueError, KeyError) as e:
+            print(f"[resume] optimizer state not loaded ({e}); continuing with a fresh optimizer")
     if scheduler and ck.get("scheduler"):
-        scheduler.load_state_dict(ck["scheduler"])
+        try:
+            scheduler.load_state_dict(ck["scheduler"])
+        except (ValueError, KeyError) as e:
+            print(f"[resume] scheduler state not loaded ({e}); continuing")
     return ck.get("step", 0), ck.get("best", None)

@@ -60,6 +60,14 @@ def main():
                     help="override cube patch size for training AND sliding-window eval (e.g. 128)")
     ap.add_argument("--num-samples", type=int, default=None,
                     help="override crops per volume per step (lower this if a bigger --patch runs out of memory)")
+    ap.add_argument("--spacing", type=float, default=None,
+                    help="override isotropic target spacing in mm (e.g. 1.0 for finer resolution)")
+    ap.add_argument("--crop-pancreas", type=float, default=None,
+                    help="oracle ROI: crop to the ground-truth pancreas + this many mm of margin (e.g. 20)")
+    ap.add_argument("--crop-native", type=int, default=None,
+                    help="CLARITY: crop to pancreas in NATIVE space (before resample) + this many native-voxel margin (e.g. 24)")
+    ap.add_argument("--whole-box", action="store_true",
+                    help="EXP-12: feed the WHOLE pancreas box (padded/cropped to one --patch cube) instead of random sub-patches; use with --crop-native/--crop-pancreas")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -72,6 +80,18 @@ def main():
     if args.num_samples:
         cfg["sampling"]["num_samples"] = args.num_samples
         print(f"[override] num_samples -> {args.num_samples}")
+    if args.spacing:
+        cfg["preprocessing"]["target_spacing"] = [args.spacing, args.spacing, args.spacing]
+        print(f"[override] target_spacing -> {args.spacing}mm")
+    if args.crop_pancreas is not None:
+        cfg["preprocessing"]["crop_to_pancreas_margin_mm"] = args.crop_pancreas
+        print(f"[override] crop to pancreas ROI + {args.crop_pancreas}mm margin (oracle ROI)")
+    if args.crop_native is not None:
+        cfg["preprocessing"]["crop_native_margin_vox"] = args.crop_native
+        print(f"[override] CLARITY crop-native: pancreas ROI in native space + {args.crop_native}-voxel margin, then resample")
+    if args.whole_box:
+        cfg["preprocessing"]["whole_box"] = True
+        print(f"[override] WHOLE-BOX: feeding the entire pancreas box as one {get(cfg, 'sampling.patch_size')} cube (no random sub-patch)")
     set_seed(int(get(cfg, "seed", 42)))
     device = T.get_device(cfg)
     dp = P.data_paths(cfg)
@@ -139,6 +159,8 @@ def main():
     best_val = -1.0
     if args.resume:
         start, best = T.load_checkpoint(args.resume, model, optimizer, scheduler, map_location=device)
+        if freeze_iters and start >= freeze_iters:
+            set_encoder_requires_grad(model, True)
         print(f"resumed from {args.resume} at step {start}")
 
     # --- MLflow ---
@@ -153,10 +175,11 @@ def main():
             # a descriptive default name so runs aren't indistinguishable in the UI,
             # e.g. transfer_dice_focal_bg1_posneg_6000i
             patch_sz = (samp_cfg.get("patch_size") or [96])[0]
+            box_tag = "_wholebox" if get(cfg, "preprocessing.whole_box", False) else ""
             run_name = args.run_name or (
                 f"{'transfer' if use_pretrained else 'scratch'}_{loss_cfg.get('name', 'dice_ce')}"
                 f"_bg{int(bool(loss_cfg.get('include_background', True)))}"
-                f"_p{patch_sz}_{samp_cfg.get('strategy', 'posneg')}_{total_iters}i"
+                f"_p{patch_sz}{box_tag}_{samp_cfg.get('strategy', 'posneg')}_{total_iters}i"
             )
             mlflow.start_run(run_name=run_name)
             mlflow.log_params({
