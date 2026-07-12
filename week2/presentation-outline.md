@@ -9,7 +9,7 @@ The spine of the talk is three findings, each one paired with the decision it fo
 ## 1. Opening and framing (about 1.5 min)
 
 - What this is: a tool that outlines the pancreas and flags where a tumor might be, so a radiologist or annotator can accept, edit, or reject the outline. It is a segmentation assist, not a diagnosis. I say this out loud early because it sets the honest scope.
-- The data in one line: 9,901 abdominal CT scans from Johns Hopkins PanTS, each with voxel-level pancreas and tumor masks, gathered across 20 sites and 6 scanner makers.
+- The data in one line: 9,901 abdominal CT scans from Johns Hopkins PanTS, each with voxel-level pancreas and tumor masks, gathered across many institutions and four scanner makers (Siemens, GE, Philips, Toshiba).
 - Where I am: the full pipeline is built and has passed its sanity gate, and I have my first honest evaluation, which is where the interesting story is.
 
 ## 2. What the data looks like, quality issues found and resolved (about 2 min)

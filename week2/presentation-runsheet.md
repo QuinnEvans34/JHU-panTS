@@ -17,7 +17,7 @@ Report/notebook say specificity 8% then 42% via the constraint. Live you will sa
 ## Timed outline (12 minutes)
 
 **0:00–1:30 · Open and frame (1.5 min).** No visual, or title slide.
-Say: a tool that outlines the pancreas and flags where a tumor might be, so a radiologist can accept, edit, or reject. Segmentation assist, not diagnosis. Data in one line: 9,901 JHU PanTS abdominal CT scans, voxel-level pancreas and tumor masks, 20 sites, 6 scanner makers. Where I am: full pipeline built, sanity gate passed, first honest evaluation done.
+Say: a tool that outlines the pancreas and flags where a tumor might be, so a radiologist can accept, edit, or reject. Segmentation assist, not diagnosis. Data in one line: 9,901 JHU PanTS abdominal CT scans, voxel-level pancreas and tumor masks, many institutions, four scanner makers (Siemens, GE, Philips, Toshiba). Where I am: full pipeline built, sanity gate passed, first honest evaluation done.
 
 **1:30–3:30 · What the data looks like + quality (2 min).** Point to: notebook overview cell, then `diagrams/data-pipeline.svg`, then the label-validation cross-tab (Viz 5).
 Say: one-time reproducible bulk download (two scripts, so no Airflow needed for a static dataset). Imaging essentially 100% usable, no duplicates, every case has masks. Metadata messy (half of age/sex missing) but never fed to the model. Trust check: my tumor label agrees with the dataset's own flag 99.6% of the time, and I flag the 44 disagreements instead of trusting the spreadsheet.

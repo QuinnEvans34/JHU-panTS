@@ -24,7 +24,7 @@ Decision: every scan is reoriented to a standard orientation and resampled to a 
 
 ## 5. Acquisition: contrast phase and sites (Visualization 4)
 On screen: contrast-phase bars and scans-per-site.
-Say: "The data spans 20 sites, six scanner makers, and several contrast phases. That diversity is a strength for generalization, but it is also where the intensity and geometry variation comes from."
+Say: "The data spans many institutions, four scanner makers, and several contrast phases. That diversity is a strength for generalization, but it is also where the intensity and geometry variation comes from." (If asked: the metadata lists six manufacturer strings, but that is really four makers, because GE and Philips are each double-counted under two spellings; and the site field mixes grouped labels like '15 Sites' with codes, so it is many more than twenty institutions.)
 Decision: windowing and resampling are non-negotiable, and it is also why I am honest that a 100-case development subset only sees a slice of this diversity.
 
 ## 6. Label validation (Visualization 5)

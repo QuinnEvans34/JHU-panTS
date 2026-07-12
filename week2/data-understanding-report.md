@@ -24,13 +24,15 @@ Surprises versus the Week 1 proposal. Two things changed once I saw the real fil
 
 Counts and shape. The manifest has 9,901 rows and 29 columns. Each row is one case. The columns are file paths (CT and each mask), derived label facts (whether a lesion exists, its voxel count and volume), scan geometry (array shape and voxel spacing), and the joined metadata (contrast phase, sex, age, manufacturer, site, nationality, study year, and the dataset's tumor flag). The split field marks 9,000 training cases and 901 official test cases. The image data itself is 3D: after resampling to a common grid, a typical volume is on the order of 190 by 134 by 131 voxels, but the raw scans vary enormously (see below).
 
+Data types. The columns are a mix of strings (`case_id` and the file paths, plus the raw `shape` and `spacing` fields, which I parse into numbers), a boolean (`has_lesion`), integers (lesion voxel count and the dataset's 0/1 tumor flag), and floats (lesion volume in cubic millimeters, and age). Time range. Scans carry a study year spanning 1984 to 2021, but it is missing for about 72 percent of cases, so it is a rough provenance note rather than a usable time axis, and it is never fed to the model.
+
 Class balance. Only 1,033 of 9,901 cases contain a tumor, which is 10.4 percent. Inside a tumor case the lesion is a tiny fraction of the volume. This is the single most important fact in the whole profile, and most of my training design exists to deal with it.
 
 Tumor prevalence is not uniform across the splits. The training pool is 9.8 percent tumor-positive, while the official test set is 16.8 percent tumor-positive. The test set is deliberately enriched for tumors. This matters when reading results: healthy-case specificity has to be measured on my own held-out healthy cases, and I should not be surprised that the test set stresses tumor detection harder than training prevalence would suggest.
 
 Lesion size. Among tumor cases, lesion volume runs from about 2 cubic millimeters up to 732,388, with a median near 4,721. The quartiles are roughly 1,655 and 11,466. Seventeen lesions are smaller than 100 cubic millimeters, which is only a few voxels. So the target spans five orders of magnitude, and a meaningful number of tumors are extremely small.
 
-Scan geometry. This is the messy part. Slice counts run from 8 to 1,060 (median 190). In-plane voxel spacing runs from 0.42 to 5.0 millimeters (median 0.81), and slice spacing runs from 0.36 to 10.0 millimeters (median 1.25). The scans were acquired on 6 manufacturers across 20 sites and 14 nationalities, in multiple contrast phases. In other words, the raw voxels are not comparable across scans until they are standardized.
+Scan geometry. This is the messy part. Slice counts run from 8 to 1,060 (median 190). In-plane voxel spacing runs from 0.42 to 5.0 millimeters (median 0.81), and slice spacing runs from 0.36 to 10.0 millimeters (median 1.25). The scans were acquired on four scanner manufacturers (Siemens, GE, Philips, Toshiba) across many institutions and 14 nationalities, in multiple contrast phases. Two metadata quirks are worth stating plainly: the manufacturer field holds six raw strings but only four real makers, because GE and Philips are each recorded under two spellings, and the site field mixes grouped labels like "15 Sites" with individual codes, so it encodes many more than twenty institutions rather than twenty distinct ones. In other words, the raw voxels are not comparable across scans until they are standardized.
 
 Missing values, duplicates, anomalies, and how I handled them.
 
@@ -39,6 +41,21 @@ Missing values, duplicates, anomalies, and how I handled them.
 - Label anomaly: in 44 cases the metadata tumor flag says positive but the lesion mask is empty. I found this by cross-checking my mask-derived label against the dataset flag (they agree 99.6 percent of the time). I trust the mask, because the mask is what the model actually learns from, and I flag those 44 as a known data quirk rather than silently trusting the spreadsheet.
 
 Corrupted files. I did not hit unreadable or truncated volumes during manifest building or the single-case sanity check. The usable-out-of-the-box rate for the imaging data is effectively 100 percent for the cases exercised so far.
+
+### 2.1 The findings that drive the model
+
+Three findings matter most, and they are the spine of how I present this project. First, class imbalance: only 10.4 percent of scans contain a tumor, and inside a tumor case the lesion is a tiny fraction of the volume. Second, geometry heterogeneity: slice counts run from 8 to over 1,000 and voxel spacing varies more than tenfold, so no two raw scans are comparable until they are standardized. Third, over-prediction: the first honest evaluation showed the model finds tumors but flags them almost everywhere (8 percent specificity on healthy scans), which I diagnosed and then largely fixed with the whole-box change. The first two came out of the EDA on the manifest; the third came out of the first real evaluation, and it is the one that reshaped the rest of the plan (Sections 4.3 and 4.4). Almost everything I built traces back to one of these three.
+
+The full set of findings is below, each paired with the concrete pipeline decision it forced. This is the throughline of the project: the data told me what to build.
+
+| EDA finding | The decision it drove |
+|---|---|
+| Class imbalance: only 10.4% of scans have a tumor, and the lesion is a tiny fraction of a volume. | Tumor-biased patch sampling, a Dice-based loss instead of plain accuracy, and scoring lesion Dice only on tumor cases with specificity measured separately on healthy ones. |
+| Lesion size spans five orders of magnitude (2 to 732,388 mm3); 17 tumors are only a few voxels. | Positive-biased sampling so tiny tumors are actually seen, and a minimum-volume cleanup at inference to drop specks. |
+| Geometry heterogeneity: slice counts 8 to 1,060, voxel spacing varying more than tenfold. | Reorient to RAS and resample to a common 1.5mm isotropic grid before the model sees anything. |
+| Acquisition diversity: four scanner makers, many institutions, multiple contrast phases. | Intensity windowing to a fixed Hounsfield range, plus honesty that a 100-case subset samples only a slice of this diversity. |
+| Label check: my mask label agrees with the dataset's tumor flag 99.6% of the time; the 44 mismatches are all flag-positive with an empty mask. | Train from the mask, not the spreadsheet; treat the 44 as an annotation gap rather than trusting either source blindly. |
+| Over-prediction at first honest eval (8% specificity), later resolved. | Diagnosed as a field-of-view problem; feeding the whole pancreas box lifted specificity to 55% on its own (Section 4.4). |
 
 ---
 
@@ -93,7 +110,7 @@ Because the raw scans are so inconsistent (Section 2), every volume goes through
 - Crop to the body region, then pad so every volume is at least the patch size (some scans are thinner than 96 voxels).
 - For training, sample 96 by 96 by 96 patches with `RandCropByPosNegLabeld` biased toward lesion voxels, so the network actually sees tumors despite their rarity, plus light augmentation.
 
-This directly reflects the EDA. The wild spacing and slice-count spread is why resampling is non-negotiable. The five-orders-of-magnitude lesion size range and the 17 tiny lesions are why patch sampling is biased toward positives and why inference later applies a small minimum-volume cleanup.
+This directly reflects the EDA. The wild spacing and slice-count spread is why resampling is non-negotiable. The five-orders-of-magnitude lesion size range and the 17 tiny lesions are why patch sampling is biased toward positives and why inference later applies a small minimum-volume cleanup. The steps above are the baseline patch recipe; my current best model instead feeds the whole pancreas box as one 128-voxel cube (Section 4.4), but the reorient, resample, window, and label steps are identical either way.
 
 ### 4.3 The overfit-a-single-batch test
 
@@ -123,9 +140,11 @@ For outside context, published pancreas segmentation models report an organ Dice
 
 ### 5.1 Feature candidates and justification
 
-This is a vision model, so the primary input feature is the preprocessed 3D CT volume itself: reoriented, resampled to 1.5 millimeter isotropic, and intensity-windowed to [-100, 300] then scaled to [0, 1]. That transformation is the feature engineering. The EDA justifies each part of it, as described in Section 4.2.
+This is a vision model, so the features are voxel data, not tabular columns. The planned model inputs, each with its transformation and the reason it is included:
 
-The candidate auxiliary feature is surrounding anatomy. Each case ships with 27 to 28 organ masks, and the PanTS work reports that adding richer anatomical context improves tumor Dice substantially. So a planned experiment is to feed a few neighboring structures (for example duodenum and vessels) as extra channels and measure the change in lesion Dice. Demographic metadata (age, sex, site) is explicitly not used as a model input: it is about half missing and is not needed for a voxel segmentation task, though it stays in the manifest for reporting and stratification.
+- Primary input: the preprocessed 3D CT volume. Transformation: reorient to RAS, resample to 1.5 millimeter isotropic, window Hounsfield units to [-100, 300], scale to [0, 1]. Justification: this is the raw signal the tumor lives in, and the transformation is exactly what makes the wildly inconsistent scans of Section 2 comparable to each other. For a segmentation model this standardization is the feature engineering.
+- Candidate auxiliary input: a few neighboring anatomical structures as extra input channels (for example duodenum and vessels). Transformation: each structure's binary mask added as its own channel alongside the CT. Justification: every case ships with 27 to 28 organ masks, and the PanTS work reports that richer anatomical context improves tumor Dice substantially, so this is a planned ablation, measured by the change in lesion Dice.
+- Explicitly excluded: demographic and acquisition metadata (age, sex, site). Justification: it is about half missing and a voxel segmentation model does not need it. It stays in the manifest for reporting and stratification, not as a model input. One exception proved its analytic worth this week: contrast phase is not a model input, but slicing the data by it revealed that phase is a strong driver of the sensitivity-specificity balance (see `docs/experiments.md`, EXP-14).
 
 ### 5.2 Revised Core Requirements (granular and measurable)
 
@@ -140,6 +159,18 @@ The candidate auxiliary feature is surrounding anatomy. Each case ships with 27 
 ### 5.3 Schedule
 
 The finalized week-by-week schedule lives in `docs/schedule.md` and the living execution plan is in `docs/implementation-plan.md`. In short: Week 2 was the wired pipeline and the passed overfit gate, and it ran ahead, since the evaluation, the sensitivity-specificity work, and the whole-box improvement all landed early. That pulls the plan forward: Week 3 pivots to the main remaining lever, scaling up the tumor data (and a clarity-curriculum experiment, EXP-13, suggested by my instructor), Week 4 is full-volume evaluation and pushing lesion Dice toward the 0.35 to 0.50 target, and Week 5 is failure analysis, the static demo, and the final report. Level 4.5 is the line that has to hold; Level 5 is the first thing dropped if a week slips.
+
+---
+
+## 6. Context Files
+
+Three AI-collaboration documents are maintained in the repo and updated every week:
+
+- `docs/Claude.md`: the project's AI context file. It defines the goal, how the assistant should help, and the tone, scope, and constraints (no clinical claims, split by patient not slice, config-driven pipeline, dataset on the external drive).
+- `docs/ai-usage-log.md`: a running weekly log of what I used AI for, the prompts and context that worked well, and where the output needed correction. The Week 2 entry is in place.
+- `docs/agent-plan.md`: the operating guide for how the agent and I divide work, and the AI-versus-manual task split.
+
+These are living files that grow across the five weeks, not one-time deliverables.
 
 ---
 
