@@ -487,8 +487,82 @@ for M in clarity20 repr20; do
 done
 ```
 
-Result: to fill in (compare clarity20 vs repr20 lesion + pancreas Dice and specificity).
-Decision: to fill in.
+Result (eval n=20 pos / 20 free, both best.pt at step 2000; models early-stopped by val since 20 cases overfit fast):
+
+| metric | clarity20 (sharp, median 0.80mm) | repr20 (representative, 1.50mm) |
+|---|---|---|
+| pancreas Dice | 0.780 | 0.782 |
+| lesion Dice raw | 0.204 | 0.189 |
+| lesion Dice cleaned | 0.208 | 0.182 |
+| specificity raw | 85% (17/20) | 50% (10/20) |
+| specificity cleaned | 90% (18/20) | 60% (12/20) |
+
+Sweep: clarity holds ~0.20 lesion Dice at 80-95% specificity (0.70 thr -> 0.196 / 95%); repr must reach 0.90 thr to hit 85% and sits at 55% at 0.50 thr.
+
+Decision: SOFT NULL on the pre-registered accuracy bar, STRONG (but confounded) surprise on specificity. Lesion Dice is +0.015 raw / +0.026 cleaned and pancreas is flat, so it does not cleanly clear the +0.02 accuracy bar. That soft null is consistent with the predicted confound #1: resampling to 1.5mm normalizes native resolution away before the model sees it, so "sharper = more accurate" barely shows up in Dice. The unregistered surprise is specificity: the clarity-weighted model is far less trigger-happy on healthy scans (raw 50->85, cleaned 60->90), a Pareto win here since Dice is tied-or-better too. Treat this as a strong hypothesis-generating result, NOT a confirmed causal claim of sharpness, because (confound #2) the sharp cohort also differs in site and contrast phase (mostly non-contrast), so the gain could be domain/appearance rather than resolution; and n=20 (each free case = 5 pts) means the 7-case gap is directionally credible but wide. Mechanistic read: training on the sharp, mostly non-contrast cohort may give the model a cleaner sense of "normal pancreas," so it hallucinates fewer tumors on healthy scans. Follow-up to isolate the cause: repeat controlling for contrast phase, or at larger n. Note both arms are 20-case models, so absolute numbers sit below the 95-case whole-box base (lesion 0.263); the value is the relative clarity-vs-representative contrast, which is real and large on specificity.
+
+---
+
+## EXP-14: Contrast phase, isolated from resolution [Week 3, follow-up to EXP-13]
+
+Motivation: EXP-13 raised specificity but its sharp cohort was also mostly non-contrast, so clarity and contrast phase were confounded. This isolates contrast phase to answer the question EXP-13 could not: is contrast phase the real driver of the specificity effect?
+
+Design: `scripts/make_contrast_splits.py` builds two disjoint 20-case sets (10 tumor / 10 healthy), both drawn from the slice 1.0-2.0mm + in-plane 0.7-1.1mm band, so both land at median slice ~1.2mm and in-plane 0.80mm. Only contrast phase differs: `nc20` = non-contrast, `pv20` = portal-venous. Both trained with the whole-box recipe (crop-native 16, whole-box, 128 @1.5mm, SuPreM transfer, bg0), 4000 iters, best.pt by val lesion on the same 20 tumor-positive val cases, evaluated on the identical val set (20 pos / 20 free).
+
+Hypothesis (H1, primary and clean = specificity): at matched resolution, non-contrast trains a MORE specific model than portal-venous, because non-contrast tumors are subtle so the model learns to be cautious about calling them. Accept if nc20 specificity beats pv20 by >= 3 healthy cases (about 15 points) at n=20.
+Secondary (confounded = sensitivity): portal-venous >= non-contrast on lesion Dice, since tumors are more conspicuous with contrast. Report but do not over-claim (see limitation).
+
+Interpretation either way: if nc >> pv on specificity, contrast phase IS the driver behind the EXP-13 surprise (confirms the reinterpretation). If nc ~ pv, contrast is ruled out and EXP-13's specificity gain came from something else (residual resolution, or site/domain). Both outcomes are informative.
+
+Known limitation, stated up front: tumor SIZE could not be fully matched. At this resolution non-contrast has only ~11 tumors, and they are smaller, so even after a common 1000-20000 mm3 size band the venous tumors stay ~1.9x larger (median 8359 vs 4473). Therefore the SPECIFICITY read (healthy scans, no tumor size involved) is the clean primary result; the lesion-Dice read carries a residual size advantage for portal-venous and cannot separate contrast conspicuity from tumor size at n=10. That non-contrast tumors are both fewer and smaller at matched resolution is itself a finding. n=20 eval (each healthy case = 5 points).
+
+Split facts (seed 42, disjoint): nc20 median slice 1.25mm / in-plane 0.80mm / lesion 4473 mm3; pv20 1.12mm / 0.81mm / 8359 mm3.
+
+Runbook:
+
+```bash
+source .venv312/bin/activate
+python scripts/make_contrast_splits.py            # writes nc20.txt + pv20.txt
+
+# Arm NC: non-contrast
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split nc20 --transfer \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --ckpt-every 200 \
+  --max-iters 4000 --val-limit 20 --val-positive --val-every 1000 \
+  --run-name nc20_wholebox
+cp outputs/checkpoints/pants-level45/best.pt outputs/checkpoints/pants-level45/nc20_best.pt
+
+# Arm PV: portal-venous
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split pv20 --transfer \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --ckpt-every 200 \
+  --max-iters 4000 --val-limit 20 --val-positive --val-every 1000 \
+  --run-name pv20_wholebox
+cp outputs/checkpoints/pants-level45/best.pt outputs/checkpoints/pants-level45/pv20_best.pt
+
+# eval both on the identical val set + recipe
+for M in nc20 pv20; do
+  echo "===== $M ====="
+  PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+    --ckpt outputs/checkpoints/pants-level45/${M}_best.pt \
+    --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10 \
+    --crop-native 16 --whole-box --roi 128 --spacing 1.5
+done
+```
+
+Result (eval n=20 pos / 20 free; nc20 best.pt step 2000, pv20 best.pt step 1000, both early-stopped by val):
+
+| metric | nc20 (non-contrast) | pv20 (portal-venous) |
+|---|---|---|
+| pancreas Dice | 0.791 | 0.704 |
+| lesion Dice raw | 0.116 | 0.124 |
+| lesion Dice cleaned | 0.116 | 0.138 |
+| specificity raw | 90% (18/20) | 10% (2/20) |
+| specificity cleaned | 95% (19/20) | 10% (2/20) |
+
+Sweep: nc20 holds 90-95% specificity at every threshold (already saturated); pv20 climbs 10% -> 50% only by threshold 0.90.
+
+Decision: ACCEPT H1 (specificity), DECISIVELY. At matched resolution, non-contrast trained a far more specific model than portal-venous: raw specificity 90% vs 10%, a 16-case gap at n=20, cleaned 95% vs 10%. This confirms the reinterpretation of EXP-13: contrast phase, NOT resolution/clarity, is the driver of the specificity effect (EXP-13's clarity cohort was mostly non-contrast). Mechanism: non-contrast tumors are subtle, so the model learns caution and rarely false-alarms on a healthy pancreas; portal-venous tumors are conspicuous, so the model learns "bright pancreatic region = tumor" and over-fires on healthy scans (18/20 flagged). Secondary, size-confounded: portal-venous edges non-contrast on lesion Dice (raw 0.124 vs 0.116, cleaned 0.138 vs 0.116), directionally consistent with contrast raising sensitivity, but the gap is small and pv tumors were ~1.9x larger, so do not over-claim. Pancreas gap (0.791 vs 0.704) is partly a training-time artifact (pv early-stopped at step 1000 vs nc 2000). Caveats: n=20 (but 90 vs 10 is far outside noise); contrast phase is not randomized, it travels with acquisition protocol and scan indication, so it bundles those. Product implication: contrast phase is a real operating-point dial, train toward non-contrast for specificity (screening) or portal-venous for sensitivity (catch-everything); the phase-mixed dev subset (EXP-12, 55% spec) sits between the two extremes. This is the strongest single explanatory result of the project so far and the headline for the Week 3 check-in.
 
 ---
 
