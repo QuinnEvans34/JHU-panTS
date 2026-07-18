@@ -10,19 +10,20 @@ A 3D deep-learning pipeline that takes an abdominal CT scan, segments the **panc
 
 *(This table is the grader's map. Most recent week first.)*
 
-### Week 3 (current) — M3P1: Experiment Review & Model Selection
+### Week 3 (current) — M3P1: Experiment Review & Model Selection · M3A2: Daily Check-Ins
 
 | Assignment | Deliverable | Location |
 |-----------|-------------|----------|
 | **M3P1 — Presenter** | ML experimentation report (features, experiment comparison, model selection, plan status) | [`week3/ml-experimentation-report.md`](week3/ml-experimentation-report.md) |
 | M3P1 — *presentation* | Slide deck (10-min talk) | [`week3/experiment-review-slides.pptx`](week3/experiment-review-slides.pptx) · [PDF](week3/experiment-review-slides.pdf) |
 | **M3P1 — Audience** | Audience notes on peers' presentations | [`docs/audience-notes-week3.md`](docs/audience-notes-week3.md) |
-| M3P1 — *experiment log* | Every run as a formal experiment (hypothesis → decision), EXP-01 → EXP-19 | [`docs/experiments.md`](docs/experiments.md) |
+| **M3A2 — Daily Check-Ins** | Daily standup log (Mon–Fri + the Week 3 1-on-1 retrospective) | [`docs/standup-log.md`](docs/standup-log.md) |
+| M3P1 — *experiment log* | Every run as a formal experiment (hypothesis → decision), EXP-01 → EXP-22 | [`docs/experiments.md`](docs/experiments.md) |
 | M3P1 — *revised plan (Section 5)* | Where the project stands vs the 5-week plan | [`docs/implementation-plan.md`](docs/implementation-plan.md) |
 | M3P1 — *AI docs (Section 6)* | AI context file + weekly usage log | [`CLAUDE.md`](CLAUDE.md) · [`docs/ai-usage-log.md`](docs/ai-usage-log.md) |
 | M3P1 — *metrics audit* | Self + independent-AI audit of the scoring (no leakage; ROI-leak finding) | [`docs/codex-metrics-audit.md`](docs/codex-metrics-audit.md) |
 
-**Supporting Week 3 work:** [`week3/diagrams/`](week3/diagrams/) (presentation diagrams: whole-box vs patches, the input array, metrics) · daily standups in [`docs/standup-log.md`](docs/standup-log.md).
+**Supporting Week 3 work:** [`week3/diagrams/`](week3/diagrams/) (presentation diagrams: whole-box vs patches, the input array, metrics). Post-presentation, acting on the Week 3 check-in feedback, the pipeline is being made fully autonomous and leak-free (localize the pancreas from the full CT, then segment) — tracked in [`docs/experiments.md`](docs/experiments.md) (EXP-20/22) and the Saturday standup entry.
 
 ### Week 2
 

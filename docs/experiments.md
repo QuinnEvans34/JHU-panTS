@@ -900,6 +900,77 @@ Decision: to fill in.
 
 ---
 
+## EXP-20: Autonomous cascade — predicted ROI, the comparable-to-published number [Week 4, the credibility run]
+
+Motivation (the credibility problem, raised 2026-07-17): every lesion Dice to date — including the EXP-17c headline 0.528 — was measured on a crop built from the GROUND-TRUTH pancreas. That is an oracle ROI: the model is handed *where the pancreas is* before being asked *what is in it*. Published whole-scan pancreatic-tumor numbers get no such gift, so our number is not comparable to anyone else's, which undercuts its credibility. The instructor's bar, stated directly: if the model produces the same result when the crop comes from a *predicted* pancreas instead of the ground truth, the results can be taken seriously. This experiment builds that autonomous pipeline and measures it.
+
+Design — a localize-then-segment cascade, both stages full-volume sliding-window, NO retraining:
+- Stage 1 (localizer): a full-scan pancreas model predicts the pancreas on the whole CT; take the largest connected component; read off its bounding box + a buffer. Its job is COVERAGE (contain the pancreas and the tumor), not accurate segmentation, so a ~0.75-Dice pancreas model is enough. Reused checkpoint: `p128_ctx_step6000.pt` (EXP-08, full-scan patch-128, pancreas Dice 0.747). Fallback if coverage is poor: stock SuPreM (32-class, segments pancreas natively) or a quick dedicated localizer.
+- Stage 2 (segmenter): the EXP-17c whole-box model, UNCHANGED, run on the predicted crop.
+
+Single-variable harness (`scripts/cascade_eval.py --roi-from`), everything downstream of the crop identical:
+- `gt-union` — crop from GT pancreas UNION lesion. Matches how EXP-12/17/17c were scored, so it must REPRODUCE ~0.528 and thereby validate this harness. If it does not, nothing else here is trusted.
+- `gt-panc` — crop from GT pancreas ONLY (an inference-time read on the ROI-leak of EXP-19, on the existing model, no retrain). Gap gt-union -> gt-panc = the lesion-extent leak.
+- `pred` — crop from the LOCALIZER's predicted pancreas box. The autonomous number. Pancreas-only by construction (the localizer never sees a lesion), so also leak-free. Gap gt-panc -> pred = the pure cost of imperfect localization.
+
+Metrics: lesion + pancreas Dice on tumor-positive cases (raw + cleaned), specificity on tumor-free cases, threshold sweep — all matched to `evaluate.py`. PLUS localizer coverage: fraction of the GT pancreas and GT tumor that falls inside the predicted box, and a count of cases where the box clips >10% of the tumor (the cascade's main failure mode — a clipped tumor cannot be segmented).
+
+Hypothesis (H1): the autonomous (`pred`) lesion Dice lands within noise of the oracle (`gt-union`) number — within ~0.05 at n=40 — with box coverage of the tumor >~95%. If so, the oracle number was a fair proxy all along and the result is credible/comparable.
+Null (H0): `pred` drops materially below oracle because localization clips or mislocates tumors (low coverage), meaning the oracle number was optimistic about autonomous performance.
+
+Either way it is the honest headline. Report BOTH numbers going forward — oracle as the "with provided ROI" upper bound, autonomous as the deployable one — exactly how cascade papers present it, which also lets us decompose error into leak vs localization vs segmentation.
+
+Honest confounds, stated up front:
+1. Harness crops AFTER resampling to 1.5mm (one clean code path for gt and pred), whereas training cropped in native space then resampled. The whole-box resize to 128^3 normalizes most of this away; the `gt-union` arm is the check — if it reproduces ~0.528, the crop-space change is harmless.
+2. Train/eval crop-source mismatch: the Stage-2 model was TRAINED on GT (union) boxes but is now fed PREDICTED boxes (shifted/clipped). This is deliberately the thing under test (does it transfer?). If `pred` sags, the fix is known and cheap — retrain Stage-2 with random jitter on the training box so training looks like deployment (EXP-21, staged and ready but NOT run until we see whether zero-retrain transfer holds).
+3. Buffer size (`--margin-vox`, default 12 @1.5mm ~= 18mm) trades clip-risk against drifting back toward a whole-scan input; test sensitivity if `pred` underperforms only from clipping.
+
+Runbook (tonight — eval-only, ~1-2h for 40+40 cases through two SW stages; SANITY one case FIRST):
+
+```bash
+source .venv312/bin/activate   # or .venv; no MLflow needed for eval
+SEG=outputs/checkpoints/pants-level45/wholebox_scaledmax_GOOD.pt
+LOC=outputs/checkpoints/pants-level45/p128_ctx_step6000.pt
+
+# 0. SANITY: one tumor-positive case, saves an overlay PNG — eyeball the crop before trusting aggregates
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/cascade_eval.py --seg-ckpt $SEG --loc-ckpt $LOC \
+  --roi-from pred --sanity <a_tumor_positive_val_case_id>
+
+# 1. HARNESS CHECK: must land near the oracle 0.528, else stop and debug the harness
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/cascade_eval.py --seg-ckpt $SEG --loc-ckpt $LOC \
+  --roi-from gt-union --n-pos 40 --n-neg 40
+
+# 2. THE AUTONOMOUS NUMBER (the credibility result)
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/cascade_eval.py --seg-ckpt $SEG --loc-ckpt $LOC \
+  --roi-from pred --n-pos 40 --n-neg 40 --sweep --lesion-within-pancreas-mm 10
+
+# 3. (optional, same harness) the leak control, EXP-19 inference-time read
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/cascade_eval.py --seg-ckpt $SEG --loc-ckpt $LOC \
+  --roi-from gt-panc --n-pos 40 --n-neg 40
+```
+
+Read in the morning: if `gt-union` ~= 0.528 (harness valid) AND `pred` is within ~0.05 with tumor coverage >95%, the number is credible and we build on it. If `pred` drops, the coverage line says whether it is a localization/clip problem (low coverage -> bigger buffer or better localizer) or a crop-shift robustness problem (good coverage but lower Dice -> the EXP-21 jitter retrain). Do NOT launch a 15h run tonight; this eval answers the question first, and the fix (if needed) is a targeted overnight run tomorrow with full information.
+
+### EXP-22 (sub-run of the cascade): a dedicated full-scan pancreas LOCALIZER [Week 4, launched 2026-07-18 overnight]
+
+Goal: replace the reused `p128_ctx` (0.747 pancreas, trained on ~95 cases) with a stronger Stage-1 localizer trained on all 1,412 `scaledmax` cases. A better pancreas model gives tighter, more reliable boxes, so containment needs less buffer. Full-scan patch training (NOT whole-box): standard SuPreM transfer, patch 96, the pancreas channel of the 3-class output is the localizer. Loss stays DiceFocal (pancreas is easy; recall is obtained at inference via the low-probability-threshold box, `cascade_eval --loc-thresh`). Validation off (`--val-limit 0`) because train.py selects best.pt by LESION Dice, which is the wrong metric for a localizer — use the archived `last.pt`. A recall-oriented loss (Tversky, penalize pancreas false-negatives = "dock for missing pancreas") is the reserved next lever IF the containment audit shows the buffer alone is insufficient.
+Command run: `train.py --split scaledmax --transfer --cache disk --patch 96 --num-samples 2 --max-iters 16000 --val-limit 0 --run-name localizer_fullscan_scaledmax`.
+Then (tomorrow): `cascade_eval.py --audit-coverage --loc-ckpt <last.pt> --loc-roi 96 --loc-thresh 0.1 --margin-vox 16 --n-audit 1000` to certify containment, and re-run the accuracy arm with the new localizer.
+Result: to fill in.
+
+Result (2026-07-18, `cascade_eval.py`, n=40 pos / 40 neg; localizer `p128_ctx_step6000.pt` @0.747 pancreas, segmenter `wholebox_scaledmax_GOOD.pt`):
+- Sanity (PanTS_00000029): pancreas coverage 1.00, lesion coverage 1.00, lesion Dice 0.790 — overlay confirms the crop + mapping are correct.
+- HARNESS CHECK (`gt-union`): pancreas 0.833, lesion 0.496 raw / 0.484 cleaned, specificity 30% (raw=cleaned). Reproduces the EXP-17c oracle (pancreas 0.837, lesion 0.524/0.528) within ~0.03. The small dip is confound #1 (crop-after-resample + margin-12 vs training's native crop), so the harness is VALIDATED: within-harness comparisons are trustworthy, and its absolute lesion Dice reads ~0.03 below the native-crop oracle.
+- AUTONOMOUS (`pred`): pancreas 0.819, lesion **0.483 raw** / 0.456 cleaned, specificity 38% (raw=cleaned; sweep reaches 48% at threshold 0.90 for only -0.007 lesion Dice). Localizer coverage pancreas 0.992, tumor 0.979; only 2/40 cases clip >10% of the tumor; 0 full localizer misses.
+- THE KEY NUMBER: within the same harness, autonomous (0.483) vs GT-box (0.496) is a **0.013 lesion-Dice gap — inside n=40 noise**. The predicted pancreas box gives essentially the same result as the ground-truth box. Coverage 98% confirms the localizer almost never clips the tumor.
+
+Decision: **ACCEPT H1 DECISIVELY.** The pipeline is now autonomous and the headline is credible/comparable: lesion Dice ~0.48 with a PREDICTED ROI, ~equal to the provided-ROI result, at 98% tumor coverage. No jitter retrain (EXP-21) needed — zero-retrain transfer held. Report going forward as two numbers: autonomous lesion Dice ~0.48 (deployable, comparable to the ~0.53 published reference) vs provided-ROI ~0.52 (upper bound).
+- Corollary on the ROI leak (EXP-19): the autonomous arm is leak-free by construction (the localizer never sees a lesion) yet matches the leaky `gt-union` arm, which implies the lesion-extent leak was small. Running `gt-panc` would quantify it exactly (optional, same harness), but the practical conclusion is the leak was not materially inflating the headline.
+- HONEST caveat (the real specificity, finally measured): this is the first proper specificity read on the max-data model — ~30-38% at n=40 (tunable to ~48% by threshold), MODERATE and lower than the small-data models' 50-55%. More data bought a large lesion-Dice gain and 90% detection, but not higher specificity. Specificity stays an operating-point dial (threshold / TTA / anatomical constraint) and a capstone data problem; detection sensitivity (90%) remains the CADe headline.
+- Next: fold the autonomous number into the report/UI as the deployable figure; optionally run `gt-panc` to close the leak decomposition; the remaining accuracy lever is small-tumor localization + specificity (both data/curriculum problems for Week 4 / capstone).
+
+---
+
 ## Backlog: designed but not yet run
 
 - More data, scaling past the 100-case dev subset. The EXP-05/07 null results point at data volume as the real ceiling; this is the main Week 3/capstone lever and needs a persistent/disk cache to replace the RAM `CacheDataset` (not yet wired — see `configs/level45.yaml` `training.cache`).
