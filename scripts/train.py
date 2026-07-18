@@ -49,7 +49,10 @@ def main():
     ap.add_argument("--no-mlflow", action="store_true")
     ap.add_argument("--run-name", default=None, help="MLflow run name (auto-built from the config if omitted)")
     ap.add_argument("--positive", action="store_true", help="draw overfit cases from tumor-positive cases only")
-    ap.add_argument("--no-cache", action="store_true", help="disable CacheDataset (slower)")
+    ap.add_argument("--no-cache", action="store_true", help="disable caching (plain Dataset, slowest)")
+    ap.add_argument("--cache", choices=["ram", "disk", "none"], default=None,
+                    help="dataset cache mode (overrides config training.cache): "
+                         "ram=RAM CacheDataset, disk=persistent SSD cache (scales past RAM, survives resume), none")
     ap.add_argument("--val-split", default="val")
     ap.add_argument("--val-limit", type=int, default=0, help=">0 enables validation on N held-out cases")
     ap.add_argument("--val-every", type=int, default=500)
@@ -68,6 +71,8 @@ def main():
                     help="CLARITY: crop to pancreas in NATIVE space (before resample) + this many native-voxel margin (e.g. 24)")
     ap.add_argument("--whole-box", action="store_true",
                     help="EXP-12: feed the WHOLE pancreas box (padded/cropped to one --patch cube) instead of random sub-patches; use with --crop-native/--crop-pancreas")
+    ap.add_argument("--roi-source", choices=["union", "pancreas"], default=None,
+                    help="what the ROI crop is built from: union (pancreas+lesion, legacy) or pancreas (organ only, no lesion leak)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -92,11 +97,29 @@ def main():
     if args.whole_box:
         cfg["preprocessing"]["whole_box"] = True
         print(f"[override] WHOLE-BOX: feeding the entire pancreas box as one {get(cfg, 'sampling.patch_size')} cube (no random sub-patch)")
+    if args.roi_source:
+        cfg["preprocessing"]["roi_source"] = args.roi_source
+        print(f"[override] ROI source = {args.roi_source} ({'pancreas organ only, no lesion leak' if args.roi_source=='pancreas' else 'pancreas+lesion, legacy'})")
     set_seed(int(get(cfg, "seed", 42)))
     device = T.get_device(cfg)
     dp = P.data_paths(cfg)
     epoch_iters = int(get(cfg, "training.epoch_iters", 250))
     total_iters = args.max_iters or (args.epochs or int(get(cfg, "training.max_epochs", 100))) * epoch_iters
+
+    # --- cache mode: --no-cache > --cache > config training.cache (default ram) ---
+    if args.no_cache:
+        cache_mode = "none"
+    elif args.cache:
+        cache_mode = args.cache
+    else:
+        cache_mode = str(get(cfg, "training.cache", "ram"))
+        if cache_mode not in ("ram", "disk", "none"):
+            cache_mode = "ram"
+    if cache_mode == "disk":
+        cdir = get(cfg, "training.cache_dir", None) or str(dp["output_dir"] / "cache")
+        print(f"[cache] mode=disk -> {cdir} (first epoch fills it, then fast + resume-safe)")
+    else:
+        print(f"[cache] mode={cache_mode}")
 
     # --- data ---
     override_ids = None
@@ -105,7 +128,7 @@ def main():
         m = pd.read_csv(dp["manifest"])
         override_ids = m[(m["split"] == "train") & (m["has_lesion"].astype(bool))]["case_id"].tolist()
         print(f"[positive] {len(override_ids)} tumor-positive train cases available")
-    ds = get_dataset(cfg, args.split, train=True, cache=(not args.no_cache),
+    ds = get_dataset(cfg, args.split, train=True, cache=cache_mode,
                      limit=args.overfit, ids=override_ids)
     loader = DataLoader(ds, batch_size=int(get(cfg, "training.batch_size", 1)),
                         shuffle=True, num_workers=0)
@@ -119,7 +142,7 @@ def main():
             m = pd.read_csv(dp["manifest"])
             vset = {x.strip() for x in (dp["splits_dir"] / f"{args.val_split}.txt").read_text().split() if x.strip()}
             val_ids = m[(m["case_id"].isin(vset)) & (m["has_lesion"].astype(bool))]["case_id"].tolist()
-        val_ds = get_dataset(cfg, args.val_split, train=False, cache=True, limit=args.val_limit, ids=val_ids)
+        val_ds = get_dataset(cfg, args.val_split, train=False, cache=cache_mode, limit=args.val_limit, ids=val_ids)
         val_loader = DataLoader(val_ds, batch_size=1, shuffle=False, num_workers=0)
         tag = "tumor-positive " if args.val_positive else ""
         print(f"validation: {len(val_ds)} {tag}cases every {args.val_every} iters (sliding-window)")
@@ -163,6 +186,22 @@ def main():
             set_encoder_requires_grad(model, True)
         print(f"resumed from {args.resume} at step {start}")
 
+    # --- run identity (computed ONCE, used for BOTH MLflow and the on-disk archive) ---
+    # This is deliberately independent of MLflow: EXP-12 was lost because it ran without
+    # MLflow AND its best.pt was overwritten by later runs. The per-run archive below now
+    # preserves every keeper checkpoint even when MLflow is unavailable.
+    import datetime
+    loss_cfg = cfg.get("loss", {})
+    samp_cfg = cfg.get("sampling", {})
+    patch_sz = (samp_cfg.get("patch_size") or [96])[0]
+    box_tag = "_wholebox" if get(cfg, "preprocessing.whole_box", False) else ""
+    run_name = args.run_name or (
+        f"{'transfer' if use_pretrained else 'scratch'}_{loss_cfg.get('name', 'dice_ce')}"
+        f"_bg{int(bool(loss_cfg.get('include_background', False)))}"
+        f"_p{patch_sz}{box_tag}_{samp_cfg.get('strategy', 'posneg')}_{total_iters}i"
+    )
+    run_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
     # --- MLflow ---
     ml = None
     if not args.no_mlflow:
@@ -170,17 +209,6 @@ def main():
             import mlflow
             mlflow.set_tracking_uri(get(cfg, "mlflow.tracking_uri", "sqlite:///outputs/mlflow.db"))
             mlflow.set_experiment(get(cfg, "mlflow.experiment", "pants-level45"))
-            loss_cfg = cfg.get("loss", {})
-            samp_cfg = cfg.get("sampling", {})
-            # a descriptive default name so runs aren't indistinguishable in the UI,
-            # e.g. transfer_dice_focal_bg1_posneg_6000i
-            patch_sz = (samp_cfg.get("patch_size") or [96])[0]
-            box_tag = "_wholebox" if get(cfg, "preprocessing.whole_box", False) else ""
-            run_name = args.run_name or (
-                f"{'transfer' if use_pretrained else 'scratch'}_{loss_cfg.get('name', 'dice_ce')}"
-                f"_bg{int(bool(loss_cfg.get('include_background', True)))}"
-                f"_p{patch_sz}{box_tag}_{samp_cfg.get('strategy', 'posneg')}_{total_iters}i"
-            )
             mlflow.start_run(run_name=run_name)
             mlflow.log_params({
                 "mode": "transfer" if use_pretrained else "scratch",
@@ -198,9 +226,44 @@ def main():
             print(f"[mlflow] run '{run_name}' -> {get(cfg, 'mlflow.tracking_uri')}")
             ml = mlflow
         except Exception as e:
-            print(f"[mlflow disabled] {e}")
+            # EXP-12 ran in a venv without mlflow and its metrics were lost. Make that
+            # impossible to miss now: a loud banner instead of a quiet one-liner. The
+            # on-disk archive + run_ledger.csv below still capture the run regardless.
+            print("\n" + "!" * 70)
+            print(f"[MLflow NOT logging]  {e}")
+            print("  This run will NOT appear in the MLflow UI. If you want live tracking,")
+            print("  stop now and launch from .venv312 (which has mlflow installed).")
+            print("  The per-run checkpoint archive + run_ledger.csv WILL still record it.")
+            print("!" * 70 + "\n")
+    else:
+        print("[MLflow] skipped (--no-mlflow). Run still recorded in the on-disk archive + run_ledger.csv.")
 
     ckpt_dir = dp["output_dir"] / "checkpoints" / get(cfg, "mlflow.experiment", "run")
+
+    # --- per-run checkpoint archive (the fix for the EXP-12 loss) ---
+    # Every run still writes the shared best.pt/last.pt (so existing eval/resume runbooks
+    # keep working), but it ALSO writes immutable copies into a unique, timestamped folder
+    # that no later run can touch. run_info.txt makes each archived checkpoint self-documenting,
+    # so a checkpoint can never again become an orphan whose provenance is unknown.
+    run_dir = ckpt_dir / "runs" / f"{run_name}__{run_stamp}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "run_info.txt").write_text(
+        f"run_name: {run_name}\n"
+        f"timestamp: {run_stamp}\n"
+        f"split: {args.split}\n"
+        f"mode: {'transfer' if use_pretrained else 'scratch'}\n"
+        f"total_iters: {total_iters}\n"
+        f"config: {args.config}\n"
+        f"patch: {get(cfg, 'sampling.patch_size')}\n"
+        f"spacing: {get(cfg, 'preprocessing.target_spacing')}\n"
+        f"whole_box: {get(cfg, 'preprocessing.whole_box', False)}\n"
+        f"crop_native_margin_vox: {get(cfg, 'preprocessing.crop_native_margin_vox')}\n"
+        f"crop_to_pancreas_margin_mm: {get(cfg, 'preprocessing.crop_to_pancreas_margin_mm')}\n"
+        f"loss: {loss_cfg.get('name')} include_background={loss_cfg.get('include_background')}\n"
+        f"seed: {get(cfg, 'seed', 42)}\n"
+    )
+    print(f"[archive] keeper checkpoints for this run -> {run_dir}")
+
     it = cycle(loader)
     model.train()
     t0 = time.time()
@@ -243,6 +306,7 @@ def main():
             if val_loader is None and d["mean"] > best:  # train-dice best only when not validating
                 best = d["mean"]
                 T.save_checkpoint(ckpt_dir / "best.pt", model, optimizer, scheduler, step + 1, best)
+                T.save_checkpoint(run_dir / "best.pt", model, optimizer, scheduler, step + 1, best)  # immutable archive copy
 
         if val_loader is not None and (step + 1) % args.val_every == 0:
             from src.inference.sliding_window import validate
@@ -259,13 +323,28 @@ def main():
             if score > best_val:
                 best_val = score
                 T.save_checkpoint(ckpt_dir / "best.pt", model, optimizer, scheduler, step + 1, best_val)
-                print(f"  [val] new best (lesion {score:.3f}) -> saved best.pt")
+                T.save_checkpoint(run_dir / "best.pt", model, optimizer, scheduler, step + 1, best_val)  # immutable archive copy
+                print(f"  [val] new best (lesion {score:.3f}) -> saved best.pt (+ archive)")
 
         if (step + 1) % args.ckpt_every == 0:
             T.save_checkpoint(ckpt_dir / "last.pt", model, optimizer, scheduler, step + 1, best)
 
     T.save_checkpoint(ckpt_dir / "last.pt", model, optimizer, scheduler, total_iters, best)
-    print(f"\nDone. checkpoints in {ckpt_dir}")
+    T.save_checkpoint(run_dir / "last.pt", model, optimizer, scheduler, total_iters, best)  # immutable archive copy
+
+    # persistent, MLflow-independent record of every run (one row per run, never overwritten)
+    ledger = ckpt_dir / "run_ledger.csv"
+    new_ledger = not ledger.exists()
+    with open(ledger, "a") as f:
+        if new_ledger:
+            f.write("timestamp,run_name,split,mode,total_iters,best_val_lesion,archive_dir\n")
+        bv = f"{best_val:.4f}" if best_val >= 0 else ""
+        f.write(f"{run_stamp},{run_name},{args.split},"
+                f"{'transfer' if use_pretrained else 'scratch'},{total_iters},{bv},{run_dir.name}\n")
+
+    print(f"\nDone. shared checkpoints in {ckpt_dir}")
+    print(f"[archive] keeper copies safe in {run_dir}  (best.pt + last.pt + run_info.txt)")
+    print(f"[ledger]  run appended to {ledger}")
     if best_val >= 0:
         print(f"best VAL lesion-Dice {best_val:.3f}")
     if args.overfit:

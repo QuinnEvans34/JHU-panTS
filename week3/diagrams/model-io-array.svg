@@ -1,0 +1,126 @@
+<svg viewBox="0 0 980 580" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>What the model reads: the pancreas as a tensor of numbers</title>
+  <desc>The cropped pancreas cube becomes a 3D array of shape 1 by 128 by 128 by 128: one channel (CT intensity, 0 to 1 from Hounsfield units) at each voxel. The 3D SegResNet returns an array of shape 3 by 128 by 128 by 128: a probability of background, pancreas, and lesion at every voxel; the largest is the label.</desc>
+  <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#cbd5e1"/></marker></defs>
+  <rect x="-50" y="-50" width="200%" height="200%" fill="#0b0f17"/>
+
+  <text x="490" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f5f9">What the model actually reads: the pancreas as a grid of numbers</text>
+  <text x="490" y="53" text-anchor="middle" font-size="12" fill="#94a3b8">The cropped organ is just a 3D array of intensities in, and a per-voxel label out.</text>
+
+  <text x="40" y="92" font-size="13" font-weight="700" fill="#60a5fa">1 · INPUT — cropped pancreas cube</text>
+  <rect x="55" y="115" width="95" height="95" rx="8" fill="#05070c" stroke="#334155" stroke-width="1.5"/>
+  <ellipse cx="97" cy="158" rx="34" ry="10" transform="rotate(-18 97 158)" fill="#34d399" fill-opacity="0.8"/>
+  <ellipse cx="123" cy="170" rx="12" ry="14" fill="#34d399" fill-opacity="0.8"/>
+  <circle cx="127" cy="173" r="5" fill="#f87171"/>
+  <text x="102" y="228" text-anchor="middle" font-size="10.5" fill="#64748b">128 x 128 x 128 voxels</text>
+  <line x1="152" y1="205" x2="200" y2="215" stroke="#cbd5e1" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="150" y="112" font-size="10.5" fill="#94a3b8">zoom in →</text>
+
+  <rect x="205" y="120" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="220.0" y="138.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.02</text>
+  <rect x="235" y="120" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="250.0" y="138.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.04</text>
+  <rect x="265" y="120" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="280.0" y="138.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.05</text>
+  <rect x="295" y="120" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="310.0" y="138.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.03</text>
+  <rect x="325" y="120" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="340.0" y="138.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.02</text>
+  <rect x="355" y="120" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="370.0" y="138.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.01</text>
+  <rect x="205" y="150" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="220.0" y="168.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.03</text>
+  <rect x="235" y="150" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="250.0" y="168.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.30</text>
+  <rect x="265" y="150" width="30" height="30" fill="#34d399" fill-opacity="0.22" stroke="#0b0f17" stroke-width="1"/>
+  <text x="280.0" y="168.5" text-anchor="middle" font-size="9.5" fill="#d1fae5">0.43</text>
+  <rect x="295" y="150" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="310.0" y="168.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.39</text>
+  <rect x="325" y="150" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="340.0" y="168.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.07</text>
+  <rect x="355" y="150" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="370.0" y="168.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.02</text>
+  <rect x="205" y="180" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="220.0" y="198.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.05</text>
+  <rect x="235" y="180" width="30" height="30" fill="#34d399" fill-opacity="0.22" stroke="#0b0f17" stroke-width="1"/>
+  <text x="250.0" y="198.5" text-anchor="middle" font-size="9.5" fill="#d1fae5">0.45</text>
+  <rect x="265" y="180" width="30" height="30" fill="#34d399" fill-opacity="0.22" stroke="#0b0f17" stroke-width="1"/>
+  <text x="280.0" y="198.5" text-anchor="middle" font-size="9.5" fill="#d1fae5">0.62</text>
+  <rect x="295" y="180" width="30" height="30" fill="#34d399" fill-opacity="0.22" stroke="#0b0f17" stroke-width="1"/>
+  <text x="310.0" y="198.5" text-anchor="middle" font-size="9.5" fill="#d1fae5">0.66</text>
+  <rect x="325" y="180" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="340.0" y="198.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.34</text>
+  <rect x="355" y="180" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="370.0" y="198.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.03</text>
+  <rect x="205" y="210" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="220.0" y="228.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.04</text>
+  <rect x="235" y="210" width="30" height="30" fill="#34d399" fill-opacity="0.22" stroke="#0b0f17" stroke-width="1"/>
+  <text x="250.0" y="228.5" text-anchor="middle" font-size="9.5" fill="#d1fae5">0.49</text>
+  <rect x="265" y="210" width="30" height="30" fill="#f87171" fill-opacity="0.3" stroke="#0b0f17" stroke-width="1"/>
+  <text x="280.0" y="228.5" text-anchor="middle" font-size="9.5" fill="#fee2e2">0.74</text>
+  <rect x="295" y="210" width="30" height="30" fill="#f87171" fill-opacity="0.3" stroke="#0b0f17" stroke-width="1"/>
+  <text x="310.0" y="228.5" text-anchor="middle" font-size="9.5" fill="#fee2e2">0.82</text>
+  <rect x="325" y="210" width="30" height="30" fill="#34d399" fill-opacity="0.22" stroke="#0b0f17" stroke-width="1"/>
+  <text x="340.0" y="228.5" text-anchor="middle" font-size="9.5" fill="#d1fae5">0.57</text>
+  <rect x="355" y="210" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="370.0" y="228.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.05</text>
+  <rect x="205" y="240" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="220.0" y="258.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.02</text>
+  <rect x="235" y="240" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="250.0" y="258.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.28</text>
+  <rect x="265" y="240" width="30" height="30" fill="#34d399" fill-opacity="0.22" stroke="#0b0f17" stroke-width="1"/>
+  <text x="280.0" y="258.5" text-anchor="middle" font-size="9.5" fill="#d1fae5">0.55</text>
+  <rect x="295" y="240" width="30" height="30" fill="#34d399" fill-opacity="0.22" stroke="#0b0f17" stroke-width="1"/>
+  <text x="310.0" y="258.5" text-anchor="middle" font-size="9.5" fill="#d1fae5">0.61</text>
+  <rect x="325" y="240" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="340.0" y="258.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.32</text>
+  <rect x="355" y="240" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="370.0" y="258.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.02</text>
+  <rect x="205" y="270" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="220.0" y="288.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.01</text>
+  <rect x="235" y="270" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="250.0" y="288.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.03</text>
+  <rect x="265" y="270" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="280.0" y="288.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.06</text>
+  <rect x="295" y="270" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="310.0" y="288.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.05</text>
+  <rect x="325" y="270" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="340.0" y="288.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.03</text>
+  <rect x="355" y="270" width="30" height="30" fill="#1e293b" fill-opacity="0.55" stroke="#0b0f17" stroke-width="1"/>
+  <text x="370.0" y="288.5" text-anchor="middle" font-size="9.5" fill="#64748b">0.01</text>
+  <text x="295" y="330" text-anchor="middle" font-size="11.5" fill="#cbd5e1">each cell = one voxel = one number</text>
+  <text x="295" y="348" text-anchor="middle" font-size="11" fill="#94a3b8">CT intensity, Hounsfield units scaled to 0–1  (0 ≈ air, higher ≈ denser tissue)</text>
+
+  <rect x="40" y="378" width="470" height="150" rx="10" fill="#111827" stroke="#334155" stroke-width="1"/>
+  <text x="62" y="406" font-size="13" font-weight="700" fill="#f1f5f9">The array fed to the model</text>
+  <text x="62" y="434" font-size="16" font-weight="700" fill="#60a5fa">shape = [ 1, 128, 128, 128 ]</text>
+  <text x="62" y="456" font-size="12" fill="#94a3b8">channels(1)  ·  depth  ·  height  ·  width</text>
+  <text x="62" y="486" font-size="12" fill="#cbd5e1">Channel 0 = CT intensity  (the only channel we use).</text>
+  <text x="62" y="506" font-size="12" fill="#64748b">Placeholder future channels: [organ mask?] · [vessels?] — an anatomy-context experiment.</text>
+
+  <rect x="545" y="150" width="105" height="95" rx="10" fill="#0f2a1f" stroke="#34d399" stroke-width="1.5"/>
+  <text x="597" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#6ee7b7">3D SegResNet</text>
+  <text x="597" y="210" text-anchor="middle" font-size="10.5" fill="#94a3b8">encoder → decoder</text>
+  <text x="597" y="226" text-anchor="middle" font-size="10.5" fill="#94a3b8">(one forward pass)</text>
+  <line x1="500" y1="197" x2="543" y2="197" stroke="#cbd5e1" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="652" y1="197" x2="690" y2="197" stroke="#cbd5e1" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <text x="700" y="92" font-size="13" font-weight="700" fill="#34d399">2 · OUTPUT — a label for every voxel</text>
+  <rect x="700" y="150" width="86" height="86" rx="5" fill="#64748b" fill-opacity="0.16" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="716" y="134" width="86" height="86" rx="5" fill="#34d399" fill-opacity="0.16" stroke="#34d399" stroke-width="1.5"/>
+  <rect x="732" y="118" width="86" height="86" rx="5" fill="#f87171" fill-opacity="0.16" stroke="#f87171" stroke-width="1.5"/>
+  <rect x="700" y="250" width="13" height="13" rx="2" fill="#f87171" fill-opacity="0.5" stroke="#f87171" stroke-width="1"/><text x="722" y="261" font-size="12" fill="#cbd5e1">P(lesion)</text>
+  <rect x="700" y="272" width="13" height="13" rx="2" fill="#34d399" fill-opacity="0.5" stroke="#34d399" stroke-width="1"/><text x="722" y="283" font-size="12" fill="#cbd5e1">P(pancreas)</text>
+  <rect x="700" y="294" width="13" height="13" rx="2" fill="#64748b" fill-opacity="0.5" stroke="#64748b" stroke-width="1"/><text x="722" y="305" font-size="12" fill="#cbd5e1">P(background)</text>
+  <text x="700" y="336" font-size="16" font-weight="700" fill="#34d399">[ 3, 128, 128, 128 ]</text>
+  <text x="700" y="356" font-size="11.5" fill="#94a3b8">3 class channels · depth · height · width</text>
+  <text x="700" y="374" font-size="11.5" fill="#94a3b8">one probability per class, at every voxel</text>
+
+  <text x="700" y="398" font-size="12" fill="#94a3b8">take the biggest per voxel (argmax) →</text>
+  <rect x="820" y="416" width="115" height="115" rx="8" fill="#05070c" stroke="#34d399" stroke-width="1.5"/>
+  <ellipse cx="868" cy="468" rx="40" ry="12" transform="rotate(-18 868 468)" fill="#34d399" fill-opacity="0.8"/>
+  <ellipse cx="898" cy="484" rx="14" ry="17" fill="#34d399" fill-opacity="0.8"/>
+  <circle cx="903" cy="487" r="6" fill="#f87171"/>
+  <text x="877" y="546" text-anchor="middle" font-size="10.5" fill="#64748b">the final outline</text>
+  <line x1="770" y1="404" x2="825" y2="430" stroke="#cbd5e1" stroke-width="1.6" marker-end="url(#ar)"/>
+</svg>

@@ -8,9 +8,23 @@ A 3D deep-learning pipeline that takes an abdominal CT scan, segments the **panc
 
 ## 📌 Graded deliverables — where to find everything
 
-*(This table is the grader's map. Week 2 deliverables first, then Week 1.)*
+*(This table is the grader's map. Most recent week first.)*
 
-### Week 2 (current)
+### Week 3 (current) — M3P1: Experiment Review & Model Selection
+
+| Assignment | Deliverable | Location |
+|-----------|-------------|----------|
+| **M3P1 — Presenter** | ML experimentation report (features, experiment comparison, model selection, plan status) | [`week3/ml-experimentation-report.md`](week3/ml-experimentation-report.md) |
+| M3P1 — *presentation* | Slide deck (10-min talk) | [`week3/experiment-review-slides.pptx`](week3/experiment-review-slides.pptx) · [PDF](week3/experiment-review-slides.pdf) |
+| **M3P1 — Audience** | Audience notes on peers' presentations | [`docs/audience-notes-week3.md`](docs/audience-notes-week3.md) |
+| M3P1 — *experiment log* | Every run as a formal experiment (hypothesis → decision), EXP-01 → EXP-19 | [`docs/experiments.md`](docs/experiments.md) |
+| M3P1 — *revised plan (Section 5)* | Where the project stands vs the 5-week plan | [`docs/implementation-plan.md`](docs/implementation-plan.md) |
+| M3P1 — *AI docs (Section 6)* | AI context file + weekly usage log | [`CLAUDE.md`](CLAUDE.md) · [`docs/ai-usage-log.md`](docs/ai-usage-log.md) |
+| M3P1 — *metrics audit* | Self + independent-AI audit of the scoring (no leakage; ROI-leak finding) | [`docs/codex-metrics-audit.md`](docs/codex-metrics-audit.md) |
+
+**Supporting Week 3 work:** [`week3/diagrams/`](week3/diagrams/) (presentation diagrams: whole-box vs patches, the input array, metrics) · daily standups in [`docs/standup-log.md`](docs/standup-log.md).
+
+### Week 2
 
 | Assignment | Deliverable | Location |
 |-----------|-------------|----------|
@@ -49,14 +63,16 @@ A 3D deep-learning pipeline that takes an abdominal CT scan, segments the **panc
 
 ---
 
-## Current status (Week 2 — complete)
+## Current status (Week 3 — complete)
 
-- ✅ **Data understood** — EDA built from the real 9,901-case manifest: 10.4% tumor prevalence, lesion volume spanning five orders of magnitude, extreme geometry heterogeneity (8 to 1,000+ slices), and a label that agrees with the dataset's own tumor flag 99.6% of the time.
+- ✅ **Data understood** — EDA built from the real 9,901-case manifest: 10.4% tumor prevalence, lesion volume spanning five orders of magnitude, extreme geometry heterogeneity (8 to 1,000+ slices).
 - ✅ **Pipeline validated** — Stage 0 overfit gate passed; the ingestion → resample → patch → model path is proven end to end.
-- ✅ **Over-prediction diagnosed and largely fixed** — first eval was pancreas Dice 0.72 / lesion 0.17 with only 8% specificity. A **whole-box ROI** change (feed the entire pancreas box as one cube) is the current best: **pancreas 0.807, lesion 0.263** (best to date), **specificity 55%** — the over-prediction problem is largely gone.
-- 🔄 **In progress** — a clarity-curriculum experiment (EXP-13, per instructor suggestion) and, toward capstone, scaling up tumor data and an autonomous localize→segment cascade.
+- ✅ **Over-prediction diagnosed and fixed** — first eval was pancreas Dice 0.72 / lesion 0.17 with only 8% specificity. A **whole-box ROI** change (feed the entire pancreas box as one cube) lifted specificity to 55% and became the winning recipe.
+- ✅ **Data proven to be the lever (Week 3 headline)** — four recipe knobs (sampling, loss, field of view, resolution) were all nulls on tumor accuracy; scaling the tumor data was the only thing that moved it. Holding the whole-box recipe fixed and training on all 1,412 available cases lifted **lesion Dice 0.26 → 0.528** (≈ the ~0.53 published reference), **pancreas Dice 0.837**, and **90% per-case detection**. This is the selected model.
+- ✅ **Metrics audited** — self + independent-AI pass confirmed the arithmetic and found no train/validation leakage; one honest finding (the ROI leaks lesion extent, making lesion Dice an upper bound) is documented and a control (EXP-19) is queued.
+- 🔄 **Week 4** — a longer run on the max-data set, the pancreas-only de-leak control, and a final held-out test pass; the autonomous localize→segment cascade is the capstone direction.
 
-*All runs are logged as formal experiments in [`docs/experiments.md`](docs/experiments.md).*
+*Every run is logged as a formal experiment (hypothesis → decision) in [`docs/experiments.md`](docs/experiments.md).*
 
 ---
 
@@ -67,9 +83,11 @@ JHU-PanTS/
 ├── README.md              ← you are here (grader map)
 ├── CLAUDE.md              project state/decisions for AI agents
 ├── configs/               level45.yaml (the locked recipe as config)
+├── week3/                 M3P1 deliverables: experiment report, slide deck, diagrams
 ├── week2/                 M2A1/M2P2 deliverables: report, EDA notebook, diagrams, run sheet
 ├── docs/                  graded docs (standup, audience notes, plan, schedule, ai-usage)
-│                          + full design docs + experiments.md
+│                          + full design docs + experiments.md + metrics audit
+├── ui/                    React + NiiVue static demo viewer (Week 5 build)
 ├── src/
 │   ├── utils/             config, seed, paths
 │   ├── data/             transforms (label compose, patch/whole-box), dataset

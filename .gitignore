@@ -40,6 +40,13 @@ dist/
 build/
 .next/
 
+# ---- Presentation render byproducts (slide/QA image exports, office temp & lock files) ----
+# Keep: the .pptx/.pdf deck, week3/diagrams/**, and week3/mlflow-*.png screenshots.
+# Ignore: the per-slide .jpg exports and QA thumbnails at the week3/ root, plus LibreOffice temp/lock files.
+week3/*.jpg
+*.tmp
+.~lock.*#
+
 # ---- Env & OS ----
 .env
 .DS_Store

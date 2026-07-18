@@ -121,15 +121,20 @@ training:
   max_epochs: 100
   batch_size: 1                                 # volumes; effective batch = 1 * num_samples
   amp: false                                    # fp32 on MPS initially
-  cache: ram                                    # CacheDataset for the dev subset
+  cache: ram                                    # WIRED: ram | disk | none. disk = PersistentDataset on the SSD
+                                                #   (scales past RAM, survives resume). Override per-run: train.py --cache disk
+  cache_dir: outputs/cache                      # where the disk cache lives — internal SSD, NEVER the external drive
   num_workers: 4
   grad_accum_steps: 1
 
 # ---- Validation ----
+# NOTE: train.py drives validation from CLI flags (--val-limit / --val-every / --val-positive),
+# not from this block. interval_epochs and patience are NOT-YET-WIRED (no epoch-based interval or
+# early stopping in the loop; best.pt is selected by val lesion Dice, matching best_metric below).
 validation:
-  interval_epochs: 5
-  best_metric: dice_lesion                      # select best checkpoint by LESION Dice
-  patience: 10                                  # early stop (in # of validations)
+  interval_epochs: 5                            # NOT-YET-WIRED (loop uses --val-every iters)
+  best_metric: dice_lesion                      # implemented: best checkpoint chosen by LESION Dice
+  patience: 10                                  # NOT-YET-WIRED (no early stopping; runs full --max-iters)
   report_separately: [dice_pancreas, dice_lesion]
 
 # ---- Inference (full-volume) ----
@@ -139,7 +144,7 @@ inference:
   overlap: 0.5
   blend_mode: gaussian
   stitch_device: cpu                            # relieve MPS memory
-  tta: false                                    # flips at test time (Track B)
+  tta: false                                    # wired: 8-view flip TTA. Enable here or with evaluate.py --tta (EXP-15)
   postprocess:
     pancreas_largest_cc: true
     lesion_min_volume_mm3: 50                   # drop tiny false-positive blobs

@@ -1,0 +1,57 @@
+<svg viewBox="0 0 780 520" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>The sensitivity vs specificity operating point</title>
+  <desc>One model, one dial. As we demand more lesion confidence before flagging (raising the threshold, left to right), specificity rises because we raise fewer false alarms, while sensitivity falls because we catch fewer real tumors. The two curves trade off against each other. A screening tool sits to the left (catch everything, tolerate false alarms); a confirmation tool sits to the right (few false alarms, may miss some). Our whole-box model's default sits where specificity is about 55 percent. Curves are illustrative; the marked value is our measured result.</desc>
+  <rect x="-50" y="-50" width="200%" height="200%" fill="#0b0f17"/>
+
+  <text x="390" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f5f9">One model, one dial: the operating point we choose</text>
+  <text x="390" y="55" text-anchor="middle" font-size="12" fill="#94a3b8">The same model can favor catching tumors or avoiding false alarms — we pick where to sit.</text>
+
+  <!-- legend -->
+  <rect x="250" y="70" width="13" height="4" rx="2" fill="#60a5fa"/>
+  <text x="270" y="77" font-size="11.5" fill="#cbd5e1">Sensitivity (catch tumors)</text>
+  <rect x="452" y="70" width="13" height="4" rx="2" fill="#34d399"/>
+  <text x="472" y="77" font-size="11.5" fill="#cbd5e1">Specificity (avoid false alarms)</text>
+
+  <!-- axes -->
+  <line x1="130" y1="110" x2="130" y2="400" stroke="#334155" stroke-width="1.2"/>
+  <line x1="130" y1="400" x2="690" y2="400" stroke="#334155" stroke-width="1.2"/>
+  <g font-size="10" fill="#64748b" text-anchor="end">
+    <text x="122" y="404">0%</text>
+    <text x="122" y="332">25%</text>
+    <text x="122" y="259">50%</text>
+    <text x="122" y="187">75%</text>
+    <text x="122" y="114">100%</text>
+  </g>
+  <g stroke="#161d2b" stroke-width="1">
+    <line x1="130" y1="328" x2="690" y2="328"/>
+    <line x1="130" y1="255" x2="690" y2="255"/>
+    <line x1="130" y1="183" x2="690" y2="183"/>
+  </g>
+
+  <!-- x axis label: threshold, low to high -->
+  <text x="410" y="430" text-anchor="middle" font-size="12" fill="#cbd5e1">Lesion confidence we require before flagging  →</text>
+  <text x="140" y="430" text-anchor="start" font-size="10.5" fill="#64748b">flag eagerly</text>
+  <text x="680" y="430" text-anchor="end" font-size="10.5" fill="#64748b">flag only if very sure</text>
+
+  <!-- specificity curve (rising) green -->
+  <polyline points="130,313 216,286 302,255 388,224 474,191 560,163 647,139 690,131" fill="none" stroke="#34d399" stroke-width="2.5"/>
+  <!-- sensitivity curve (falling) blue -->
+  <polyline points="130,133 216,150 302,168 388,193 474,220 560,252 647,284 690,296" fill="none" stroke="#60a5fa" stroke-width="2.5"/>
+
+  <!-- operating point marker -->
+  <line x1="345" y1="110" x2="345" y2="400" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+  <circle cx="345" cy="240" r="5" fill="#34d399" stroke="#0b0f17" stroke-width="1.5"/>
+  <circle cx="345" cy="181" r="5" fill="#60a5fa" stroke="#0b0f17" stroke-width="1.5"/>
+  <rect x="360" y="150" width="212" height="70" rx="7" fill="#111827" stroke="#334155" stroke-width="1"/>
+  <text x="372" y="172" font-size="12" font-weight="700" fill="#f1f5f9">Our whole-box default</text>
+  <text x="372" y="191" font-size="11.5" fill="#34d399">specificity ~55%</text>
+  <text x="372" y="209" font-size="11.5" fill="#94a3b8">sensitivity-favored, lesion Dice 0.26</text>
+
+  <!-- zone labels -->
+  <text x="205" y="460" text-anchor="middle" font-size="12" font-weight="600" fill="#93c5fd">SCREENING</text>
+  <text x="205" y="478" text-anchor="middle" font-size="10.5" fill="#64748b">catch everything, tolerate false alarms</text>
+  <text x="600" y="460" text-anchor="middle" font-size="12" font-weight="600" fill="#6ee7b7">CONFIRMATION</text>
+  <text x="600" y="478" text-anchor="middle" font-size="10.5" fill="#64748b">few false alarms, may miss some</text>
+
+  <text x="390" y="504" text-anchor="middle" font-size="10.5" fill="#475569">Curves are illustrative of the trade-off; the marked point is our measured whole-box result. Levers that move along this dial: threshold, test-time augmentation, contrast phase.</text>
+</svg>

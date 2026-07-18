@@ -1,0 +1,41 @@
+:root {
+  --bg: #0b0f17;
+  --panel: #111827;
+  --border: #334155;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --dim: #64748b;
+  --green: #34d399;
+  --red: #f87171;
+  --amber: #fbbf24;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: #1f2937;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+button:hover { background: #273449; }
+button.active { background: #1d4ed8; border-color: #3b82f6; }
+
+select, input[type="range"] { width: 100%; }
+select {
+  background: #1f2937; color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
+}
+label { font-size: 12px; color: var(--muted); display: block; margin: 12px 0 4px; }

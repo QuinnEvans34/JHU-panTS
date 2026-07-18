@@ -1,0 +1,68 @@
+<svg viewBox="0 0 780 560" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>Why we track sensitivity and specificity</title>
+  <desc>A 2x2 confusion matrix. Rows are the truth (scan has a tumor, or scan is healthy); columns are the model's call (flags a tumor, or stays quiet). The four cells are true positive (caught the tumor), false negative (missed a cancer), false positive (false alarm on a healthy scan), and true negative (correctly cleared). Sensitivity reads the tumor row: of real tumors, how many did we catch. Specificity reads the healthy row: of healthy scans, how many did we correctly clear. Our whole-box model correctly cleared 11 of 20 healthy scans, a specificity of 55 percent.</desc>
+  <rect x="-50" y="-50" width="200%" height="200%" fill="#0b0f17"/>
+
+  <text x="390" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f5f9">The two questions a tumor-finder must answer</text>
+  <text x="390" y="55" text-anchor="middle" font-size="12" fill="#94a3b8">Did we catch the cancers (sensitivity), and did we avoid crying wolf (specificity)?</text>
+
+  <!-- column headers (model's call) -->
+  <text x="390" y="86" text-anchor="middle" font-size="11" fill="#64748b" letter-spacing="1">MODEL'S CALL</text>
+  <text x="356" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#cbd5e1">Flags a tumor</text>
+  <text x="540" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#cbd5e1">Stays quiet</text>
+
+  <!-- row headers (the truth) -->
+  <text x="66" y="180" font-size="11" fill="#64748b" letter-spacing="1" transform="rotate(-90 66 180)" text-anchor="middle">THE TRUTH</text>
+  <text x="250" y="172" text-anchor="end" font-size="13" font-weight="600" fill="#cbd5e1">Scan HAS</text>
+  <text x="250" y="190" text-anchor="end" font-size="13" font-weight="600" fill="#cbd5e1">a tumor</text>
+  <text x="250" y="292" text-anchor="end" font-size="13" font-weight="600" fill="#cbd5e1">Scan is</text>
+  <text x="250" y="310" text-anchor="end" font-size="13" font-weight="600" fill="#cbd5e1">HEALTHY</text>
+
+  <!-- cells -->
+  <!-- TP -->
+  <rect x="268" y="120" width="176" height="112" rx="8" fill="#0f2a1f" stroke="#34d399" stroke-width="1.5"/>
+  <circle cx="288" cy="144" r="5" fill="#34d399"/>
+  <text x="304" y="149" font-size="14" font-weight="700" fill="#f1f5f9">True Positive</text>
+  <text x="284" y="178" font-size="12.5" fill="#a7f3d0">Caught the tumor</text>
+  <text x="284" y="198" font-size="11" fill="#6ee7b7">the win we want</text>
+
+  <!-- FN -->
+  <rect x="456" y="120" width="176" height="112" rx="8" fill="#2a1114" stroke="#f87171" stroke-width="1.5"/>
+  <circle cx="476" cy="144" r="5" fill="#f87171"/>
+  <text x="492" y="149" font-size="14" font-weight="700" fill="#f1f5f9">False Negative</text>
+  <text x="472" y="178" font-size="12.5" fill="#fecaca">Missed a cancer</text>
+  <text x="472" y="198" font-size="11" fill="#fca5a5">the dangerous error</text>
+
+  <!-- FP -->
+  <rect x="268" y="240" width="176" height="112" rx="8" fill="#2a2410" stroke="#fbbf24" stroke-width="1.5"/>
+  <circle cx="288" cy="264" r="5" fill="#fbbf24"/>
+  <text x="304" y="269" font-size="14" font-weight="700" fill="#f1f5f9">False Positive</text>
+  <text x="284" y="298" font-size="12.5" fill="#fde68a">False alarm</text>
+  <text x="284" y="318" font-size="11" fill="#fcd34d">wastes trust and time</text>
+
+  <!-- TN -->
+  <rect x="456" y="240" width="176" height="112" rx="8" fill="#0f2a1f" stroke="#34d399" stroke-width="1.5"/>
+  <circle cx="476" cy="264" r="5" fill="#34d399"/>
+  <text x="492" y="269" font-size="14" font-weight="700" fill="#f1f5f9">True Negative</text>
+  <text x="472" y="298" font-size="12.5" fill="#a7f3d0">Correctly cleared</text>
+  <text x="472" y="318" font-size="11" fill="#6ee7b7">healthy stays healthy</text>
+
+  <!-- metric callouts -->
+  <!-- sensitivity reads the top (tumor) row -->
+  <rect x="60" y="388" width="342" height="120" rx="8" fill="#111827" stroke="#334155" stroke-width="1"/>
+  <rect x="60" y="388" width="6" height="120" rx="3" fill="#f87171"/>
+  <text x="82" y="416" font-size="14" font-weight="700" fill="#f1f5f9">SENSITIVITY</text>
+  <text x="82" y="438" font-size="12" fill="#cbd5e1">caught tumors / all tumor scans</text>
+  <text x="82" y="460" font-size="12" fill="#94a3b8">"of the real cancers, how many did we catch?"</text>
+  <text x="82" y="484" font-size="11.5" fill="#f87171">reads the TUMOR row — misses are missed cancers</text>
+
+  <!-- specificity reads the bottom (healthy) row -->
+  <rect x="418" y="388" width="342" height="120" rx="8" fill="#111827" stroke="#334155" stroke-width="1"/>
+  <rect x="418" y="388" width="6" height="120" rx="3" fill="#34d399"/>
+  <text x="440" y="416" font-size="14" font-weight="700" fill="#f1f5f9">SPECIFICITY</text>
+  <text x="440" y="438" font-size="12" fill="#cbd5e1">correctly cleared / all healthy scans</text>
+  <text x="440" y="460" font-size="12" fill="#94a3b8">"of the healthy scans, how many did we clear?"</text>
+  <text x="440" y="484" font-size="11.5" fill="#34d399">our whole-box model: 11 of 20 healthy = 55%</text>
+
+  <text x="390" y="534" text-anchor="middle" font-size="10.5" fill="#475569">These two pull against each other — flag more eagerly and you catch more tumors but raise more false alarms. That trade-off is the operating point we choose.</text>
+</svg>

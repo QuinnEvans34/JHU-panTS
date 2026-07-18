@@ -1,0 +1,42 @@
+<svg viewBox="0 0 780 470" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>Why the tumor average (0.52) hides a size gradient</title>
+  <desc>Dice is a ratio of overlap to total size. The same small boundary error barely dents the large pancreas but removes a large fraction of the tiny lesion's overlap. Left panel: two large circles (ground truth and prediction) offset by a few voxels still overlap almost completely, Dice about 0.80. Right panel: two small circles offset by the same few voxels overlap much less, Dice about 0.26. So 0.26 is not three times worse than 0.80; the metric is simply far less forgiving on tiny targets.</desc>
+  <rect x="-50" y="-50" width="200%" height="200%" fill="#0b0f17"/>
+
+  <text x="390" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f5f9">The 0.52 average hides a tumor-size gradient</text>
+  <text x="390" y="55" text-anchor="middle" font-size="12" fill="#94a3b8">Same model, same boundary error — Dice is a ratio, so it is far harsher on tiny tumors.</text>
+
+  <!-- legend -->
+  <circle cx="258" cy="80" r="6" fill="none" stroke="#34d399" stroke-width="2.5"/>
+  <text x="270" y="84" font-size="11.5" fill="#cbd5e1">Ground truth</text>
+  <circle cx="392" cy="80" r="6" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-dasharray="3 2"/>
+  <text x="404" y="84" font-size="11.5" fill="#cbd5e1">Model prediction</text>
+
+  <!-- LEFT: pancreas (large) -->
+  <text x="230" y="130" text-anchor="middle" font-size="14" font-weight="700" fill="#f1f5f9">Large tumor</text>
+  <circle cx="222" cy="255" r="92" fill="#34d399" fill-opacity="0.16" stroke="#34d399" stroke-width="2"/>
+  <circle cx="242" cy="270" r="92" fill="#60a5fa" fill-opacity="0.16" stroke="#60a5fa" stroke-width="2" stroke-dasharray="5 3"/>
+  <!-- offset marker -->
+  <line x1="222" y1="255" x2="242" y2="270" stroke="#e2e8f0" stroke-width="1.5"/>
+  <circle cx="222" cy="255" r="2.5" fill="#e2e8f0"/>
+  <circle cx="242" cy="270" r="2.5" fill="#e2e8f0"/>
+  <text x="232" y="372" text-anchor="middle" font-size="11" fill="#94a3b8">same few-voxel shift</text>
+  <rect x="150" y="388" width="164" height="30" rx="6" fill="#0f2a1f" stroke="#34d399" stroke-width="1"/>
+  <text x="232" y="408" text-anchor="middle" font-size="14" font-weight="700" fill="#a7f3d0">Dice &#8776; 0.70</text>
+
+  <!-- divider -->
+  <line x1="390" y1="120" x2="390" y2="420" stroke="#1f2937" stroke-width="1"/>
+
+  <!-- RIGHT: lesion (tiny) -->
+  <text x="560" y="130" text-anchor="middle" font-size="14" font-weight="700" fill="#f1f5f9">Small tumor</text>
+  <circle cx="551" cy="258" r="30" fill="#34d399" fill-opacity="0.16" stroke="#34d399" stroke-width="2"/>
+  <circle cx="571" cy="273" r="30" fill="#60a5fa" fill-opacity="0.16" stroke="#60a5fa" stroke-width="2" stroke-dasharray="5 3"/>
+  <line x1="551" y1="258" x2="571" y2="273" stroke="#e2e8f0" stroke-width="1.5"/>
+  <circle cx="551" cy="258" r="2.5" fill="#e2e8f0"/>
+  <circle cx="571" cy="273" r="2.5" fill="#e2e8f0"/>
+  <text x="561" y="372" text-anchor="middle" font-size="11" fill="#94a3b8">same shift, much less overlap left</text>
+  <rect x="478" y="388" width="164" height="30" rx="6" fill="#2a1114" stroke="#f87171" stroke-width="1"/>
+  <text x="560" y="408" text-anchor="middle" font-size="14" font-weight="700" fill="#fecaca">Dice &#8776; 0.22</text>
+
+  <text x="390" y="450" text-anchor="middle" font-size="11" fill="#64748b">Large tumors reach 0.70; small ones ~0.22 with the same model. The 0.52 average is a blend — report detection sensitivity (90%) alongside it.</text>
+</svg>

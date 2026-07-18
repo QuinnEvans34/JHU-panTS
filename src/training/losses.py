@@ -2,10 +2,12 @@
 
 Knobs (all optional, defaults preserve prior behavior):
   loss.name                 "dice_focal" | "dice_ce"
-  loss.include_background    include the background class in the loss. Setting this
-                             TRUE gives the model an explicit reason to predict
-                             background correctly, which penalizes false-positive
-                             lesion calls on healthy tissue (the over-prediction fix).
+  loss.include_background    include the background class in the loss. Default is
+                             FALSE (bg0), the project's locked best base: excluding
+                             background keeps gradient on the tiny lesion. Flipping it
+                             TRUE was tested (EXP-07) as an over-prediction fix and
+                             REJECTED — it left raw specificity at 8% and cost lesion
+                             Dice — so leave it False unless re-running that ablation.
   loss.focal_gamma           focal focusing parameter (DiceFocal only, default 2.0).
   loss.lambda_dice           weight on the Dice term (default 1.0).
   loss.lambda_focal          weight on the focal term (DiceFocal only, default 1.0).
@@ -27,7 +29,7 @@ def build_loss(cfg: dict):
     common = dict(
         softmax=l.get("softmax", True),
         to_onehot_y=l.get("to_onehot_y", True),
-        include_background=l.get("include_background", True),
+        include_background=l.get("include_background", False),  # bg0 = locked best base (EXP-07 rejected bg1)
     )
 
     if l.get("name") == "dice_focal":

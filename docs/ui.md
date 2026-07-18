@@ -27,7 +27,7 @@ One page, clinical dark theme, top to bottom:
 
 1. **Disclaimer banner** — *segmentation tool, not a diagnosis; a clinician decides.*
 2. **CADe summary panel** — the headline: "Possible lesion · head of pancreas · ~1.8 cm · confidence 0.7" or "No lesion detected."
-3. **NiiVue viewer** — the centerpiece: tri-planar CT with pancreas (green) + lesion (red) overlays, scrollable slices, **and a 3D mode** (rotatable volume / organ-with-tumor). Layer toggles + opacity.
+3. **NiiVue viewer** — the centerpiece is a **rotatable 3D view** (decided 2026-07-15, this is the hero, not 2D slice-scrolling): the CT volume rendered in 3D with the pancreas (green) + lesion (red) **surface meshes** overlaid, navigated by orbit plus **clip planes through all three axes** (move through space while staying in 3D). Controls: layer toggles, opacity, and a prediction-vs-ground-truth toggle (the wrong-prediction case shows both in two colors). Optional 2D planes as a secondary detail inset if wanted.
 4. **Actions** — case picker, **export predicted mask (NIfTI)** for editing in a real tool (3D Slicer) — the accept / edit / reject step.
 
 ## 4. Layout sketch
@@ -53,15 +53,18 @@ The model side produces, per showcase case:
 - `pred.nii.gz` — predicted mask (0 bg / 1 pancreas / 2 lesion).
 - an entry in `results.json`: `{case_id, has_lesion, location, lesion_volume_mm3, confidence, dice_pancreas?, dice_lesion?}`.
 
-Optional: a surface **mesh** (marching cubes → `.mz3`/`.obj`) for a crisp 3D organ+tumor render in NiiVue.
+Surface **meshes** (marching cubes → `.obj`, world-aligned) for the crisp 3D organ+tumor render — pancreas + lesion, for both prediction and ground truth.
+
+**Producer built Week 3 (2026-07-15):** `scripts/export_case.py` writes all of the above per case (CT, gt/pred masks, meshes, and the `results.json` entry) in the whole-box model's input space, so the volume and meshes align. `--list` mode scans the val set to help pick the healthy / tumor / wrong-prediction showcase trio. This is the reusable spine: the same files feed a static figure now and the Week 5 NiiVue app.
 
 ## 6. Tiers
 
 | Tier | Scope | Status |
 |------|-------|--------|
-| Core | Static React + NiiVue over precomputed predictions | Week 5 target |
+| Core | Data exporter (`export_case.py`) → CT + masks + meshes + `results.json` | **Built Week 3** |
+| Core | Static React + NiiVue: layered 3D (CT volume + surface mesh), orbit + clip planes | Week 5 target |
 | Stretch | Live inference via FastAPI backend | Capstone |
-| Stretch | Surface-mesh 3D render + confidence heatmap overlay | Capstone |
+| Stretch | Confidence heatmap overlay (probability map as a NiiVue layer) | Capstone |
 | Fallback | The `peek_case.py` PNGs / a barebones viewer | Always available |
 
 ## 7. Timing & risk
@@ -75,7 +78,7 @@ Build in **Week 5**, after the model is trained and evaluated. The pipeline is d
 
 ## 9. Open questions
 
-- NiiVue overlay styling: label volume overlay vs. surface mesh for the 3D view (start with the label volume; add mesh if time).
+- ~~NiiVue overlay styling: label volume vs. surface mesh for 3D~~ **RESOLVED (2026-07-15):** layered 3D — CT volume render + surface mesh overlay (pancreas translucent, lesion solid). Meshes precomputed via marching cubes in `scripts/export_case.py`. One thing to verify when first loaded: mesh-to-volume alignment in NiiVue (the world affine from the MONAI MetaTensor should place them together; if a flip/offset appears, adjust the affine handling in `get_affine`).
 - Confidence heatmap: render the probability map as a NiiVue overlay?
 - Hosting for the static demo (Vercel/Netlify/GitHub Pages).
 - How many showcase cases to precompute (mix of tumor-positive and healthy).

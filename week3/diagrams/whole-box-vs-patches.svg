@@ -1,0 +1,68 @@
+<svg viewBox="0 0 920 552" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>Random patches vs the whole-box ROI</title>
+  <desc>Left: a regular 3D system crops small random cubes (patches) out of the full abdominal scan, so the model sees fragmented local slabs that often miss the organ and rarely center the tiny tumor, with no whole-organ context. Right: our whole-box approach crops to the pancreas and fits the entire organ into one fixed cube every step, so the model always sees the complete pancreas and its tumor in context. This is why specificity jumped from 8 to 55 percent: with the whole organ in view the model can tell a tumor from normal tissue.</desc>
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#cbd5e1"/>
+    </marker>
+  </defs>
+  <rect x="-50" y="-50" width="200%" height="200%" fill="#0b0f17"/>
+
+  <text x="460" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f5f9">How the model sees the scan: random patches vs whole-box</text>
+  <text x="460" y="55" text-anchor="middle" font-size="12" fill="#94a3b8">Same scan, two ways to feed it to the model.</text>
+
+  <line x1="460" y1="80" x2="460" y2="415" stroke="#1f2937" stroke-width="1"/>
+
+  <!-- ===================== LEFT: random patches ===================== -->
+  <text x="230" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#fbbf24">REGULAR: random patches</text>
+
+  <!-- abdomen -->
+  <ellipse cx="230" cy="235" rx="175" ry="108" fill="#151d2b" stroke="#334155" stroke-width="1.5"/>
+  <!-- pancreas (comma) + lesion -->
+  <ellipse cx="205" cy="215" rx="80" ry="20" transform="rotate(-18 205 215)" fill="#34d399" fill-opacity="0.8"/>
+  <ellipse cx="278" cy="240" rx="25" ry="29" fill="#34d399" fill-opacity="0.8"/>
+  <circle cx="285" cy="244" r="8" fill="#f87171"/>
+  <!-- random patch windows (dashed) -->
+  <g stroke="#e2e8f0" stroke-width="1.6" fill="#e2e8f0" fill-opacity="0.04" stroke-dasharray="5 4">
+    <rect x="95" y="150" width="56" height="56" rx="3"/>
+    <rect x="150" y="235" width="56" height="56" rx="3"/>
+    <rect x="248" y="168" width="56" height="56" rx="3"/>
+    <rect x="300" y="238" width="56" height="56" rx="3"/>
+    <rect x="330" y="150" width="56" height="56" rx="3"/>
+  </g>
+  <text x="123" y="182" text-anchor="middle" font-size="10" fill="#94a3b8">empty</text>
+  <text x="358" y="182" text-anchor="middle" font-size="10" fill="#94a3b8">empty</text>
+  <text x="230" y="372" text-anchor="middle" font-size="11" fill="#64748b">random 96³ patches — one per training step</text>
+
+  <text x="230" y="398" text-anchor="middle" font-size="12.5" fill="#cbd5e1">Fragmented local slabs — no whole-organ context.</text>
+
+  <!-- ===================== RIGHT: whole-box ===================== -->
+  <text x="690" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#34d399">WHOLE-BOX (OURS): crop to the organ, feed it whole</text>
+
+  <!-- abdomen -->
+  <ellipse cx="575" cy="235" rx="118" ry="105" fill="#151d2b" stroke="#334155" stroke-width="1.5"/>
+  <!-- pancreas + lesion -->
+  <ellipse cx="558" cy="218" rx="66" ry="17" transform="rotate(-18 558 218)" fill="#34d399" fill-opacity="0.8"/>
+  <ellipse cx="618" cy="238" rx="20" ry="24" fill="#34d399" fill-opacity="0.8"/>
+  <circle cx="623" cy="241" r="7" fill="#f87171"/>
+  <!-- crop box (solid bright) around the pancreas -->
+  <rect x="492" y="182" width="150" height="92" rx="4" fill="none" stroke="#34d399" stroke-width="2.5"/>
+  <text x="567" y="176" text-anchor="middle" font-size="10.5" fill="#6ee7b7">crop to the pancreas</text>
+
+  <!-- arrow to cube -->
+  <line x1="648" y1="228" x2="742" y2="228" stroke="#cbd5e1" stroke-width="2.2" marker-end="url(#arr)"/>
+
+  <!-- the single 128 cube input -->
+  <rect x="748" y="150" width="150" height="150" rx="6" fill="#05070c" stroke="#34d399" stroke-width="2"/>
+  <ellipse cx="818" cy="228" rx="55" ry="15" transform="rotate(-18 818 228)" fill="#34d399" fill-opacity="0.8"/>
+  <ellipse cx="862" cy="246" rx="17" ry="20" fill="#34d399" fill-opacity="0.8"/>
+  <circle cx="866" cy="248" r="6" fill="#f87171"/>
+  <text x="823" y="372" text-anchor="middle" font-size="11" fill="#64748b">one 128³ cube — the whole organ</text>
+  <text x="690" y="398" text-anchor="middle" font-size="12.5" fill="#cbd5e1">The model sees the complete pancreas in context.</text>
+
+  <!-- ===================== bottom result banner ===================== -->
+  <rect x="60" y="438" width="800" height="86" rx="10" fill="#0f2a1f" stroke="#34d399" stroke-width="1"/>
+  <text x="88" y="466" font-size="13" font-weight="700" fill="#6ee7b7">Why it worked</text>
+  <text x="88" y="490" font-size="12.5" fill="#cbd5e1">A tumor is an anomaly relative to the normal pancreas — you have to see the whole organ to judge it. With the whole</text>
+  <text x="88" y="509" font-size="12.5" fill="#cbd5e1">pancreas in view, the model stopped over-flagging healthy tissue: specificity jumped 8% → 55%, and lesion accuracy rose.</text>
+</svg>

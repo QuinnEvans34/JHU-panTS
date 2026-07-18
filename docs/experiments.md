@@ -201,40 +201,61 @@ PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
 
 ---
 
-## EXP-09: Transfer versus from-scratch (the pretraining ablation)
+## EXP-09: Transfer versus from-scratch (the pretraining ablation) [Week 3, queued]
 
-Run: to fill in (`--scratch`, dice_focal bg0, patch 96, 6000 iters). MLflow name auto `scratch_dice_focal_bg0_p96_posneg_6000i`.
+Run: to fill in (`--scratch`, whole-box recipe, 6000 iters). MLflow name `scratch_wholebox_p128_1p5`.
 
-Hypothesis (H1): the SuPreM pretraining materially helps, so a from-scratch SegResNet on the same 100-case dev subset scores clearly lower pancreas and lesion Dice than the transfer model.
+Design update (2026-07-12): the original stub compared scratch-vs-transfer at the old patch-96 recipe (baseline lesion 0.206). That is superseded. The project's best base is now the EXP-12 whole-box recipe (transfer lesion 0.263, pancreas 0.807, spec 55%), so the fair and presentation-relevant version of this ablation runs from-scratch on the SAME whole-box recipe and compares against EXP-12. This makes the transfer arm a run we already have (EXP-12) and keeps the comparison on the model we actually present. The single toggled flag is still `--scratch` vs `--transfer`.
 
-Null (H0): from-scratch matches transfer within noise, meaning the pretraining is not doing much at this data scale.
+Question it answers: does the SuPreM pretraining actually earn its place, or would a from-scratch SegResNet on 95 cases do just as well? Every prior scratch run was only the 2-case overfit gate, so the transfer benefit has never been measured at full scale. This is the number that defends the core model decision at the Week 3 check-in.
 
-Variable: `--scratch` instead of `--transfer`. Everything else identical to the balanced bg0 baseline.
+Hypothesis (H1): SuPreM pretraining materially helps, so from-scratch scores clearly lower pancreas and/or lesion Dice than the EXP-12 transfer model.
+Null (H0): from-scratch matches transfer within noise, meaning the pretraining is not doing much at 95 cases (which would itself be a real, report-worthy finding, and consistent with the data-scale story).
 
-Why run it now: it fills a real gap (every prior scratch run was only the 2-case overfit gate, so the transfer benefit has never been measured at full scale), and it is the ideal fire-and-forget overnight run because it does not depend on the EXP-08 patch result. It also directly strengthens the presentation claim about why transfer learning was the right call.
+Variable: `--scratch` instead of `--transfer`. Everything else identical to EXP-12: same `dev_subset_clean` split, whole-box, crop-native 16, patch 128, spacing 1.5, bg0 DiceFocal, seed 42, 6000 iters, val on the same 20 tumor-positive cases.
 
-Accept H1 if: transfer beats scratch by a clear margin on pancreas and/or lesion Dice. Reject if they land within noise.
+Confound to state honestly (do not skip): the two arms are not a pure initialization-only test. Transfer uses `lr_transfer` 1e-4 with a 3-epoch encoder-freeze warm-up; scratch uses `lr_scratch` 2e-4 with no freeze (train.py applies the freeze only when pretrained). That is the intended, each-regime-tuned way to run them, so the honest framing of the result is "the SuPreM transfer recipe vs a from-scratch recipe," the practical question. If a strictly initialization-only isolation is wanted later, re-run scratch at matched LR with no freeze on the transfer side.
 
-Runbook (launch overnight AFTER the EXP-08 run finishes; back up the EXP-08 model first so this does not erase it):
+Measurement: full eval at n-pos 20 / n-neg 20 on the same val cases as EXP-12, so the transfer numbers are EXP-12's (0.807 / 0.263 / 55%). Report pancreas Dice, lesion Dice (raw + cleaned), and specificity.
+
+Accept H1 if: transfer beats scratch by a clear margin (lesion Dice gap >= 0.03 or pancreas Dice gap >= 0.03). Reject (accept H0) if they land within noise (both within +/- 0.02), and record that pretraining does not move the needle at this scale.
+
+Runbook (fire-and-forget overnight; no dependency on other runs; back up whatever best.pt currently exists first):
 
 ```bash
-cp outputs/checkpoints/pants-level45/best.pt \
-   outputs/checkpoints/pants-level45/p128_ctx_step6000.pt
-
 source .venv312/bin/activate
-caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
-  --config configs/level45.yaml --split dev_subset --scratch \
-  --ckpt-every 50 --max-iters 6000 --val-limit 12 --val-positive --val-every 1000 \
-  --run-name scratch_dice_focal_bg0_p96
+# preserve the current best.pt before this run overwrites it
+cp outputs/checkpoints/pants-level45/best.pt \
+   outputs/checkpoints/pants-level45/prev_best_backup_$(date +%Y%m%d).pt 2>/dev/null || true
 
-# morning: evaluate and compare against the transfer baseline (balanced_step6000.pt)
+# from-scratch arm, identical to EXP-12 except --scratch
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split dev_subset_clean --scratch \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --ckpt-every 200 \
+  --max-iters 6000 --val-limit 20 --val-positive --val-every 1000 \
+  --run-name scratch_wholebox_p128_1p5
+cp outputs/checkpoints/pants-level45/best.pt outputs/checkpoints/pants-level45/scratch_wholebox_best.pt
+
+# morning: eval on the SAME 20/20 val cases and recipe as EXP-12, compare to 0.807 / 0.263 / 55%
 PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
-  --ckpt outputs/checkpoints/pants-level45/best.pt \
-  --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10
+  --ckpt outputs/checkpoints/pants-level45/scratch_wholebox_best.pt \
+  --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10 \
+  --crop-native 16 --whole-box --roi 128 --spacing 1.5
 ```
 
-Result: to fill in.
-Decision: to fill in.
+Note on the transfer arm: EXP-12's whole-box checkpoint is the transfer side of this comparison. If that checkpoint was overwritten by the EXP-13/14 20-case runs (see the EXP-15 provenance note), re-run the EXP-12 command (swap `--scratch` back to `--transfer`, run-name `transfer_wholebox_p128_1p5`) so both arms are freshly matched under the current code, then compare the two directly.
+
+Result (2026-07-14, both best-val checkpoints, eval n=20/20; transfer = regenerated EXP-12 step 2000, scratch step 4000):
+
+| metric | transfer (SuPreM) | scratch |
+|---|---|---|
+| pancreas Dice | 0.778 | 0.650 |
+| lesion Dice raw | 0.257 | 0.120 |
+| lesion Dice cleaned | 0.263 | 0.137 |
+| specificity raw | 50% (10/20) | 0% (0/20) |
+| specificity cleaned | 55% (11/20) | 5% (1/20) |
+
+Decision: ACCEPT H1 DECISIVELY. Transfer beats scratch on every axis by margins far past the 0.03 bar: lesion +0.137 raw, pancreas +0.128, specificity +50 points. From-scratch on 95 cases barely learns the pancreas (0.650) and over-predicts on every single healthy scan (0% specificity), while the SuPreM-initialized model reaches a usable 0.778 / 0.263 / 55%. So the SuPreM pretraining is not a marginal boost, it is what makes the model work at this data scale, which is the number that defends the model choice at the Week 3 check-in. Confound acknowledged: the two arms also differ in LR (1e-4 vs 2e-4) and the encoder-freeze warm-up (transfer only), so this is the practical "transfer recipe vs scratch recipe" comparison, not a pure initialization-only isolation. But the gap is far too large for the LR/freeze differences to account for it. The transfer arm here is also the regenerated EXP-12 (see EXP-12 regeneration note), which reproduced the lost original within noise.
 
 ---
 
@@ -412,6 +433,22 @@ Follow-ups: re-log to MLflow (graded deliverable); pick a default CADe operating
 sweep; the remaining big lever is data scale (capstone). Autonomous version needs a pancreas detector
 in front of this box stage (the cascade).
 
+Regeneration (2026-07-14): the original EXP-12 checkpoint was confirmed lost (see the Checkpoint &
+logging discipline note), so I re-ran the identical command (seed 42, dev_subset_clean, whole-box,
+6000 iters). The clean, uninterrupted re-run REPRODUCED the result within noise: pancreas 0.778 (vs
+0.807), lesion 0.257 raw / 0.263 cleaned (vs 0.263 raw), specificity 50% raw / 55% cleaned (vs 55%).
+The 55% specificity reproducing is the important part: it was not a lucky draw. Two process lessons
+came out of the recovery: (1) an interrupted-then-`--resume`d run produced a badly non-reproducing
+checkpoint (lesion 0.096, pancreas 0.723) because resume resets the best-val tracker to -1 and then
+overwrote the good shared best.pt with a worse late checkpoint. So keeper runs must run uninterrupted,
+and resume needs hardening (restore best_val from the checkpoint; never overwrite a better best.pt with
+a worse one). (2) A separately interrupted run's best.pt landed at step 3000 with only 15% specificity,
+confirming specificity is the noisier, run-to-run-variable metric (it is not what best.pt selects on),
+while lesion Dice reproduces tightly across all three checkpoints (0.236 / 0.257 / 0.263). The per-run
+archive is what made recovery possible: every attempt's best.pt survived in its own immutable folder.
+Reported EXP-12 numbers going forward use the clean regenerated checkpoint (archive
+`transfer_wholebox_p128_1p5__20260713_221119`, pinned as `wholebox_p128_1p5_GOOD.pt`).
+
 ---
 
 ## EXP-13: Clarity curriculum (train on sharper scans) [Week 3, professor's idea]
@@ -566,12 +603,319 @@ Decision: ACCEPT H1 (specificity), DECISIVELY. At matched resolution, non-contra
 
 ---
 
+## EXP-15: Test-time augmentation at evaluation (free lever, no retrain) [Week 3, queued]
+
+Motivation: TTA is the cheapest lever left. Averaging the model's predictions over label-preserving flips of the input usually steadies segmentation output at no training cost. It is a pure evaluation change on an existing checkpoint, so it either helps for free or it does not, and either way it is a clean thing to report.
+
+What it does (now wired in code): `evaluate.py --tta` runs sliding-window inference on all 8 flip combinations of the three spatial axes, un-flips each prediction back to the original frame, and averages the softmax probabilities before argmax/threshold. The threshold sweep and the anatomical constraint run on the averaged probabilities exactly as before. Implemented in `src/inference/sliding_window.py::predict_probs_tta`; the non-TTA path is untouched.
+
+Target checkpoint: the EXP-12 whole-box best (lesion 0.263 / pancreas 0.807 / spec 55%). This is a single-variable test: same checkpoint, same 20/20 val cases, same recipe, TTA off (EXP-12 numbers) vs TTA on.
+
+PROVENANCE CAVEAT (RESOLVED 2026-07-12): the EXP-12 whole-box checkpoint is confirmed GONE from disk. A second Claude session searched the whole repo tree: the four named backups are other runs (aggressive/balanced = sampling, `p128_ctx` = EXP-08, `roi_1mm` = EXP-10), there is no Jul-10 file anywhere, and the current `best.pt`/`last.pt` are the EXP-14 pv20 model. It was never an MLflow artifact either (EXP-12 ran in `.venv` without mlflow; `log_run_to_mlflow.py` logs only params/metrics, not weights). Only a Time Machine snapshot from before Jul 11 13:18 could recover the exact bytes. Plan: regenerate by re-running the EXP-12 command (`--transfer`, whole-box, run-name `transfer_wholebox_p128_1p5`); seed 42 + unchanged training code reproduces a statistically equivalent model (within n=20 noise of 0.807/0.263/55%), which is all TTA needs. This folds into the EXP-09 night (the transfer arm IS the regenerated EXP-12). Going forward this cannot recur: `train.py` now auto-archives every keeper into `outputs/checkpoints/pants-level45/runs/<run_name>__<timestamp>/` with a `run_info.txt`, plus a `run_ledger.csv` row, independent of MLflow.
+
+Hypothesis (H1): 8-view flip TTA improves the deployable numbers on the EXP-12 model, lesion Dice +>=0.01 OR specificity +>=1 healthy case, without regressing the other.
+Null (H0): TTA changes nothing beyond noise (whole-box input is already centered and low-variance, so flips add little).
+
+Accept if: either lesion Dice or specificity improves with no meaningful regression on the other, then adopt TTA as a default at eval (it is free). Reject if flat or if it trades one metric down for the other (then it is not a free win and we leave it off).
+
+Cost: 8x forward passes at eval only. In whole-box mode each case is a single 128-cube window, so 40 cases x 8 views is a few minutes, not an overnight run.
+
+Runbook:
+
+```bash
+source .venv312/bin/activate
+# EXP-12 baseline (TTA off) for the matched comparison, if not already recorded at n=20/20:
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+  --ckpt outputs/checkpoints/pants-level45/<exp12_wholebox>.pt \
+  --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10 \
+  --crop-native 16 --whole-box --roi 128 --spacing 1.5
+
+# same checkpoint + recipe, TTA on (the only change)
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+  --ckpt outputs/checkpoints/pants-level45/<exp12_wholebox>.pt \
+  --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10 \
+  --crop-native 16 --whole-box --roi 128 --spacing 1.5 --tta
+```
+
+Result (2026-07-14, EXP-12 GOOD ckpt `wholebox_p128_1p5_GOOD.pt`, eval n=20/20):
+
+| metric | no TTA (EXP-12) | 8-view flip TTA |
+|---|---|---|
+| pancreas Dice | 0.778 | 0.756 |
+| lesion Dice raw | 0.257 | 0.234 |
+| lesion Dice cleaned | 0.263 | 0.238 |
+| specificity raw | 50% (10/20) | 75% (15/20) |
+| specificity cleaned | 55% (11/20) | 80% (16/20) |
+
+TTA sweep: thr 0.40 -> lesion 0.239 / spec 75%; 0.60 -> 0.220 / 85%; 0.80 -> 0.161 / 90%; 0.90 -> 0.140 / 90%.
+
+Decision: REJECT as an always-on default, per the pre-registered bar (it did not improve one metric with no meaningful regression on the other). TTA raised specificity sharply (+25 points, 55% -> 80% cleaned) but cost lesion Dice (0.263 -> 0.238) and a little pancreas Dice (0.778 -> 0.756), so it is a sensitivity-for-specificity TRADE, not a free win. KEEP it in the toolbox as a genuine specificity lever, though: it reaches an 80-90% specificity regime the non-TTA threshold sweep could NOT (that sweep capped at 55% even at threshold 0.90). Mechanism: averaging predictions over the 8 flips softens the lesion probabilities and suppresses the high-confidence near-organ false positives that a threshold alone cannot remove, so it behaves like a principled confidence-lowering. Product read: TTA joins contrast phase (EXP-14) and the probability threshold as an operating-point dial for the CADe story, use it when screening specificity is the priority and leave it off when lesion-outline accuracy is. Caveat: n=20 (each healthy case is 5 points), so +25pp is directionally strong but wide. Adopted default stays TTA-off for the reported accuracy numbers.
+
+---
+
+## EXP-16: Resolution inside the whole box (finer spacing, matched field of view) [Week 3, running tonight]
+
+Motivation: whole-box (EXP-12) fixed the field of view and the specificity, but lesion Dice has plateaued around 0.26 across every recipe change. Resolution is the one untested accuracy axis that needs no new infrastructure, and EXP-10 hinted finer resolution helps once the whole organ is in view. The current whole box is a 128 cube at 1.5mm = a 192mm span sampled at 1.5mm per voxel. This run holds that physical span constant but samples it finer.
+
+Variable (single = resolution): patch 128 -> 160 AND spacing 1.5 -> 1.2mm together, so the box footprint stays 192mm (160 x 1.2 = 192 = 128 x 1.5) but each voxel is 1.2mm instead of 1.5mm, giving the tumor about 1.95x more voxels. Holding the field of view constant is exactly what makes this a resolution test and not a field-of-view change (the confound that sank EXP-11). Everything else is identical to EXP-12: SuPreM transfer, crop-native 16, whole-box, bg0 DiceFocal, seed 42, 6000 iters, val on the same 20 tumor-positive cases.
+
+Hypothesis (H1): finer resolution raises lesion Dice by >= 0.02 over EXP-12 (0.263 cleaned) at n=20, because the tumor is resolved in more voxels.
+Null (H0): no meaningful lesion Dice gain (within +/- 0.02), meaning resolution is not the ceiling and data scale is (consistent with every other null this project).
+
+Accept H1 if: lesion Dice clears 0.283 at n=20 without specificity collapsing. Reject if within noise.
+
+Cost / risk: about 2x the voxels of EXP-12, so more MPS memory and a longer run. Smoke-tested first (50 iters) so a memory failure aborts before the full run rather than wasting the night. If it OOMs, the fallback is patch 144 @ 1.33mm (also ~192mm span, ~1.4x voxels), or keep 128 and drop spacing to 1.2 (smaller 154mm FOV, less preferred).
+
+Runbook (smoke test gates the full run via `&&`, so a broken/OOM config never reaches the overnight run):
+
+```bash
+source .venv312/bin/activate
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split dev_subset_clean --transfer \
+  --crop-native 16 --whole-box --patch 160 --spacing 1.2 \
+  --max-iters 50 --val-limit 0 --no-mlflow --ckpt-every 50 --run-name smoke_p160 \
+&& caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split dev_subset_clean --transfer \
+  --crop-native 16 --whole-box --patch 160 --spacing 1.2 --ckpt-every 200 \
+  --max-iters 6000 --val-limit 20 --val-positive --val-every 1000 \
+  --run-name transfer_wholebox_p160_1p2
+
+# morning eval (must match training: roi 160, spacing 1.2)
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+  --ckpt outputs/checkpoints/pants-level45/runs/transfer_wholebox_p160_1p2__<STAMP>/best.pt \
+  --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10 \
+  --crop-native 16 --whole-box --roi 160 --spacing 1.2
+```
+
+Result (2026-07-15, `transfer_wholebox_p160_1p2` best.pt, eval n=20/20):
+
+| metric | EXP-12 (128 @ 1.5mm) | EXP-16 (160 @ 1.2mm) |
+|---|---|---|
+| pancreas Dice | 0.778 | 0.805 |
+| lesion Dice raw | 0.257 | 0.248 |
+| lesion Dice cleaned | 0.263 | 0.228 |
+| specificity raw | 50% | 55% |
+| specificity cleaned | 55% | 55% |
+
+Decision: REJECT H1 (accept H0). Finer resolution at matched field of view did NOT raise lesion Dice: raw 0.248 vs 0.257 (within noise, slightly lower), cleaned 0.228 vs 0.263 (lower), both well short of the 0.283 bar. It DID raise pancreas Dice (0.778 -> 0.805, back to the original EXP-12 level), which makes sense: the large, easy pancreas benefits from more voxels, the tiny lesion does not. Specificity unchanged (55%). Interpretation: resolution is not the lesion-accuracy lever. This is the decisive null the strategy needed. We have now ruled out, for lesion accuracy, every recipe axis available without new data: sampling (EXP-05), loss (EXP-07), field-of-view / context (EXP-08), and now resolution (EXP-16), while the one structural win (whole-box, EXP-12) lifted pancreas and specificity but not lesion Dice. Four independent nulls point the same way: lesion Dice ~0.26 is the honest ceiling at 95 cases, and DATA SCALE is the remaining lever (the disk-cache / capstone direction). Minor process note: cleaned < raw here (0.228 < 0.248), unlike EXP-12, suggesting finer resolution fragments the lesion into pieces the largest-CC/constraint prunes; if resolution is ever revisited, relax largest-CC. Reported base model stays EXP-12 (128 @ 1.5mm, lesion 0.263).
+
+---
+
+## EXP-17: Data scale-up — 3x the tumor cases (the lever every null pointed to) [Week 3/4, running tonight]
+
+Motivation: four independent recipe axes are now ruled out for lesion accuracy (sampling EXP-05, loss EXP-07, context EXP-08, resolution EXP-16), and the whole-box structural win lifted pancreas + specificity but not lesion Dice. Every arrow points at data scale. This is the first test of that hypothesis: hold the winning whole-box recipe fixed and just feed it more tumor cases. No disk cache needed yet — the RAM CacheDataset handles ~300 whole-box cubes (~5 GB); the cost is a longer one-time cache build.
+
+Variable (single = training-set size): split `dev_subset_clean` (95 cases, 50 tumor) -> `scaled300` (300 cases, 150 tumor). A 3x increase in tumor examples, the bottleneck class. Everything else identical to EXP-12: SuPreM transfer, crop-native 16, whole-box, 128 @ 1.5mm, bg0 DiceFocal, seed 42, 6000 iters, val on the same 20 tumor-positive / 20 tumor-free cases. Split built by `scripts/make_scaled_split.py --n-tumor 150 --n-healthy 150` (manifest-only, seed 42, drawn from the 706 tumor / 6494 healthy train pool).
+
+Hypothesis (H1): more tumor data raises lesion Dice by a real margin, clearing 0.30 at n=20 (up from the 0.263 ceiling), because the model finally sees enough tumor variety to generalize rather than memorize ~50.
+Null (H0): lesion Dice stays within noise of 0.263, meaning 3x is not enough and the fix is either much more data or the cascade (capstone).
+
+Accept H1 if: lesion Dice >= 0.30 at n=20 without specificity collapsing. Reject if within +/- 0.02 of 0.263. Secondary read: EXP-12/16 peaked early (best checkpoint ~step 2000) then overfit; with 3x data the peak should land later and higher, so watch whether the in-loop val is still climbing at step 6000 (if so, EXP-17b extends to 10-12k iters).
+
+Cost / risk: the cache build loads 300 full scans from the external drive up front (~30-45 min) before training starts, which front-loads the drive I/O (good: training then runs from RAM, less overnight drive exposure) but concentrates drive-drop risk in the first hour, so keep the drive mounted + lid open + caffeinate. Bad-mask cases (empty/tiny pancreas) are handled by the whole-box `PadEmptyCropd` guard rather than crashing, so an audit pass is optional; run `audit_masks.py` only if the cache build errors on a case. 6000 iters held constant for a clean comparison to EXP-12.
+
+Runbook:
+
+```bash
+source .venv312/bin/activate
+# split already built: outputs/splits/scaled300.txt (300 cases, 150 tumor)
+
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split scaled300 --transfer \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --ckpt-every 200 \
+  --max-iters 6000 --val-limit 20 --val-positive --val-every 1000 \
+  --run-name transfer_wholebox_scaled300
+
+# morning eval (same recipe + val set; use the archived path)
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+  --ckpt outputs/checkpoints/pants-level45/runs/transfer_wholebox_scaled300__<STAMP>/best.pt \
+  --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10 \
+  --crop-native 16 --whole-box --roi 128 --spacing 1.5
+```
+
+Result (2026-07-16, `transfer_wholebox_scaled300` best.pt, eval n=20/20):
+
+| metric | EXP-12 (95 cases, 50 tumor) | EXP-17 (300 cases, 150 tumor) |
+|---|---|---|
+| pancreas Dice | 0.778 | 0.815 |
+| lesion Dice raw | 0.257 | 0.313 |
+| lesion Dice cleaned | 0.263 | 0.327 |
+| specificity raw | 50% | 50% |
+| specificity cleaned | 55% | 50% |
+
+Sweep: lesion Dice ~0.31 flat-to-slightly-rising across thresholds; specificity climbs 40% -> 70% (thr 0.90 -> lesion 0.319 / spec 70%; thr 0.80 -> 0.318 / 65%).
+
+Decision: ACCEPT H1 DECISIVELY. Tripling the tumor data moved lesion Dice from 0.263 to 0.313 raw / 0.327 cleaned (+0.05 / +0.064), clearing the 0.30 bar and beating the ceiling that four recipe levers (sampling, loss, context, resolution) could not touch. Pancreas also rose (0.778 -> 0.815). Specificity essentially held (50% vs 55%, within n=20 noise). Two extra wins: (1) CADe post-processing now HELPS (cleaned 0.327 > raw 0.313, the reverse of EXP-16), so the predictions are cleaner; (2) the whole operating curve shifted UP, at threshold 0.90 you get lesion 0.319 AND specificity 70%, a strictly better dial than EXP-12. This is the first result all week to beat 0.263 and it directly confirms the project's central hypothesis: lesion accuracy is DATA-limited, not recipe-limited. Data scale is THE lever. New Track-A best base. Caveats: n=20 (each healthy case ~5 spec points, so 50 vs 55 is noise); the run executed in `.venv` (Python 3.14, no MLflow) so re-log via `log_run_to_mlflow.py`; check the best checkpoint's step, if in-loop val was still climbing near 6000, EXP-17b (more iters and/or more data) likely climbs further. Pinned as `wholebox_scaled300_GOOD.pt` (archive `transfer_wholebox_scaled300__20260715_205005`). Next: Week 4 = build the disk cache to scale past 300 (500-1000 cases) + add a patient-level detection-sensitivity metric.
+
+---
+
+## EXP-17b: Scale further with the disk cache — 600 cases, 6x tumor [Week 4, running tonight]
+
+Motivation: EXP-17 proved data is the lever (0.263 -> 0.327 at 300 cases). This continues up the curve to 600 cases (300 tumor, 6x the original dev subset) and, in doing so, tests the new disk-cache code that makes scaling past RAM feasible and resume-safe.
+
+New infrastructure (built 2026-07-16): `dataset.py` now supports `cache=disk` via MONAI `PersistentDataset`, wired through `train.py --cache disk` and `config training.cache`/`cache_dir`. It caches the deterministic preprocessing to the internal SSD (`outputs/cache/<recipe-tag>/`) once, filling lazily over the first epoch, then every epoch and every future run reuses it. Unlike the RAM CacheDataset (rebuilt each run, capped by memory), the disk cache scales to thousands of cases and survives interruption. Split built by `make_scaled_split.py --n-tumor 300 --n-healthy 300 --name scaled600`.
+
+Variables (not a pure single-variable run, stated honestly): (1) training data 300 -> 600 cases / 150 -> 300 tumor; (2) iterations 6000 -> 8000, because more data warrants more exposure; (3) cache ram -> disk (an infrastructure change that should not affect the model, only speed/scale). The recipe is otherwise the EXP-12/17 whole-box: SuPreM transfer, crop-native 16, whole-box, 128 @ 1.5mm, bg0 DiceFocal, seed 42, val on the same 20/20.
+
+Hypothesis (H1): continued data scaling raises lesion Dice further, clearing 0.35 at n=20 (a real climb above EXP-17's 0.327), because the model is still data-starved.
+Null (H0): lesion Dice plateaus near 0.327, meaning 300 tumor cases is near the point of diminishing returns for this recipe and the next gain needs the cascade or richer labels, not just more data.
+
+Accept H1 if: lesion Dice clears 0.35 at n=20 (or clearly beats 0.327 beyond noise) without specificity collapsing. Either way it maps the data-scaling curve, which is the Week 4 deliverable.
+
+Notes / risk: RUN FROM `.venv312` so it logs to MLflow (EXP-17 ran in `.venv` and did not). The disk cache loads the 600 scans off the external drive over the first epoch (spread out, not a giant upfront build), so keep the drive mounted through roughly the first hour; after that training runs from the SSD cache and the external drive is no longer touched. Do NOT `--resume` (best_val reset bug still unhardened) — run uninterrupted. ~8000 iters at MPS ~0.3 it/s is roughly 7-8h plus the first-epoch cache fill, comfortably inside a 12h window.
+
+Runbook:
+
+```bash
+source .venv312/bin/activate   # MLflow logging this time
+
+# 0. smoke test the disk-cache path (~2-3 min): confirms it writes to outputs/cache/
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split scaled600 --transfer --cache disk \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 \
+  --max-iters 30 --val-limit 0 --no-mlflow --ckpt-every 30 --run-name smoke_disk
+ls -la outputs/cache/ && du -sh outputs/cache/* 2>/dev/null   # should show a populated cache dir
+
+# 1. full overnight run
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split scaled600 --transfer --cache disk \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --ckpt-every 200 \
+  --max-iters 8000 --val-limit 20 --val-positive --val-every 1000 \
+  --run-name transfer_wholebox_scaled600
+
+# 2. morning eval (archived path)
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+  --ckpt outputs/checkpoints/pants-level45/runs/transfer_wholebox_scaled600__<STAMP>/best.pt \
+  --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10 \
+  --crop-native 16 --whole-box --roi 128 --spacing 1.5
+```
+
+Result: to fill in.
+Decision: to fill in.
+
+---
+
+## EXP-17c: Max data + long training — every tumor case, 15h+ [Week 4, running tonight]
+
+Motivation: EXP-17 proved data is the lever (0.263 -> 0.327 at 300 cases); the per-case analysis (analyze_cases.py, scaled300) then showed the model DETECTS 95% of tumors but OVER-SEGMENTS them (predicted volume 4-8x ground truth on small/medium tumors), which is what caps Dice. This run pushes the data lever to its ceiling and trains long, to answer two questions at once: (1) does more data + more training keep raising lesion Dice, and (2) does it reduce the over-segmentation on its own — or does that need a loss change (EXP-18 Tversky)?
+
+Scale: `scaledmax` = 706 tumor + 706 healthy = 1412 cases — ALL 706 tumor cases in the train pool (14x the original dev subset, and the maximum tumor data the Mini release's train partition offers; val/test tumors are held out). Uses the new disk cache (`--cache disk`, ~22 GB on the SSD) since this far exceeds RAM.
+
+Variables (not single-variable, stated honestly): data 300 -> 1412 cases (150 -> 706 tumor) AND iterations 6000 -> ~24000 (long training). Recipe otherwise fixed to the EXP-12/17 whole-box: SuPreM transfer, crop-native 16, whole-box 128 @ 1.5mm, bg0 DiceFocal, seed 42. Loss deliberately held at DiceFocal so this is a clean test of "data + training time," with the loss (Tversky, to attack over-segmentation) reserved for EXP-18.
+
+Hypothesis (H1): max data + long training raises lesion Dice clearly above 0.327 (target >= 0.36) and the val curve is still climbing at the end (which would justify a multi-day run).
+Null (H0): lesion Dice plateaus near 0.327 despite 14x tumor data and 4x iterations — which would mean the remaining gap is the over-segmentation the LOSS must fix (EXP-18), not something more data solves.
+
+Accept H1 if lesion Dice clears 0.36 at n>=20 without specificity collapsing. Read the val-Dice progression: still rising at 24k iters -> a 72h run is warranted; flat by ~12k -> the ceiling is the loss/recipe, not data volume.
+
+Notes / risk: RUN FROM `.venv312` (MLflow). First epoch fills the disk cache by loading 1412 scans off the external drive (~1-2h) — keep the drive mounted + lid open + caffeinate through that window; after it caches, training runs from the SSD and the drive is idle. Do NOT `--resume` (best_val reset bug); run uninterrupted. ~24000 iters at MPS ~2s/step is roughly 13-14h of training + the cache build, landing near morning. best.pt (by val lesion Dice) is archived, so whatever it reaches is safe. Morning: eval at a larger n (e.g. --n-pos 40) for a stabler read, and re-run analyze_cases.py to check whether the over-segmentation shrank.
+
+Runbook:
+
+```bash
+source .venv312/bin/activate
+
+# 0. smoke test the disk-cache path on scaledmax (~2-3 min)
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split scaledmax --transfer --cache disk \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 \
+  --max-iters 30 --val-limit 0 --no-mlflow --ckpt-every 30 --run-name smoke_scaledmax
+
+# 1. the long run (~15h)
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split scaledmax --transfer --cache disk \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --ckpt-every 500 \
+  --max-iters 24000 --val-limit 20 --val-positive --val-every 2000 \
+  --run-name transfer_wholebox_scaledmax
+
+# 2. morning: stabler eval + over-segmentation check
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+  --ckpt outputs/checkpoints/pants-level45/runs/transfer_wholebox_scaledmax__<STAMP>/best.pt \
+  --n-pos 40 --n-neg 40 --sweep --lesion-within-pancreas-mm 10 \
+  --crop-native 16 --whole-box --roi 128 --spacing 1.5
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/analyze_cases.py \
+  --ckpt outputs/checkpoints/pants-level45/runs/transfer_wholebox_scaledmax__<STAMP>/best.pt \
+  --n-pos 40 --crop-native 16 --whole-box --roi 128 --spacing 1.5
+```
+
+Result (2026-07-17, run `transfer_wholebox_scaledmax`, archive `..._scaledmax__20260716_165439`, logged to MLflow from .venv312): **best in-loop VAL lesion-Dice 0.487** (n=20 tumor-positive), up from EXP-17's 0.327 — a +0.16 jump, the biggest single move of the project, blowing past the pre-registered 0.36 bar and approaching the ~0.53 segmentation SOTA. Pinned `wholebox_scaledmax_GOOD.pt`.
+
+PENDING before this is final: (1) full `evaluate.py` at n=40 to confirm the in-loop number (in-loop has tracked full-eval closely for whole-box, e.g. scaled300 was 0.313/0.313, so 0.487 is expected to hold, but confirm); (2) read the MLflow val-Dice curve — was it still climbing at 24k iters? and (3) analyze_cases to see whether the gain came from tighter outlines (less over-segmentation) or catching more tumors.
+
+FULL EVAL CONFIRMED (2026-07-17, n=40/40): pancreas Dice **0.837**, lesion Dice **0.524 raw / 0.528 cleaned** — HIGHER than the in-loop 0.487 and on double the cases, so this is solid. Essentially at the ~0.53 segmentation SOTA reference (with the provided-ROI-upper-bound caveat). Detection sensitivity 36/40 = 90%; detected-only lesion Dice 0.582. analyze_cases breakdown:
+- By size: small <1cm3 (n=7) 0.225 @ 86% det; medium 1-8cm3 (n=23) 0.536 @ 87%; large >8cm3 (n=10) 0.703 @ 100%. Every bin improved vs scaled300 (small 0.054->0.225, medium 0.324->0.536, large 0.609->0.703).
+- By phase: non-contrast (n=18) 0.425, arterial (n=6) 0.491, venous (n=16) 0.646 — the EXP-14 conspicuity gradient persists but non-contrast rose from 0.169.
+- KEY MECHANISM: the over-segmentation from scaled300 is LARGELY GONE. Predicted lesion volumes are now within ~1-2x of ground truth (e.g. gt 327/pred 344, gt 7574/pred 7685, gt 8522/pred 7952, gt 25917/pred 27439) versus the 4-8x over-prediction at 300 cases. So the +0.20 gain came primarily from TIGHTER OUTLINES, exactly the failure mode the per-case analysis flagged — and data fixed it without a loss change. This makes EXP-18 (Tversky) less urgent.
+- Remaining failure modes: 4 misses (detection 90%); a few small tumors detected but localized wrong (0 Dice despite a lesion predicted, e.g. gt 256/pred 820, gt 392/pred 1458); and one giant 94cm3 tumor under-segmented to 0.197 (an outlier likely exceeding the whole-box field of view). Small tumors and non-contrast remain the hard tail.
+
+Decision: ACCEPT decisively (pending full-eval confirmation). What we can already conclude and what we cannot:
+- CONFIRMED: the data-scaling curve is still climbing steeply — 0.169 (whole-scan) -> 0.263 (whole-box, 95 cases) -> 0.327 (300) -> 0.487 (1412 + long training). Data scale is not just a lever, it is THE dominant lever, and at max tumor data it has not plateaued.
+- CONFOUND: two things changed vs EXP-17 (data 300 -> 1412 AND iters 6000 -> 24000), so this run does not separate "more data" from "more training time." A control (300 cases at 24k iters, or 1412 at 6k) would decompose it. But the practical result is unambiguous.
+- CEILING NOTE: we have now used ALL 706 tumor cases in the train pool, so further data gains from the Mini release are exhausted. Remaining levers: more training TIME (iterations) on this max-data set, the loss (Tversky for over-segmentation, EXP-18), and the ROI-leak correction (EXP-19).
+- CAVEAT (do not drop): this is still the UNION ROI, so 0.487 is an upper bound inflated by the lesion-extent leak (unquantified until EXP-19). It is a "provided pancreas+lesion ROI, development-validation" number, not autonomous full-volume performance.
+
+72h decision: if the MLflow val curve was still rising at 24k iters, a much longer run on scaledmax (60-80k iters) is justified and likely climbs further — this is the weekend's highest-value move. If it plateaued, the next lever is the loss/ROI, not more time.
+
+---
+
+## EXP-19: Pancreas-only ROI — quantify the lesion-extent leak [Week 4, the audit control]
+
+Motivation: a two-way metrics audit (mine + Codex, 2026-07-17, saved in `docs/codex-metrics-audit.md`) found the "oracle pancreas box" is actually built from pancreas UNION lesion (`_foreground_label` = label>0). When a lesion protrudes past the pancreas mask, it enlarges/shifts the crop, so lesion location leaks into the model's field of view and biases lesion Dice UPWARD. Every result so far (EXP-10/12/16/17/17b/17c) used this union crop, so the RELATIVE conclusions hold, but the absolute lesion Dice is an upper bound on the provided-ROI setting. This control measures the leak.
+
+Fix implemented (2026-07-17): `preprocessing.roi_source` = `union` (legacy default, unchanged) | `pancreas` (organ mask only). `ComposeLabeld` now keeps the original pancreas mask as `panc_roi`, threaded through orientation/crop/resample, so the crop can be built from pancreas alone. Wired as `train.py --roi-source pancreas` / `evaluate.py --roi-source pancreas`, with its own disk-cache tag so it never collides with union caches.
+
+Variable (single): `roi_source` union -> pancreas. Everything else matched to EXP-17 (scaled300, SuPreM transfer, whole-box, crop-native 16, 128 @ 1.5mm, bg0 DiceFocal, seed 42). Anchor to compare against: EXP-17 union = lesion 0.327 cleaned.
+
+Hypothesis (H1): pancreas-only ROI lowers lesion Dice materially (>= 0.03 drop), i.e. the union crop was inflating the number and the honest provided-pancreas-ROI figure is lower.
+Null (H0): lesion Dice is within noise of 0.327, i.e. lesions are almost always inside the pancreas mask so union ~ pancreas and there was effectively no leak.
+
+Either result is publishable and important: it tells us how much (if any) of our headline was ROI leak, and the pancreas-only number becomes the honest one to report going forward.
+
+Runbook (smoke-test FIRST — this exercises the new crop path, which has not run live):
+
+```bash
+source .venv312/bin/activate
+# smoke (~2-3 min): confirms the pancreas-only crop + panc_roi threading works end to end
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split scaled300 --transfer --cache disk --roi-source pancreas \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 \
+  --max-iters 30 --val-limit 0 --no-mlflow --ckpt-every 30 --run-name smoke_panc_roi
+
+# full run (matched to EXP-17 except roi_source)
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split scaled300 --transfer --cache disk --roi-source pancreas \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --ckpt-every 200 \
+  --max-iters 6000 --val-limit 20 --val-positive --val-every 1000 \
+  --run-name transfer_wholebox_scaled300_pancROI
+
+# eval (MUST pass --roi-source pancreas so eval matches training)
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+  --ckpt outputs/checkpoints/pants-level45/runs/transfer_wholebox_scaled300_pancROI__<STAMP>/best.pt \
+  --n-pos 20 --n-neg 20 --sweep --lesion-within-pancreas-mm 10 \
+  --crop-native 16 --whole-box --roi 128 --spacing 1.5 --roi-source pancreas
+```
+
+Result: to fill in.
+Decision: to fill in.
+
+---
+
 ## Backlog: designed but not yet run
 
-- Transfer versus scratch, full comparison. The scratch runs so far were only the 2-case overfit gate; a full-scale from-scratch baseline has not been run, so the real value of the SuPreM pretraining is not yet quantified on the dev subset. One clean 6000-iter `--scratch` run would give the number.
-- Harder-negatives sampling (`sampling.strategy: classes`), already coded, to be tried only if the loss change (EXP-07) is not enough, since sampling proved a weak lever in EXP-05.
-- More data, scaling past the 100-case dev subset. The EXP-05 null result points at data volume as the real ceiling; this is the capstone direction.
-- ROI cascade (coarse locate then fine segment), the proper fix for whole-organ context; capstone.
+- More data, scaling past the 100-case dev subset. The EXP-05/07 null results point at data volume as the real ceiling; this is the main Week 3/capstone lever and needs a persistent/disk cache to replace the RAM `CacheDataset` (not yet wired — see `configs/level45.yaml` `training.cache`).
+- Harder-negatives sampling (`sampling.strategy: classes`), already coded, to be tried only if it becomes the priority; sampling proved a weak lever in EXP-05.
+- ROI cascade (coarse locate then fine segment), the autonomous version of the EXP-12 whole-box stage: a pancreas detector in front of the box stage; capstone.
+
+Now formalized as experiments (moved off this backlog): transfer-vs-scratch = EXP-09; test-time augmentation = EXP-15.
+
+## Checkpoint & logging discipline (added 2026-07-12, after losing EXP-12)
+
+The EXP-12 whole-box best (lesion 0.263) was lost because every run shared one `best.pt`/`last.pt` and the manual "copy it after the run" step was skipped, so the EXP-13/14 runs overwrote it; it also ran without MLflow, so no metrics were live-logged either. Two code fixes now make both failure modes structural rather than dependent on memory:
+
+1. Per-run archive (in `train.py`). Alongside the shared `best.pt`/`last.pt`, every run writes immutable copies into `outputs/checkpoints/<experiment>/runs/<run_name>__<timestamp>/` with a `run_info.txt` recording the recipe (split, mode, patch, spacing, whole_box, crop, loss, seed). No later run can touch a previous run's folder, so a keeper is never clobbered and never an orphan. Point eval at the archived path, not the shared `best.pt`, for anything you care about.
+2. Persistent, MLflow-independent ledger. Every run appends one row to `outputs/checkpoints/<experiment>/run_ledger.csv` (timestamp, run_name, split, mode, iters, best_val_lesion, archive_dir). If MLflow is unavailable, `train.py` now prints a loud banner instead of a quiet one-liner, so an unlogged run cannot slip by unnoticed.
+
+Rules of thumb: always launch from `.venv312` (has MLflow); the archive/ledger live under `outputs/` (git-ignored, local safety net) while `experiments.md` stays the committed record; periodically prune archive folders of rejected runs to reclaim disk (each is ~110 MB).
 
 ## How to add the next entry
 

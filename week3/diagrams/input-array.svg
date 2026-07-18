@@ -1,0 +1,45 @@
+<svg viewBox="0 0 860 500" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>What we feed the model: the input array, by dimension</title>
+  <desc>The input is a 4D array laid out as channel by depth by height by width. The channel dimension is what is measured at each voxel; we use one channel, intensity, the CT brightness. Depth, height, and width are the 3D grid of voxels in the cropped pancreas box. Adding channels would add more measurements per voxel, such as an organ mask, which is a future experiment.</desc>
+  <rect x="-50" y="-50" width="200%" height="200%" fill="#0b0f17"/>
+
+  <text x="430" y="38" text-anchor="middle" font-size="19" font-weight="700" fill="#f1f5f9">What we feed the model: the input array</text>
+  <text x="430" y="60" text-anchor="middle" font-size="12.5" fill="#94a3b8">A 3D grid of voxels, with one measurement — intensity — at each one.</text>
+
+  <!-- bracket notation, labels not numbers -->
+  <text x="430" y="112" text-anchor="middle" font-size="20" font-weight="700" fill="#94a3b8">the array&#8201;:&#8201;&#8201;[ channel · depth · height · width ]</text>
+
+  <!-- WHAT: channel -->
+  <text x="62" y="160" font-size="12" font-weight="700" fill="#60a5fa" letter-spacing="1">WHAT IS MEASURED</text>
+  <rect x="60" y="172" width="235" height="120" rx="10" fill="#111827" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="177" y="203" text-anchor="middle" font-size="14" font-weight="700" fill="#93c5fd">channel</text>
+  <text x="177" y="240" text-anchor="middle" font-size="25" font-weight="700" fill="#f1f5f9">intensity</text>
+  <text x="177" y="270" text-anchor="middle" font-size="11.5" fill="#94a3b8">the CT brightness at each voxel</text>
+
+  <!-- WHERE: the 3D grid -->
+  <text x="342" y="160" font-size="12" font-weight="700" fill="#34d399" letter-spacing="1">WHERE IT IS — THE 3D GRID</text>
+  <g>
+    <rect x="340" y="172" width="150" height="120" rx="10" fill="#111827" stroke="#334155" stroke-width="1.5"/>
+    <text x="415" y="216" text-anchor="middle" font-size="17" font-weight="700" fill="#6ee7b7">depth</text>
+    <text x="415" y="244" text-anchor="middle" font-size="12" fill="#94a3b8">front ↔ back</text>
+  </g>
+  <g>
+    <rect x="502" y="172" width="150" height="120" rx="10" fill="#111827" stroke="#334155" stroke-width="1.5"/>
+    <text x="577" y="216" text-anchor="middle" font-size="17" font-weight="700" fill="#6ee7b7">height</text>
+    <text x="577" y="244" text-anchor="middle" font-size="12" fill="#94a3b8">top ↔ bottom</text>
+  </g>
+  <g>
+    <rect x="664" y="172" width="150" height="120" rx="10" fill="#111827" stroke="#334155" stroke-width="1.5"/>
+    <text x="739" y="216" text-anchor="middle" font-size="17" font-weight="700" fill="#6ee7b7">width</text>
+    <text x="739" y="244" text-anchor="middle" font-size="12" fill="#94a3b8">left ↔ right</text>
+  </g>
+  <text x="577" y="312" text-anchor="middle" font-size="11.5" fill="#64748b">together = the box of voxels around the cropped pancreas</text>
+
+  <!-- key -->
+  <rect x="60" y="338" width="754" height="140" rx="10" fill="#0d1420" stroke="#334155" stroke-width="1"/>
+  <text x="82" y="366" font-size="13" font-weight="700" fill="#f1f5f9">Reading the array</text>
+  <text x="82" y="393" font-size="12.5" fill="#cbd5e1"><tspan fill="#93c5fd" font-weight="700">channel</tspan> — what is measured at each point. We use one channel: intensity (the CT brightness; denser tissue = brighter).</text>
+  <text x="82" y="418" font-size="12.5" fill="#cbd5e1"><tspan fill="#6ee7b7" font-weight="700">depth × height × width</tspan> — the three-dimensional grid of voxels in the cropped pancreas box.</text>
+  <text x="82" y="443" font-size="12.5" fill="#cbd5e1"><tspan fill="#fbbf24" font-weight="700">more channels?</tspan> — each extra channel adds another measurement per voxel (e.g. an organ mask, or vessels).</text>
+  <text x="82" y="462" font-size="11.5" fill="#64748b">We use just intensity today; adding channels is a planned anatomy-context experiment.</text>
+</svg>

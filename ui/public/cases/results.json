@@ -1,0 +1,78 @@
+{
+  "PanTS_00000008": {
+    "case_id": "PanTS_00000008",
+    "gt_has_lesion": false,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 47.2,
+    "dice_pancreas": 0.828,
+    "dice_lesion": 0.0,
+    "confidence": 0.608,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00000008/ct.nii.gz",
+      "gt": "PanTS_00000008/gt.nii.gz",
+      "pred": "PanTS_00000008/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00000008/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00000008/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00000008/mesh/pancreas_gt.obj"
+      },
+      "ct_full": "PanTS_00000008/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00000011": {
+    "case_id": "PanTS_00000011",
+    "gt_has_lesion": false,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 1218.4,
+    "dice_pancreas": 0.877,
+    "dice_lesion": 0.0,
+    "confidence": 0.757,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00000011/ct.nii.gz",
+      "gt": "PanTS_00000011/gt.nii.gz",
+      "pred": "PanTS_00000011/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00000011/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00000011/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00000011/mesh/pancreas_gt.obj"
+      },
+      "ct_full": "PanTS_00000011/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00000029": {
+    "case_id": "PanTS_00000029",
+    "gt_has_lesion": true,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 5065.9,
+    "dice_pancreas": 0.853,
+    "dice_lesion": 0.683,
+    "confidence": 0.939,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00000029/ct.nii.gz",
+      "gt": "PanTS_00000029/gt.nii.gz",
+      "pred": "PanTS_00000029/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00000029/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00000029/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00000029/mesh/pancreas_gt.obj",
+        "lesion_gt": "PanTS_00000029/mesh/lesion_gt.obj"
+      },
+      "ct_full": "PanTS_00000029/ct_full.nii.gz"
+    }
+  }
+}

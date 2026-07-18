@@ -1,0 +1,21 @@
+{
+  "name": "pants-niivue-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Static-first React + NiiVue 3D viewer for PanTS pancreas/lesion CADe (docs/ui.md).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@niivue/niivue": "^0.69.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}

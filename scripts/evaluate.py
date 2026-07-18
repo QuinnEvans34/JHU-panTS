@@ -28,16 +28,22 @@ from src.utils import paths as P
 from src.data.dataset import get_dataset
 from src.models.segresnet import build_model
 from src.training import trainer as T
-from src.inference.sliding_window import predict_volume
+from src.inference.sliding_window import predict_volume, predict_probs_tta
 from src.inference.postprocess import postprocess
 
 from monai.data import DataLoader
 
 
-def dice(a: np.ndarray, b: np.ndarray) -> float:
-    a, b = a.astype(bool), b.astype(bool)
-    s = int(a.sum() + b.sum())
-    return 1.0 if s == 0 else 2.0 * int((a & b).sum()) / s
+def dice(pred: np.ndarray, gt: np.ndarray) -> float:
+    """Dice of prediction vs ground truth. Returns NaN when the GROUND TRUTH is empty
+    (the class is undefined for this case) so it is excluded via nanmean — never silently
+    awarded 1.0, which would inflate a positive-cohort mean if a tiny lesion vanished in
+    preprocessing (metrics audit, 2026-07-17)."""
+    pred, gt = np.asarray(pred).astype(bool), np.asarray(gt).astype(bool)
+    g = int(gt.sum())
+    if g == 0:
+        return float("nan")
+    return 2.0 * int((pred & gt).sum()) / (int(pred.sum()) + g)
 
 
 def softmax_np(logits) -> np.ndarray:
@@ -80,6 +86,10 @@ def main():
                     help="crop pancreas in native space + native-voxel margin; MUST match training")
     ap.add_argument("--whole-box", action="store_true",
                     help="EXP-12: feed the whole pancreas box as one --roi cube; MUST match training")
+    ap.add_argument("--tta", action="store_true",
+                    help="test-time augmentation: average predictions over flips (no retrain); 8 views")
+    ap.add_argument("--roi-source", choices=["union", "pancreas"], default=None,
+                    help="ROI crop source; MUST match training (union=legacy, pancreas=organ only)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -99,6 +109,9 @@ def main():
     if args.whole_box:
         cfg["preprocessing"]["whole_box"] = True
         print(f"[override] WHOLE-BOX: feeding the entire pancreas box as one cube")
+    if args.roi_source:
+        cfg["preprocessing"]["roi_source"] = args.roi_source
+        print(f"[override] ROI source = {args.roi_source}")
     set_seed(get(cfg, "seed", 42))
     device = T.get_device(cfg)
     dp = P.data_paths(cfg)
@@ -110,7 +123,16 @@ def main():
     model = build_model(cfg).to(device)
     step, _ = T.load_checkpoint(args.ckpt, model, map_location=device)
     model.eval()
-    print(f"loaded {args.ckpt} (step {step}) on {device}   min-lesion={min_mm3:.0f} mm3\n")
+    use_tta = args.tta or bool(get(cfg, "inference.tta", False))
+    print(f"loaded {args.ckpt} (step {step}) on {device}   min-lesion={min_mm3:.0f} mm3"
+          f"{'   [TTA: 8-view flips]' if use_tta else ''}\n")
+
+    def infer_probs(image):
+        """Softmax probabilities (C,H,W,D) for one volume, with or without flip TTA."""
+        if use_tta:
+            return predict_probs_tta(model, image, cfg, device)
+        with torch.no_grad():
+            return softmax_np(predict_volume(model, image, cfg, device))
 
     man = pd.read_csv(dp["manifest"])
     vset = {x.strip() for x in (dp["splits_dir"] / f"{args.split}.txt").read_text().split() if x.strip()}
@@ -130,9 +152,7 @@ def main():
     p_d, l_raw, l_pp = [], [], []
     for b in DataLoader(get_dataset(cfg, args.split, train=False, cache=False, ids=pos),
                         batch_size=1, num_workers=0):
-        with torch.no_grad():
-            logits = predict_volume(model, b["image"].to(device), cfg, device)
-        probs = softmax_np(logits)                       # (C,H,W,D), computed once
+        probs = infer_probs(b["image"].to(device))       # (C,H,W,D), computed once (TTA-aware)
         pred = probs.argmax(0)
         gt = b["label"][0, 0].cpu().numpy()
         p_d.append(dice(pred == 1, gt == 1))
@@ -141,10 +161,12 @@ def main():
                                      lesion_within_pancreas_mm=within) == 2, gt == 2))
         for t in thresholds:
             sweep_pos[t].append(dice(label_from_probs(probs, t) == 2, gt == 2))
-    print(f"\n[TUMOR-POSITIVE cases, n={len(pos)}]")
-    print(f"  pancreas Dice         : {np.mean(p_d):.3f}")
-    print(f"  lesion Dice (raw)     : {np.mean(l_raw):.3f}")
-    print(f"  lesion Dice (cleaned) : {np.mean(l_pp):.3f}")
+    n_excl = int(np.isnan(l_raw).sum())
+    print(f"\n[TUMOR-POSITIVE cases, n={len(pos)}]"
+          + (f"  ({n_excl} excluded: lesion empty after preprocessing)" if n_excl else ""))
+    print(f"  pancreas Dice         : {np.nanmean(p_d):.3f}")
+    print(f"  lesion Dice (raw)     : {np.nanmean(l_raw):.3f}")
+    print(f"  lesion Dice (cleaned) : {np.nanmean(l_pp):.3f}")
 
     # --- tumor-free: specificity, raw vs cleaned ---
     n = len(neg)
@@ -152,9 +174,7 @@ def main():
         clean_raw = clean_pp = 0
         for b in DataLoader(get_dataset(cfg, args.split, train=False, cache=False, ids=neg),
                             batch_size=1, num_workers=0):
-            with torch.no_grad():
-                logits = predict_volume(model, b["image"].to(device), cfg, device)
-            probs = softmax_np(logits)
+            probs = infer_probs(b["image"].to(device))
             pred = probs.argmax(0)
             if int((pred == 2).sum()) * vox_mm3 < min_mm3:
                 clean_raw += 1
@@ -164,7 +184,7 @@ def main():
             for t in thresholds:
                 if int((label_from_probs(probs, t) == 2).sum()) * vox_mm3 < min_mm3:
                     sweep_neg[t] += 1
-        print(f"\n[TUMOR-FREE cases, n={n}]  (specificity = correctly NOT flagged)")
+        print(f"\n[MASK-NEGATIVE cases, n={n}]  (specificity@{min_mm3:.0f}mm3 = predicted lesion below threshold)")
         print(f"  specificity (raw)     : {clean_raw}/{n} = {100*clean_raw/n:.0f}%")
         print(f"  specificity (cleaned) : {clean_pp}/{n} = {100*clean_pp/n:.0f}%")
 
@@ -174,7 +194,7 @@ def main():
         print(f"  {'thresh':>7} | {'lesion Dice (pos)':>18} | {'specificity (neg)':>18}")
         print("  " + "-" * 52)
         for t in thresholds:
-            ld = np.mean(sweep_pos[t]) if sweep_pos[t] else float("nan")
+            ld = np.nanmean(sweep_pos[t]) if sweep_pos[t] else float("nan")
             sp = f"{sweep_neg[t]}/{n} = {100*sweep_neg[t]/n:.0f}%" if n else "n/a"
             print(f"  {t:>7.2f} | {ld:>18.3f} | {sp:>18}")
 
