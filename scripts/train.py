@@ -73,6 +73,10 @@ def main():
                     help="EXP-12: feed the WHOLE pancreas box (padded/cropped to one --patch cube) instead of random sub-patches; use with --crop-native/--crop-pancreas")
     ap.add_argument("--roi-source", choices=["union", "pancreas"], default=None,
                     help="what the ROI crop is built from: union (pancreas+lesion, legacy) or pancreas (organ only, no lesion leak)")
+    ap.add_argument("--loss", choices=["dice_focal", "dice_ce", "tversky", "tversky_focal"], default=None,
+                    help="EXP-18: override the loss. tversky/tversky_focal penalize false positives to fight over-segmentation")
+    ap.add_argument("--tversky-alpha", type=float, default=None, help="Tversky FALSE-POSITIVE weight (raise to fight over-segmentation, e.g. 0.7)")
+    ap.add_argument("--tversky-beta", type=float, default=None, help="Tversky false-negative weight (e.g. 0.3)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -100,9 +104,31 @@ def main():
     if args.roi_source:
         cfg["preprocessing"]["roi_source"] = args.roi_source
         print(f"[override] ROI source = {args.roi_source} ({'pancreas organ only, no lesion leak' if args.roi_source=='pancreas' else 'pancreas+lesion, legacy'})")
+    if args.loss:
+        cfg.setdefault("loss", {})["name"] = args.loss
+        print(f"[override] loss -> {args.loss}")
+    if args.tversky_alpha is not None:
+        cfg.setdefault("loss", {})["tversky_alpha"] = args.tversky_alpha
+        print(f"[override] tversky alpha (false-positive weight) -> {args.tversky_alpha}")
+    if args.tversky_beta is not None:
+        cfg.setdefault("loss", {})["tversky_beta"] = args.tversky_beta
+        print(f"[override] tversky beta (false-negative weight) -> {args.tversky_beta}")
     set_seed(int(get(cfg, "seed", 42)))
     device = T.get_device(cfg)
     dp = P.data_paths(cfg)
+
+    # SAFETY GUARD (Codex audit 2026-07-19): a TRAINING split must never intersect val/test.
+    # This is the assertion that would have caught the make_scaled_split leakage before it ever trained.
+    def _read_ids(name):
+        f = Path(dp["splits_dir"]) / f"{name}.txt"
+        return {x.strip() for x in f.read_text().split() if x.strip()} if f.exists() else set()
+    if args.split not in ("val", "test"):
+        _train_ids = _read_ids(args.split)
+        _leak = _train_ids & (_read_ids("val") | _read_ids("test"))
+        assert not _leak, (f"LEAKAGE ABORT: training split '{args.split}' shares {len(_leak)} case(s) with "
+                           f"val/test (e.g. {sorted(_leak)[:5]}). Rebuild it from train.txt (make_scaled_split.py).")
+        print(f"[split-check] '{args.split}' is disjoint from val+test ({len(_train_ids)} train cases)  OK")
+
     epoch_iters = int(get(cfg, "training.epoch_iters", 250))
     total_iters = args.max_iters or (args.epochs or int(get(cfg, "training.max_epochs", 100))) * epoch_iters
 

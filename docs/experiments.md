@@ -956,7 +956,107 @@ Read in the morning: if `gt-union` ~= 0.528 (harness valid) AND `pred` is within
 Goal: replace the reused `p128_ctx` (0.747 pancreas, trained on ~95 cases) with a stronger Stage-1 localizer trained on all 1,412 `scaledmax` cases. A better pancreas model gives tighter, more reliable boxes, so containment needs less buffer. Full-scan patch training (NOT whole-box): standard SuPreM transfer, patch 96, the pancreas channel of the 3-class output is the localizer. Loss stays DiceFocal (pancreas is easy; recall is obtained at inference via the low-probability-threshold box, `cascade_eval --loc-thresh`). Validation off (`--val-limit 0`) because train.py selects best.pt by LESION Dice, which is the wrong metric for a localizer — use the archived `last.pt`. A recall-oriented loss (Tversky, penalize pancreas false-negatives = "dock for missing pancreas") is the reserved next lever IF the containment audit shows the buffer alone is insufficient.
 Command run: `train.py --split scaledmax --transfer --cache disk --patch 96 --num-samples 2 --max-iters 16000 --val-limit 0 --run-name localizer_fullscan_scaledmax`.
 Then (tomorrow): `cascade_eval.py --audit-coverage --loc-ckpt <last.pt> --loc-roi 96 --loc-thresh 0.1 --margin-vox 16 --n-audit 1000` to certify containment, and re-run the accuracy arm with the new localizer.
+
+Result (2026-07-18): trained (16000 iters, full-scan patch-96, SuPreM transfer, scaledmax; `last.pt` in archive `localizer_fullscan_scaledmax__20260717_235833`). Containment audit n=300:
+- The new localizer BEATS the reused p128 on a matched cohort: 88.7% fully contained vs 77.7%, tumor 100% vs 95.5%. More data helped the localizer.
+- RECALL mode (`--loc-thresh 0.1 --dilate 2`) REJECTED as the lever: barely moved containment (262->266) but doubled oversize boxes (42->110). Low-threshold inflates boxes without fixing the misses.
+- KEY DIAGNOSIS (`--diag-localizer`): most "containment failures" are BROKEN GROUND-TRUTH LABELS, not localizer misses. Examples: PanTS_00000610 gt=32 voxels (near-empty; localizer correctly found a 14k-voxel pancreas elsewhere), PanTS_00000398 gt=46 vox, PanTS_00000817 gt=132,113 vox spanning z 6-125 (~446 cm3 over 119 slices — corrupt/over-inclusive; the localizer's compact prediction is MORE correct than the label). The control PanTS_00000029 (normal gt 23,942 vox / 46 slices) scores containment 1.00. This extends the earlier data-integrity finding (broken pancreas masks) into the val set.
+- FIX (code, no rerun): added a GT-quality gate to `--audit-coverage` (flags pancreas GT outside 3,000-90,000 vox or z-span >95 slices as implausible, scores the localizer on VALID-GT cases only, lists broken labels separately). Tomorrow's single audit run now returns the honest localizer number instead of one polluted by bad labels.
+
+Decision: localizer is stronger than the raw 88.7% implied — a large share of failures are label defects. Next (tomorrow): (1) re-run `--audit-coverage --n-audit 800/1000` with the GT gate for the clean containment number + rule-of-three bound on valid-GT cases; (2) size the buffer from the worst REAL (valid-GT) clearance; (3) add the automated plausibility fail-safe (flag/expand when the localizer output OR the input scan is implausible — the deployment safety net); (4) if any real localizer misses remain, test stock SuPreM as a more robust localizer. Then re-run the autonomous accuracy arm (EXP-20 pred) with the new localizer + locked settings.
+
+HONEST CONTAINMENT NUMBER (2026-07-18, `--audit-coverage --n-audit 800 --margin-vox 16`, GT gate on):
+- GT-quality gate excluded 76/800 = 9.5% of val cases with implausible pancreas GT (many are literally 0 voxels in our pipeline).
+- On VALID-GT cases (n=724): pancreas containment mean 0.9932, **fully contained 685/724 = 94.6%**; tumor containment mean 0.9987, **86/87 = 98.9%**. Worst per-face clearance -88.5mm; the remaining 39 failures (5.4%) are MODERATE clips (-37 to -88mm), not the gross -213mm mislocalizations (those were all broken labels).
+- OVERSIZE 220/800 = 27.5% at margin 16: the box exceeds the 128 cube and gets center-cropped. This + the 39 clips share ONE root cause — a 128^3 @1.5mm cube (192mm span) cannot hold a big pancreas + buffer. Motivates EXP-23 (resize-to-fit).
+- OPEN QUESTION (must resolve before calling it a data defect): the 0-voxel cases still list `pancreas` + head/body/tail in the manifest's `available_structures`, so either the mask FILES are empty/corrupt (data) or our MONAI load/orient/resample drops them (harness bug). `scripts/audit_masks.py` (raw nibabel voxel counts) settles it — run FIRST. If the files are fine, this is a loading bug in the cascade `pre` pipeline, not bad data, and the 94.6% is pessimistic.
+- Models are safe: `transfer_wholebox_scaledmax` (segmenter) and `localizer_fullscan_scaledmax` (localizer) are both logged in MLflow (FINISHED) and archived on disk (`runs/.../best.pt`+`last.pt`).
+
+---
+
+## EXP-23: Resize-to-fit whole-box — never clip the pancreas [Week 4, the containment fix]
+
+> **REMEMBER THIS (the core idea):** don't grow the buffer — grow how the box maps into the cube. Resize the whole pancreas box to FILL 128³ instead of center-cropping it, so the entire pancreas is always inside no matter its size. One retrain. Fixes both the tail-clips and the 27.5% oversize boxes at once.
+
+Motivation: the containment audit (EXP-22) showed the pipeline loses part of the pancreas on ~5% of valid scans and center-crops the box on ~27%, both from ONE cause — the fixed 128^3 @1.5mm cube (192mm span) is too small to hold a large pancreas plus a safety buffer, so `ResizeWithPadOrCropd` center-crops the overflow. A bigger buffer only trades tail-clips for more center-cropping. The principled fix decouples containment from the cube size.
+
+Change (single variable): in the whole-box path, replace `ResizeWithPadOrCropd` (pad small / center-crop large) with a true `Resized` to 128^3 — every pancreas box, whatever its size, is scaled to fill the cube. Small boxes are up-sampled, large boxes are down-sampled, NOTHING is discarded, so the whole organ + buffer is always inside by construction. Applied to BOTH train and inference so they match (this is why it needs a retrain, not just an eval change). Label uses nearest-neighbor interpolation to stay integer.
+
+Hypothesis (H1): full pancreas containment rises from 94.6% toward ~99% and oversize→0, with lesion Dice within noise of EXP-17c's 0.48-0.52 (resolution was already ruled out as the lesion lever in EXP-16, so per-case rescaling should not hurt).
+Null/risk (H0): per-case scale variation (a big pancreas shrunk, a small one enlarged) confuses the segmenter and lesion Dice drops materially (>0.03); if so, fall back to a bigger cube (160^3 @1.5mm = 240mm) instead of rescaling.
+
+Runbook (after EXP-22b data cleaning; retrain the whole-box segmenter with the new resize, then re-audit + re-eval):
+```bash
+# (code change: transforms.py whole_box branch -> Resized(128) behind a `whole_box_mode: resize` flag)
+# retrain the segmenter on the CLEAN scaledmax split (empty-GT cases removed)
+caffeinate -is env PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --config configs/level45.yaml --split scaledmax_clean --transfer --cache disk \
+  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --whole-box-mode resize \
+  --max-iters 24000 --val-limit 20 --val-positive --run-name transfer_wholebox_resize_clean
+# then: cascade_eval --audit-coverage (containment) AND --roi-from pred (accuracy) with the new ckpt
+```
 Result: to fill in.
+
+## EXP-22b: Data-quality cleaning — remove empty/corrupt pancreas labels [Week 4, prerequisite]
+
+Motivation: the containment audit flagged 9.5% of val cases with 0-voxel or degenerate pancreas GT despite the manifest listing a pancreas. If the mask files are truly empty, those cases are in the training splits too, teaching the models "no pancreas here" and hurting both the localizer and the segmenter. Resolve file-vs-harness first, then clean.
+
+Steps: (1) `python scripts/audit_masks.py --write-clean` over the full manifest — raw nibabel voxel counts settle whether the files are empty (data defect) or our MONAI pipeline drops them (harness bug). (2) If data: write clean splits (excluding empty-pancreas cases) and rebuild `scaledmax_clean`; quantify how many of the 1,412 training cases were affected. (3) If harness bug: fix the load/orient/resample path in `cascade_eval.py`'s `pre` and re-audit (the 94.6% would rise). Either outcome is a real finding and improves the honest numbers.
+
+Result (2026-07-18, `audit_masks.py --split val --write-clean`, raw nibabel): the combined `pancreas.nii.gz` is genuinely EMPTY/tiny for 110/1800 val cases (min 0.00 mL) — so it is NOT a MONAI orientation/resample bug on a good mask. Also found OVER-INCLUSIVE labels (max 855 mL vs normal ~150). `val_clean.txt` written (1690 cases). NEW LEAD (likely the real story): PanTS stores the pancreas as a combined file AND as `pancreas_head/body/tail`; the config loads only the combined file, so an empty combined mask may still have the organ in the subregions. Extended `audit_masks.py` (`--max-panc-ml`, subregion volumes, `RECOVERABLE_FROM_SUBREGIONS` flag) to test this; re-run pending. If recoverable, the fix is to union head+body+tail in `ComposeLabeld`/`source_masks` and RECOVER the cases (not discard them), and the 94.6% containment is pessimistic.
+RESOLVED (2026-07-18, enhanced `audit_masks.py` on val n=1800): 117 flagged = 101 truly-empty + 9 recoverable-from-subregions + 7 oversized/corrupt-combined. Full picture:
+- Combined `pancreas.nii.gz` empty on 110; subregion union empty on 116; they DISAGREE (15 combined-only, 9 subregion-only); 6-7 have a corrupt-HUGE combined (445-855 mL) but NORMAL subregions (~60 mL). On normal cases subregion/combined volume ratio is median 1.00 (they reconstruct each other).
+- The 101 truly-empty are ALL healthy (has_lesion=False), CT present, and CLUSTERED: 84/101 = one cohort (site CH / SIEMENS / years "2012;2016;2020"). So one contributing site lacks pancreas organ labels — a real dataset gap, not our bug, and harmless to lesion learning (no tumor cases affected).
+- FIX (mask source, robust for the eventual JHU 10k): build pancreas = union(combined, head, body, tail), but DROP the combined file when implausibly large (>300 mL) so the corrupt-huge ones fall back to subregions. Recovers ~15 val cases and hardens the loader. Implement in `ComposeLabeld` / `configs/level45.yaml source_masks.pancreas` (add head/body/tail; add the >300mL guard). The 101 both-empty cases stay excluded via `_clean` splits.
+Decision: (1) implement the union+guard mask source; (2) rebuild clean splits (val_clean done = 1683; build scaledmax_clean the same way) excluding the truly-empty + un-fixable-corrupt cases; (3) EXP-23 trains on the clean, recovered data. Separately note: the empty-label thread is DISTINCT from the containment-clip thread (EXP-23 cube fix) — both are real Week-4 items.
+
+---
+
+## ⚠ CODEX FULL-SYSTEM AUDIT (2026-07-19) — CRITICAL VALIDATION LEAKAGE. Headline numbers WITHDRAWN. (`docs/codex-audit-week4.md`)
+
+The Week-4 adversarial audit found — and I VERIFIED against the split files — that **every scaled dataset leaks validation cases into training.** `make_scaled_split.py` sampled from the manifest `split=="train"` column (the raw ImageTr *source folder*), not the carved `train.txt` fold, so:
+- scaled300 ∩ val = 54, scaled600 ∩ val = 109, **scaledmax ∩ val = 266**.
+- **30/40 positive + 5/40 negative** of the deterministic headline-eval cohort were in `scaledmax` training. Both the segmenter (EXP-17c) AND the localizer (EXP-22) trained on them.
+- Canonical `train.txt` ∩ `val.txt` = 0 (create_splits was fine); the bug is only in the derived scaled splits.
+
+CONSEQUENCE — treat these as CONTAMINATED / not held-out until a leakage-free rerun:
+- EXP-17 (0.327), EXP-17c (0.528 provided-ROI), EXP-20 (0.483 autonomous), EXP-22 (94.6%/98.9% containment), 90% detection. The data-scaling gains and the autonomous≈oracle claim both need a clean rerun before they can be stated.
+- Relative results on the ORIGINAL disjoint dev_subset (EXP-04/05/07/08/09/12/16, transfer≫scratch) are NOT affected by this bug — they used dev_subset, not scaled splits.
+
+OTHER VERIFIED FINDINGS (see report for file+line):
+- Containment 94.6% is measured on the PRE-resize box, before the 128³ center-crop truncates the 27.5% oversized boxes → optimistic; must measure effective Stage-2 containment (C2).
+- The mask-source fix needs CODE (build_records + ComposeLabeld), not just YAML `source_masks` (nothing reads it) (H1).
+- The localizer is a 3-class model (sees lesion supervision); "pancreas-only / never sees a lesion" is FALSE. No oracle at inference, but the framing was wrong (H3).
+- `--resume` still unsafe (H4); `_cache_tag` omits HU/orientation/mask-policy → stale-cache risk after the planned changes (H5); several config keys advertised but unwired (M4).
+- Confirmed correct: label precedence, same-box crop for image+GT, SW stitching, empty-GT Dice/ignore_empty, SuPreM load, models archived+logged.
+
+FIX ORDER (Codex top-3): (1) rebuild all scaled splits from `train.txt` + startup disjointness assert + invalidate caches + RETRAIN both models + rerun headlines; (2) shared config-driven pancreas resolver (union+guard) in code; (3) effective Stage-2 containment + abstention fail-safe, then EXP-23. Do NOT tune hyperparameters against the contaminated cohort. This audit is exactly why we ran it — the fix is clear and it's caught before the final report / external validation.
+
+FIX IMPLEMENTED (2026-07-18): `make_scaled_split.py` now samples the pool from `train.txt` (not the manifest `split` column) and asserts 0 overlap with val/test at build time. `train.py` now has a startup LEAKAGE ABORT guard (any training split ∩ val/test → assert). Rebuilt `scaledmax_clean` (706 tumor + 706 healthy = 1412, verified ∩val=0 ∩test=0) and `scaled300_clean`. Both compile; splits verified in-sandbox. dev_subset/dev_subset_clean were already clean (∩val=0), so all the ORIGINAL dev-subset experiments are unaffected.
+
+---
+
+## EXP-24: leakage-free scaledmax rerun — the REAL provided-ROI number [Week 4, correctness rerun]
+
+Single variable vs EXP-17c: the training split. Identical whole-box recipe (SuPreM transfer, crop-native 16, 128³ @1.5mm, bg0 DiceFocal, 24k iters, seed 42), but on `scaledmax_clean` (disjoint from val) instead of the leaked `scaledmax`. In-loop val (20 tumor-pos) is now genuinely held-out, so best.pt selection is honest too. Then eval provided-ROI on val n=40/40.
+Hypothesis: the real held-out lesion Dice is LOWER than the contaminated 0.528 (the model no longer trained on 30/40 of its eval cases). How much lower is the actual finding — it tells us how much of the headline was memorization vs generalization. Accept nothing until this lands; report this as the honest provided-ROI number going forward.
+Note: this is the SEGMENTER (provided-ROI). The localizer must ALSO be retrained on `scaledmax_clean` for a clean autonomous/containment number (next run). Mask-resolver + resize-to-fit are deliberately NOT changed here — single variable = leakage only.
+Result (2026-07-19, run `transfer_wholebox_scaledmax_CLEAN`, archive `..._CLEAN__20260719_012104`, MLflow): **best held-out in-loop val lesion Dice 0.407** (n=20 tumor-pos), pancreas 0.836. Vs the CONTAMINATED EXP-17c in-loop 0.487 → the leak inflated the in-loop number by ~0.08. The clean number did NOT collapse (would have if the model were mostly memorizing), so the data-scaling result is REAL at an honest magnitude — most of the 0.52 was generalization, ~0.08-0.10 was leakage. Full provided-ROI eval (n=40/40, `evaluate.py`) PENDING = the number of record. Next: retrain the LOCALIZER on scaledmax_clean, then re-run the autonomous cascade (EXP-20) + containment (EXP-22) leak-free.
+
+FULL EVAL DONE (2026-07-19, provided-ROI, val n=40/40, clean best.pt step 18000): pancreas **0.817**, lesion **0.415 raw / 0.412 cleaned**, specificity **15% raw / 18% cleaned** (sweep: thr 0.90 → lesion 0.404 / spec 28%). THE HONEST NUMBERS. Vs CONTAMINATED EXP-17c (0.528 lesion, and cascade-era spec ~30-38%): the leak inflated BOTH — lesion by ~0.11 AND specificity roughly 2x. Mechanism: a leaked healthy val case was memorized-as-healthy in training, so the model stayed quiet on it; remove it → the model over-fires → true specificity ~15%. So the REAL remaining problem is OVER-PREDICTION / low specificity, worse than we thought once leakage is gone. Lesion Dice 0.415 is real and solid (~0.53 reference). CAVEAT: development-validation (best.pt selected on the first 20 val pos, evaled on first 40); official 901-test still reserved. Levers for the low specificity: (1) MORE HEALTHY training data — current 1:1 tumor:healthy hugely over-represents tumor vs the ~10% prevalence, and only 706 of 6494 train-healthy were used; (2) stratify/report specificity by contrast phase (EXP-14: non-contrast high, PV low); (3) threshold/TTA/Tversky-loss. Next runs: analyze_cases for detection sensitivity + size/phase breakdown (no retrain); then a healthy-ratio experiment (specificity) and the clean localizer retrain (autonomous number).
+
+## EXP-18: Tversky loss — stop the over-segmentation, lift Dice + specificity together [Week 4, tonight 2026-07-19]
+
+Motivation: the clean model (EXP-24) DETECTS tumors well (95%) but OVER-SEGMENTS them 3-13x (gt256→pred1620, gt392→pred5110), which caps lesion Dice at 0.415 and drives specificity to 15% — the same "paints too much lesion" failure on both fronts. DiceFocal has no explicit false-positive penalty. Tversky index = TP/(TP + alpha·FP + beta·FN); raising alpha above beta punishes over-painting directly.
+
+Change (single variable vs EXP-24): loss `dice_focal` -> `tversky` (alpha 0.7, beta 0.3). Everything else identical (scaledmax_clean, SuPreM transfer, whole-box, crop-native 16, 128³ @1.5mm, 24k iters, seed 42). Wired as `train.py --loss tversky --tversky-alpha 0.7 --tversky-beta 0.3` (also `tversky_focal` = Tversky + focal, for a follow-up that guards small-tumor recall). Baseline to beat: lesion 0.415 raw, specificity 15%.
+
+Hypothesis (H1): penalizing false positives tightens outlines → lesion Dice rises above 0.415 AND specificity rises above 15%, WITHOUT detection collapsing below ~90% (there is recall headroom at 95%).
+Null/risk (H0): alpha 0.7 over-corrects → the model under-segments, small tumors get missed, detection drops and small-tumor Dice falls. If so, lower alpha (0.6) or switch to `tversky_focal` (keeps the focal term for small/rare lesions).
+Accept if lesion Dice or specificity improves materially with detection held; report both. The disk cache from EXP-24 (`scaledmax_clean`) is reused (loss doesn't affect preprocessing) so no cache rebuild → ~14h pure training.
+Result: to fill in.
+
+ANALYZE_CASES (2026-07-19, clean best.pt, n=40): **detection sensitivity 38/40 = 95%** (STRONG — finds almost every tumor; 2 misses = a 500mm³ non-contrast + a 1313mm³ arterial), detected-only Dice 0.437. By size: small<1cm³ 0.110 (86% det), medium 0.428 (96%), large 0.599 (100%). By phase: venous 0.582 / arterial 0.458 / non-contrast 0.252. **KEY: the model OVER-SEGMENTS small/medium tumors 3-13x** (gt256→pred1620, gt392→pred5110, gt1215→pred3743, gt1647→pred4566) and under-segments the giants — this over-painting is what caps Dice AND drives the 15% specificity (same "too much lesion" behavior on healthy scans). Note: this is the SAME over-segmentation EXP-17c appeared to "fix" — that fix was partly leakage; on clean data it persists. Clear lever: a precision-oriented loss (Tversky / Focal-Tversky penalizing false positives, the reserved EXP-18) to tighten outlines → should raise Dice AND specificity together; plus more-healthy-data for specificity. Model saved: MLflow `transfer_wholebox_scaledmax_CLEAN` [FINISHED] + archive `..._CLEAN__20260719_012104` (best.pt/last.pt).
 
 Result (2026-07-18, `cascade_eval.py`, n=40 pos / 40 neg; localizer `p128_ctx_step6000.pt` @0.747 pancreas, segmenter `wholebox_scaledmax_GOOD.pt`):
 - Sanity (PanTS_00000029): pancreas coverage 1.00, lesion coverage 1.00, lesion Dice 0.790 — overlay confirms the crop + mapping are correct.

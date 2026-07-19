@@ -29,7 +29,18 @@ def main():
     cfg = load_config(args.config)
     dp = P.data_paths(cfg)
     m = pd.read_csv(dp["manifest"])
-    pool = m[m["split"] == "train"]
+
+    # CRITICAL (Codex audit 2026-07-19): sample from the CARVED train fold (train.txt), NOT the
+    # manifest "split" column — that column marks the ImageTr/ImageTe SOURCE FOLDER, which still
+    # contains the cases later carved into val.txt. Using it leaked 266 val cases into scaledmax.
+    def read_ids(name):
+        f = Path(dp["splits_dir"]) / f"{name}.txt"
+        return {x.strip() for x in f.read_text().split() if x.strip()} if f.exists() else set()
+    train_ids, val_ids, test_ids = read_ids("train"), read_ids("val"), read_ids("test")
+    if not train_ids:
+        sys.exit("outputs/splits/train.txt not found — run scripts/create_splits.py first")
+
+    pool = m[m["case_id"].isin(train_ids)]                 # <- disjoint from val/test by construction
     pos = pool[pool["has_lesion"].astype(bool)]["case_id"]
     neg = pool[~pool["has_lesion"].astype(bool)]["case_id"]
 
@@ -39,12 +50,16 @@ def main():
     neg = neg.sample(n_neg, random_state=args.seed).tolist()
     ids = pos + neg
 
+    # hard guarantee: NOTHING here may appear in val or test
+    leak = set(ids) & (val_ids | test_ids)
+    assert not leak, f"LEAKAGE: {len(leak)} of {len(ids)} sampled cases are in val/test — aborting: {sorted(leak)[:5]}"
+
     out = Path(dp["splits_dir"]) / f"{args.name}.txt"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(ids) + "\n")
     print(f"wrote {out}")
-    print(f"  {len(ids)} cases: {n_pos} tumor / {n_neg} healthy  (vs dev_subset_clean: 95 / 50 tumor)")
-    print(f"  tumor examples: {n_pos} (a {n_pos/50:.1f}x increase over the dev subset)")
+    print(f"  {len(ids)} cases: {n_pos} tumor / {n_neg} healthy  (pool = train.txt fold, {len(train_ids)} cases)")
+    print(f"  DISJOINTNESS CHECK: overlap with val = {len(set(ids) & val_ids)}, with test = {len(set(ids) & test_ids)}  (both must be 0)")
 
 
 if __name__ == "__main__":

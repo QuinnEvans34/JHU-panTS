@@ -284,50 +284,67 @@ def main():
         cohort = man[man["case_id"].isin(ids)]["case_id"].tolist()[:args.n_audit]
         print(f"[CONTAINMENT AUDIT]  localizer only, {len(cohort)} cases from '{args.split}', "
               f"roi-from={args.roi_from} loc-thresh={args.loc_thresh} dilate={args.loc_dilate} margin={args.margin_vox}vox\n")
-        panc_cont, les_cont, worst_face, panc_fail, les_fail, oversz = [], [], [], [], [], 0
+        # A pancreas GT mask is only usable as a containment reference if it's anatomically
+        # plausible. The diagnostic (2026-07-18) found the "failures" are largely BROKEN LABELS:
+        # near-empty masks (32-46 voxels) or masks smeared across the whole scan (>90 slices in z,
+        # >90k voxels ~= >300 cm3). Score the localizer on VALID-GT cases; report broken GT separately.
+        GT_MIN_VOX, GT_MAX_VOX, GT_MAX_ZSPAN = 3000, 90000, 95
+        cont_all, cont_ok, worst_ok, fail_ok, broken, les_cont, oversz = [], [], [], [], [], [], 0
         for cid in cohort:
             d = pre({k: v for k, v in build_records(dp["manifest"], [cid])[0].items() if k in ("image", "pancreas", "lesion")})
             image = d["image"].as_tensor().float()
             label = d["label"].as_tensor().long()[0].numpy()
             box, _, oversize, _ = predict_pancreas_box(image, label)
             oversz += int(oversize)
-            pc = coverage(label == 1, box)
+            gt = label == 1
+            gtvox = int(gt.sum())
+            zc = np.nonzero(gt)[2]
+            zspan = int(zc.max() - zc.min() + 1) if zc.size else 0
+            plausible = (GT_MIN_VOX <= gtvox <= GT_MAX_VOX) and (zspan <= GT_MAX_ZSPAN)
+
+            pc = coverage(gt, box)
+            cont_all.append(pc)
             lc = coverage(label == 2, box)
-            panc_cont.append(pc)
             if not np.isnan(lc):
                 les_cont.append(lc)
-            fc = face_clearance_mm(label == 1, box)
-            if fc is not None:
-                mn = min(fc)
-                worst_face.append(mn)
-                if pc < 0.999:
-                    panc_fail.append((cid, pc, mn))
-            if (not np.isnan(lc)) and lc < 0.999:
-                les_fail.append((cid, lc))
+            if not plausible:
+                broken.append((cid, gtvox, zspan))
+                continue
+            cont_ok.append(pc)
+            fc = face_clearance_mm(gt, box)
+            mn = min(fc) if fc is not None else float("nan")
+            worst_ok.append(mn)
+            if pc < 0.999:
+                fail_ok.append((cid, pc, mn))
 
-        pc = np.array(panc_cont); wf = np.array(worst_face)
-        n = len(pc)
-        full = int(np.sum(pc >= 0.999))
-        print(f"PANCREAS containment (fraction of GT pancreas inside the box):")
-        print(f"  mean {np.nanmean(pc):.4f} | min {np.nanmin(pc):.4f} | fully contained {full}/{n} = {100*full/n:.1f}%")
-        print(f"  worst per-face clearance across cases: min {wf.min():.1f}mm | 1st pct {np.percentile(wf,1):.1f}mm | "
-              f"median {np.percentile(wf,50):.1f}mm   (negative = the box cut into the pancreas)")
+        n_all, n_ok = len(cont_all), len(cont_ok)
+        ok = np.array(cont_ok); wf = np.array(worst_ok)
+        print(f"GT-QUALITY GATE: {len(broken)}/{n_all} cases have implausible pancreas GT (empty/degenerate or "
+              f"smeared across the scan) — excluded from the localizer score. These are LABEL problems, not localizer misses.")
+        for cid, v, z in sorted(broken, key=lambda x: x[1])[:8]:
+            kind = "near-empty" if v < GT_MIN_VOX else ("over-sized" if v > GT_MAX_VOX else "spread z")
+            print(f"    {cid}: gt {v} vox, z-span {z} slices  ({kind})")
+        print(f"\nPANCREAS containment on VALID-GT cases (n={n_ok}):")
+        if n_ok:
+            full = int(np.sum(ok >= 0.999))
+            print(f"  mean {np.nanmean(ok):.4f} | min {np.nanmin(ok):.4f} | fully contained {full}/{n_ok} = {100*full/n_ok:.1f}%")
+            print(f"  worst per-face clearance: min {np.nanmin(wf):.1f}mm | 1st pct {np.nanpercentile(wf,1):.1f}mm | "
+                  f"median {np.nanpercentile(wf,50):.1f}mm   (negative = box cut into the pancreas)")
         if les_cont:
             lc = np.array(les_cont); lfull = int(np.sum(lc >= 0.999))
-            print(f"TUMOR containment (n={len(lc)} tumor cases): mean {lc.mean():.4f} | min {lc.min():.4f} | "
+            print(f"TUMOR containment (n={len(lc)}): mean {lc.mean():.4f} | min {lc.min():.4f} | "
                   f"fully contained {lfull}/{len(lc)} = {100*lfull/len(lc):.1f}%")
-        print(f"OVERSIZE boxes (> cube, would be center-cropped): {oversz}/{n}")
-        # statistical bound: rule of three — 0 failures in n -> 95% upper bound on failure rate ~= 3/n
-        fails = len(panc_fail)
-        if fails == 0:
-            print(f"\nGUARANTEE: 0/{n} pancreas-containment failures -> failure rate < {300.0/n:.2f}% (95% CI, rule of three).")
-        else:
-            need = max(0.0, -wf.min())
-            print(f"\n{fails} containment failure(s) — the box cut into the pancreas on these cases:")
-            for cid, cov, mn in sorted(panc_fail, key=lambda x: x[2])[:10]:
+        print(f"OVERSIZE boxes (> cube): {oversz}/{n_all}")
+        fails = len(fail_ok)
+        if fails == 0 and n_ok:
+            print(f"\nGUARANTEE: 0/{n_ok} valid-GT containment failures -> failure rate < {300.0/n_ok:.2f}% (95% CI, rule of three).")
+        elif fails:
+            need = max(0.0, -np.nanmin(wf))
+            print(f"\n{fails} REAL containment failure(s) (valid GT, box still missed pancreas):")
+            for cid, cov, mn in sorted(fail_ok, key=lambda x: x[2])[:10]:
                 print(f"    {cid}: {100*cov:.1f}% contained, worst face {mn:+.1f}mm")
-            print(f"  To clear the WORST case, increase the buffer by ~{need:.0f}mm "
-                  f"(= {int(np.ceil(need/args.spacing))} vox on top of the current {args.margin_vox}).")
+            print(f"  Worst valid case needs ~{need:.0f}mm more buffer (= {int(np.ceil(need/args.spacing))} vox); "
+                  f"if that number is small, the buffer fixes it; if huge, it's a mislocalization for the fail-safe.")
         return
 
     # ---- sanity: one case, save an overlay, exit ----
