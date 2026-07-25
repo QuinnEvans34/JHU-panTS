@@ -10,7 +10,28 @@ A 3D deep-learning pipeline that takes an abdominal CT scan, segments the **panc
 
 *(This table is the grader's map. Most recent week first.)*
 
-### Week 3 (current) — M3P1: Experiment Review & Model Selection · M3A2: Daily Check-Ins
+### Week 4 (current) — M4A1: Tuning, Orchestration & Deployment · M4A2: Daily Check-Ins
+
+| Assignment / rubric criterion | Deliverable | Location |
+|-----------|-------------|----------|
+| **M4A1 — full report (§1–5)** | Tuning, orchestration & deployment report | [`week4/tuning-orchestration-report.md`](week4/tuning-orchestration-report.md) |
+| §1 Hyperparameter Tuning | Optuna (Bayesian TPE) study + single-variable ablation; all runs in MLflow; final model registered | report §1 · [`scripts/tune_optuna.py`](scripts/tune_optuna.py) · [`docs/experiments.md`](docs/experiments.md) |
+| §1 — *MLflow tuning runs (image)* | `pants-level45-optuna` 15-trial run list | [`week4/img/mlflow-tuning-runs.png`](week4/img/mlflow-tuning-runs.png) |
+| §1 — *registered model (image)* | `pancreas-lesion-segmenter` v1 + provenance | [`week4/img/mlflow-registered-model.png`](week4/img/mlflow-registered-model.png) |
+| §2 Final Model Evaluation | Held-out TEST metrics (lesion Dice 0.474, pancreas 0.827, detection 96%, specificity 17%) + honest failure modes | report §2 · [`scripts/evaluate.py`](scripts/evaluate.py) · [`scripts/analyze_cases.py`](scripts/analyze_cases.py) |
+| §2 — *test visualization (image)* | Lesion Dice by tumor size & contrast phase | [`week4/img/test-by-size-phase.svg`](week4/img/test-by-size-phase.svg) |
+| §2 — *sample predictions, CV track (images)* | Clean catch + honest small-tumor miss, with CADe confidence | [`week4/img/sample-good-case.png`](week4/img/sample-good-case.png) · [`sample-small-miss.png`](week4/img/sample-small-miss.png) |
+| §3 Pipeline Orchestration | End-to-end pipeline + trigger / data-versioning / model-logging / error-handling | report §3 |
+| §3 — *pipeline diagram (image)* | Ingestion → training → eval → serving flowchart | [`week4/img/pipeline-diagram.svg`](week4/img/pipeline-diagram.svg) |
+| §4 Model Deployment | FastAPI endpoint + MLflow registry + live smoke test | report §4 · [`scripts/serve.py`](scripts/serve.py) · [`scripts/register_model.py`](scripts/register_model.py) |
+| §4 — *live endpoint (image)* | `/health` healthy-response page | [`week4/img/endpoint-health.png`](week4/img/endpoint-health.png) |
+| §5 Decisions & reflection | Architectural trade-offs / what I'd do with more time | report §5 |
+| §6 AI docs | AI context + Week 4 usage log + plan update | [`CLAUDE.md`](CLAUDE.md) · [`docs/ai-usage-log.md`](docs/ai-usage-log.md) · [`docs/implementation-plan.md`](docs/implementation-plan.md) |
+| **M4A2 — Daily Check-Ins** | Daily standup log (Mon–Fri, incl. the Week 4 technical-interview retrospective entry) | [`docs/standup-log.md`](docs/standup-log.md) |
+
+**Supporting Week 4 work:** experiment log with the headline model (EXP-24), the rejected anatomy-aware experiment (EXP-26), and the pre-registered specificity experiment (EXP-25 — cleared spec 17%→46% but rejected on the ≥90% detection floor) in [`docs/experiments.md`](docs/experiments.md) · deployment regression tests in [`tests/`](tests/) · full-points checklist in [`week4/M4A1-checklist.md`](week4/M4A1-checklist.md).
+
+### Week 3 — M3P1: Experiment Review & Model Selection · M3A2: Daily Check-Ins
 
 | Assignment | Deliverable | Location |
 |-----------|-------------|----------|
@@ -65,14 +86,16 @@ A 3D deep-learning pipeline that takes an abdominal CT scan, segments the **panc
 
 ---
 
-## Current status (Week 3 — complete)
+## Current status (Week 4 — complete)
 
 - ✅ **Data understood** — EDA built from the real 9,901-case manifest: 10.4% tumor prevalence, lesion volume spanning five orders of magnitude, extreme geometry heterogeneity (8 to 1,000+ slices).
 - ✅ **Pipeline validated** — Stage 0 overfit gate passed; the ingestion → resample → patch → model path is proven end to end.
 - ✅ **Over-prediction diagnosed and fixed** — first eval was pancreas Dice 0.72 / lesion 0.17 with only 8% specificity. A **whole-box ROI** change (feed the entire pancreas box as one cube) lifted specificity to 55% and became the winning recipe.
 - ✅ **Data is the lever (Week 3 headline)** — four recipe knobs (sampling, loss, field of view, resolution) were all nulls on tumor accuracy on the disjoint dev subset; scaling the tumor data was the only thing that moved it.
 - ✅ **Validation leakage found, fixed, and re-measured (the honest headline)** — an end-of-week adversarial code audit caught a bug in my data-scaling split builder that leaked validation cases into training, inflating an earlier 0.528 result. I fixed the root cause (splits now sampled from the carved train fold + a startup guard that aborts on any train/val overlap), retrained on a clean disjoint split, and the real held-out numbers are **lesion Dice 0.415, pancreas Dice 0.817, detection sensitivity 95%, specificity 15%** (val n=40). It did not collapse, so the data-scaling result was genuine — just smaller than the leaked figure. The candidate model for Week 4 tuning is this clean whole-box SegResNet. Full write-up in [`week3/ml-experimentation-report.md`](week3/ml-experimentation-report.md); audit in [`docs/codex-audit-week4.md`](docs/codex-audit-week4.md).
-- ✅ **Diagnosed weakness → Week-4 plan** — per-case analysis shows the model detects tumors (95%) but over-segments them, which caps Dice and drives the low specificity. Week 4 leads with a precision-oriented Tversky loss to attack that, plus more healthy training data and the autonomous localize→segment cascade.
+- ✅ **Final held-out TEST evaluation (Week 4 headline)** — the registered whole-box SegResNet+SuPreM model, scored **once** on the untouched official 901-case test set: **lesion Dice 0.474 [95% CI 0.42–0.52], pancreas Dice 0.827, detection sensitivity 96%, specificity 17%** — right against the ~0.53 published reference, on a split I did not choose. Full write-up in [`week4/tuning-orchestration-report.md`](week4/tuning-orchestration-report.md).
+- ✅ **Tuned, registered, deployed** — an Optuna (Bayesian TPE) search confirmed the hand-tuned learning rate was already near-optimal; the final model is registered in MLflow as `pancreas-lesion-segmenter` v1; and a FastAPI `/predict` endpoint serves it (live smoke-tested, ~1 s/case).
+- ✅ **Two pre-registered experiments, honestly rejected** — anatomy-aware auxiliary supervision (EXP-26) looked like a win at an intermediate checkpoint but was a null at convergence; the more-healthy-data specificity run (EXP-25) cleared specificity 17%→46% but missed the pre-set ≥90% detection floor (88%). Both rejected against bars set in advance, so the plain whole-box model stays the headline. The over-segmentation of small tumors remains the known weakness and the Week-5 / capstone lever (a milder healthy ratio + the autonomous localize→segment cascade).
 
 *Every run is logged as a formal experiment (hypothesis → decision) in [`docs/experiments.md`](docs/experiments.md).*
 
@@ -85,6 +108,7 @@ JHU-PanTS/
 ├── README.md              ← you are here (grader map)
 ├── CLAUDE.md              project state/decisions for AI agents
 ├── configs/               level45.yaml (the locked recipe as config)
+├── week4/                 M4A1 deliverables: tuning/orchestration/deployment report + img/ (diagram, MLflow, eval, samples, endpoint)
 ├── week3/                 M3P1 deliverables: experiment report, slide deck, diagrams
 ├── week2/                 M2A1/M2P2 deliverables: report, EDA notebook, diagrams, run sheet
 ├── docs/                  graded docs (standup, audience notes, plan, schedule, ai-usage)
