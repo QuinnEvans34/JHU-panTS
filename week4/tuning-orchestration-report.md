@@ -88,6 +88,8 @@ predictions with confidence *(2–3 in `week4/img/` — TODO)*. The threshold sw
 (0.30→0.90), i.e. the false positives are high-confidence and near the organ, so a probability cutoff
 cannot prune them — specificity is a data problem, not a thresholding one.
 
+**This "data problem" diagnosis was tested, not just asserted (EXP-25, pre-registered).** After the headline model I retrained the identical whole-box recipe on the full realistic prevalence (706 tumor + all 6,494 healthy, ~1:9, vs the headline's balanced 1:1) and scored it on the same frozen test cohorts. Specificity rose **17% → 46%**, confirming that low specificity is a movable property of the training distribution rather than a fixed flaw. It was rejected as a *headline* model, however, because detection fell **96% → 88%** — below the pre-registered ≥90% floor — with the cost concentrated in small tumors (small-tumor detection 56%), which a CADe tool must not miss. So the headline stays the balanced 0.474 / 96%-detection model, and the specificity lever carries into Week 5 as an operating-point question (a milder 1:3 ratio + a lower detection threshold, which already holds 40% specificity, to seek a point that beats the baseline on both axes). Full pre-registration, result table, and decision in `docs/experiments.md` (EXP-25).
+
 **Limitations / failure modes (honest, from `analyze_cases.py` on the test set).**
 - **Tumor size is the dominant driver of outline quality:** lesion Dice by size — small <1 cm³ **0.067**
   (n=27, 78% detected), medium 1–8 cm³ **0.512** (100% detected), large >8 cm³ **0.610** (100% detected).
