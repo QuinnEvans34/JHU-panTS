@@ -27,10 +27,26 @@ labels:
   background: 0
   pancreas: 1
   lesion: 2
+# label_mode selects the OUTPUT class space + target composer:
+#   pancreas_lesion : 3 classes (bg / pancreas / lesion) — the locked Track-A base.
+#   anatomy5        : 5 classes (bg / head / body / tail / lesion) — EXP-26 anatomy-aware.
+#                     Pancreas is the UNION head∪body∪tail; the metric/primary loss collapse
+#                     {head,body,tail}->pancreas so headline numbers stay 3-class comparable.
+# Set anatomy5 via `train.py --label-mode anatomy5` (also flips out_channels->5 and the loss).
 label_mode: pancreas_lesion
 source_masks:
   pancreas: [pancreas.nii.gz]                 # -> 1
   lesion: [pancreatic_lesion.nii.gz]          # -> 2 (overrides pancreas)
+  head: [pancreas_head.nii.gz]                # anatomy5 -> 1
+  body: [pancreas_body.nii.gz]                # anatomy5 -> 2
+  tail: [pancreas_tail.nii.gz]                # anatomy5 -> 3
+
+# pancreas_resolver: how the PANCREAS ORGAN mask is built (DECOUPLED from label_mode so the
+# 3-class control can also use the union). Both EXP-26 arms use hbt_union.
+#   combined  : use the single combined pancreas.nii.gz mask (legacy; ~6-9% are empty/corrupt).
+#   hbt_union : pancreas = head ∪ body ∪ tail (robust to a bad combined mask; no lesion leak).
+# Override per run: train.py --pancreas-resolver hbt_union
+pancreas_resolver: combined
 
 # ---- Splits ----
 split:
@@ -103,6 +119,12 @@ loss:
   lambda_focal: 1.0
   lambda_ce: 1.0                                 # DiceCE only
   # class_weights: [1, 1, 3]                     # optional [bg, pancreas, lesion]; uncomment to up-weight lesion if it collapses
+  # ---- EXP-26 anatomy-aware auxiliary loss (only used when label_mode=anatomy5) ----
+  # lambda_anat weights the auxiliary head/body/tail supervision on top of the primary
+  # (collapsed bg/pancreas/lesion) loss. 26A control = 0.0; 26B treatment = 0.3.
+  # The PRIMARY term is a deliberate probability-based reformulation (soft Dice + focal on
+  # the collapsed 3-class softmax probs) — NOT MONAI DiceFocal; see docs/spec-exp26-anatomy-aware.md.
+  lambda_anat: 0.0
 
 # ---- Optimizer & schedule ----
 optimizer:

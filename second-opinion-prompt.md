@@ -20,7 +20,7 @@
 - **3D handling:** orientation→RAS, resample spacing (~1.5×1.5×2 mm), HU window [-100,300]→[0,1], `CropForegroundd`, patch-based training (~96×128×128) with `RandCropByPosNegLabeld` at ~70% lesion-positive (extreme class imbalance), `DiceCELoss` (or DiceFocal), **AdamW** + cosine/warmup, InstanceNorm (not BatchNorm), deep supervision.
 - **Inference:** full-volume sliding-window (Gaussian, ~0.5 overlap), TTA, post-processing (largest-CC for pancreas, small-blob removal for false positives).
 - **Metrics:** pancreas Dice and lesion Dice reported **separately**, plus patient-wise sensitivity / specificity / AUC (CADe). SOTA on PanTS is ~0.53 tumor Dice, ~80% patient sensitivity, ~90% specificity — so lesion Dice ~0.35–0.50 is considered a respectable target.
-- **Tracking:** MLflow. **UI:** Streamlit (tri-planar slice viewer + a rotatable 3D mesh of the segmentation via marching cubes).
+- **Tracking:** MLflow. **UI:** React + NiiVue (tri-planar slice viewer + a rotatable 3D mesh of the segmentation via marching cubes), styled with Tailwind/shadcn and driven by precomputed static case assets.
 
 ---
 

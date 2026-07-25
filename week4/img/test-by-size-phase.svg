@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 380" font-family="Helvetica, Arial, sans-serif">
+  <style>
+    .t{font-size:15px;font-weight:bold;fill:#2b3a55}
+    .a{font-size:11px;fill:#5a6b7b}
+    .v{font-size:11px;font-weight:bold;fill:#1f2733}
+    .n{font-size:10px;fill:#8a97a5}
+    .grid{stroke:#e3e8ee;stroke-width:1}
+    .axis{stroke:#9aa7b5;stroke-width:1.2}
+  </style>
+  <text x="410" y="24" text-anchor="middle" class="t" font-size="16">Test-set lesion Dice by tumor size and contrast phase (n=151)</text>
+
+  <!-- LEFT: by size -->
+  <text x="40" y="52" class="t">By tumor size</text>
+  <!-- y axis 0..0.7, plot area x 40..360, y 70..300 (Dice 0 at 300, 0.7 at 70) -->
+  <line x1="70" y1="300" x2="360" y2="300" class="axis"/>
+  <line x1="70" y1="70" x2="70" y2="300" class="axis"/>
+  <!-- gridlines at 0.2,0.4,0.6 -->
+  <line x1="70" y1="234" x2="360" y2="234" class="grid"/><text x="64" y="238" text-anchor="end" class="n">0.2</text>
+  <line x1="70" y1="168" x2="360" y2="168" class="grid"/><text x="64" y="172" text-anchor="end" class="n">0.4</text>
+  <line x1="70" y1="102" x2="360" y2="102" class="grid"/><text x="64" y="106" text-anchor="end" class="n">0.6</text>
+  <!-- bars: small 0.067, medium 0.512, large 0.610 ; scale 0.7->230px -->
+  <rect x="95"  y="278" width="60" height="22"  fill="#c0504d"/>
+  <text x="125" y="272" text-anchor="middle" class="v">0.067</text>
+  <text x="125" y="316" text-anchor="middle" class="a">small &lt;1cm³</text><text x="125" y="330" text-anchor="middle" class="n">n=27 · 78% det</text>
+  <rect x="185" y="132" width="60" height="168" fill="#4f81bd"/>
+  <text x="215" y="126" text-anchor="middle" class="v">0.512</text>
+  <text x="215" y="316" text-anchor="middle" class="a">medium 1–8</text><text x="215" y="330" text-anchor="middle" class="n">n=60 · 100%</text>
+  <rect x="275" y="100" width="60" height="200" fill="#4f81bd"/>
+  <text x="305" y="94"  text-anchor="middle" class="v">0.610</text>
+  <text x="305" y="316" text-anchor="middle" class="a">large &gt;8</text><text x="305" y="330" text-anchor="middle" class="n">n=64 · 100%</text>
+  <text x="215" y="356" text-anchor="middle" class="n">Size is the dominant driver — small tumors are detected but over-segmented.</text>
+
+  <!-- RIGHT: by phase -->
+  <text x="440" y="52" class="t">By contrast phase</text>
+  <line x1="470" y1="300" x2="800" y2="300" class="axis"/>
+  <line x1="470" y1="70" x2="470" y2="300" class="axis"/>
+  <line x1="470" y1="234" x2="800" y2="234" class="grid"/><text x="464" y="238" text-anchor="end" class="n">0.2</text>
+  <line x1="470" y1="168" x2="800" y2="168" class="grid"/><text x="464" y="172" text-anchor="end" class="n">0.4</text>
+  <line x1="470" y1="102" x2="800" y2="102" class="grid"/><text x="464" y="106" text-anchor="end" class="n">0.6</text>
+  <!-- Arterial 0.601, Delay 0.404, Non-contrast 0.547, Venous 0.435 -->
+  <rect x="492" y="103" width="52" height="197" fill="#9bbb59"/>
+  <text x="518" y="97"  text-anchor="middle" class="v">0.601</text>
+  <text x="518" y="316" text-anchor="middle" class="a">Arterial</text><text x="518" y="330" text-anchor="middle" class="n">n=27</text>
+  <rect x="566" y="167" width="52" height="133" fill="#9bbb59"/>
+  <text x="592" y="161" text-anchor="middle" class="v">0.404</text>
+  <text x="592" y="316" text-anchor="middle" class="a">Delay</text><text x="592" y="330" text-anchor="middle" class="n">n=3</text>
+  <rect x="640" y="120" width="52" height="180" fill="#9bbb59"/>
+  <text x="666" y="114" text-anchor="middle" class="v">0.547</text>
+  <text x="666" y="316" text-anchor="middle" class="a">Non-contrast</text><text x="666" y="330" text-anchor="middle" class="n">n=13 · 100%</text>
+  <rect x="714" y="157" width="52" height="143" fill="#9bbb59"/>
+  <text x="740" y="151" text-anchor="middle" class="v">0.435</text>
+  <text x="740" y="316" text-anchor="middle" class="a">Venous</text><text x="740" y="330" text-anchor="middle" class="n">n=108</text>
+  <text x="635" y="356" text-anchor="middle" class="n">Phase is secondary + size-confounded (Venous carries most small tumors).</text>
+</svg>

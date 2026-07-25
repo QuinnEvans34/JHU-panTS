@@ -1,7 +1,19 @@
-"""Training helpers: device, optimizer, warmup+cosine schedule, checkpoints."""
+"""Training helpers used by scripts/train.py — the plumbing around the training loop.
+
+Five pieces, each a small function the trainer calls once at setup (or per checkpoint):
+  * get_device        pick the compute device — Apple-Silicon GPU ("mps"), else CUDA, else CPU.
+  * build_optimizer   AdamW over ALL model params (transfer LR vs scratch LR from the config).
+  * build_scheduler   the learning-rate schedule: linear warmup, then cosine decay to a floor.
+  * save_checkpoint   ATOMIC write (temp file + os.replace) of weights+optimizer+scheduler+step+meta.
+  * load_checkpoint   restore a checkpoint to resume; strict mode (EXP-26) fails closed on any
+                      missing/mismatched optimizer or scheduler state so a resume can't change the run.
+
+The model's learned weights + this optimizer/scheduler state are what a checkpoint (.pt) contains.
+"""
 from __future__ import annotations
 
 import math
+import os
 from pathlib import Path
 
 import torch
@@ -38,7 +50,12 @@ def build_scheduler(optimizer, warmup_iters: int, total_iters: int, min_lr_ratio
 
 
 def save_checkpoint(path, model, optimizer, scheduler, step, best, extra=None):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    """ATOMIC save: write to a temp file then os.replace() into place. A Ctrl-C (or crash)
+    mid-write can only ever corrupt the throwaway temp file, never the real checkpoint — so a
+    resume always finds a complete, valid last.pt/best.pt (the safe-to-interrupt guarantee)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
     torch.save({
         "model": model.state_dict(),
         "optimizer": optimizer.state_dict(),
@@ -46,23 +63,49 @@ def save_checkpoint(path, model, optimizer, scheduler, step, best, extra=None):
         "step": step,
         "best": best,
         "extra": extra or {},
-    }, str(path))
+    }, str(tmp))
+    os.replace(str(tmp), str(path))   # atomic on the same filesystem
 
 
-def load_checkpoint(path, model, optimizer=None, scheduler=None, map_location="cpu"):
+def load_checkpoint(path, model, optimizer=None, scheduler=None, map_location="cpu",
+                    strict=False, expected_step=None):
+    """Restore a checkpoint. With strict=False (default) optimizer/scheduler restore failures fall
+    back to a fresh optimizer (fine for casual recovery). With strict=True (EXP-26) any missing or
+    unloadable optimizer/scheduler state — or a scheduler step that disagrees with the checkpoint
+    step — RAISES, because a fresh optimizer or mis-stepped schedule after a pause would change the
+    training trajectory and break the lambda-only comparison."""
     ck = torch.load(str(path), map_location=map_location, weights_only=False)
     model.load_state_dict(ck["model"])
-    # The model weights are the important part; optimizer/scheduler state is a nice-to-have.
-    # If they don't line up (e.g. a checkpoint from an older optimizer layout), warn and keep
-    # going with a fresh optimizer rather than hard-crashing the resume. AdamW re-warms fast.
-    if optimizer and ck.get("optimizer"):
-        try:
-            optimizer.load_state_dict(ck["optimizer"])
-        except (ValueError, KeyError) as e:
-            print(f"[resume] optimizer state not loaded ({e}); continuing with a fresh optimizer")
-    if scheduler and ck.get("scheduler"):
-        try:
-            scheduler.load_state_dict(ck["scheduler"])
-        except (ValueError, KeyError) as e:
-            print(f"[resume] scheduler state not loaded ({e}); continuing")
-    return ck.get("step", 0), ck.get("best", None)
+    step = ck.get("step", 0)
+
+    if optimizer is not None:
+        osd = ck.get("optimizer")
+        if osd:
+            try:
+                optimizer.load_state_dict(osd)
+            except (ValueError, KeyError) as e:
+                if strict:
+                    raise RuntimeError(f"[resume] strict: optimizer state failed to load ({e})")
+                print(f"[resume] optimizer state not loaded ({e}); continuing with a fresh optimizer")
+        elif strict:
+            raise RuntimeError("[resume] strict: checkpoint has no optimizer state")
+
+    if scheduler is not None:
+        ssd = ck.get("scheduler")
+        if ssd:
+            try:
+                scheduler.load_state_dict(ssd)
+            except (ValueError, KeyError) as e:
+                if strict:
+                    raise RuntimeError(f"[resume] strict: scheduler state failed to load ({e})")
+                print(f"[resume] scheduler state not loaded ({e}); continuing")
+            else:
+                sched_step = ssd.get("last_epoch")
+                if strict and sched_step is not None and int(sched_step) != int(step):
+                    raise RuntimeError(f"[resume] strict: scheduler step {sched_step} != checkpoint step {step}")
+        elif strict:
+            raise RuntimeError("[resume] strict: checkpoint has no scheduler state")
+
+    if strict and expected_step is not None and int(step) != int(expected_step):
+        raise RuntimeError(f"[resume] strict: checkpoint step {step} != expected {expected_step}")
+    return step, ck.get("best", None)

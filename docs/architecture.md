@@ -152,7 +152,7 @@ Full-volume **sliding-window inference** → lesion probability map → threshol
 
 ## 10. Front-end (business layer)
 
-**React + NiiVue viewer** (full design in [`ui.md`](ui.md); Streamlit dropped — too prototype-looking). Clean React app with **NiiVue** (WebGL medical viewer) rendering the CT + pancreas/lesion overlays in tri-planar **and 3D**, a **CADe summary** panel (possible lesion · location · volume · confidence), and **mask export (NIfTI)** for the accept/edit/reject step in 3D Slicer. **Static-first architecture:** the pipeline pre-computes predictions (NIfTI + `results.json`) and the UI just reads them — no backend needed for the demo; a small FastAPI service for live inference is a capstone stretch. Built in **Week 5** after the model works, so UI effort can't block the ML core.
+**React + NiiVue viewer** (full design in [`ui.md`](ui.md)). Clean React app with **NiiVue** (WebGL medical viewer) rendering the CT + pancreas/lesion overlays in tri-planar **and 3D**, a **CADe summary** panel (possible lesion · location · volume · confidence), and **mask export (NIfTI)** for the accept/edit/reject step in 3D Slicer. **Static-first architecture:** the pipeline pre-computes predictions (NIfTI + `results.json`) and the UI just reads them — no backend needed for the demo; a small FastAPI service for live inference is a capstone stretch. Built in **Week 5** after the model works, so UI effort can't block the ML core.
 
 ---
 
@@ -186,7 +186,7 @@ Never commit raw data · split by **patient**, never slice · full-volume slidin
 
 ## 14. Course vs capstone scope
 
-This project is built once and harvested twice. The **5-week course** delivers: Level 4.5 single-stage segmentation + CADe wrapper, transfer-vs-scratch comparison, MLflow tracking, Streamlit UI (slices + 3D mesh). The **10-week capstone** extends the *same* codebase: the **localize→segment ROI cascade**, scaling to the full 9,000 cases, Level 5 multi-structure, and possibly the tumor-type classification research experiment. Every design decision here is made so the capstone is a config/module addition, not a rewrite.
+This project is built once and harvested twice. The **5-week course** delivers: Level 4.5 single-stage segmentation + CADe wrapper, transfer-vs-scratch comparison, MLflow tracking, and a **React + NiiVue clinical review UI** with tri-planar slices, layered 3D meshes, a CADe summary, and mask export. The **10-week capstone** extends the *same* codebase: the **localize→segment ROI cascade**, scaling to the full 9,000 cases, Level 5 multi-structure, and possibly the tumor-type classification research experiment. Every design decision here is made so the capstone is a config/module addition, not a rewrite.
 
 ## 15. Open questions / next planning topics
 

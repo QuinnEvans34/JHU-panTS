@@ -10,6 +10,7 @@ General training on the dev subset:
 Logs to MLflow and checkpoints to outputs/checkpoints/. Resumable via --resume.
 """
 import argparse
+import signal
 import sys
 import time
 from pathlib import Path
@@ -21,18 +22,12 @@ from src.utils.config import load_config, get
 from src.utils.seed import set_seed
 from src.utils import paths as P
 from src.data.dataset import get_dataset
-from src.models.segresnet import build_model, load_suprem, set_encoder_requires_grad
+from src.models.segresnet import build_model, load_suprem, load_init_weights, set_encoder_requires_grad, sha256_file
 from src.training.losses import build_loss
 from src.training.metrics import DiceEvaluator
 from src.training import trainer as T
 
-from monai.data import DataLoader
-
-
-def cycle(loader):
-    while True:
-        for batch in loader:
-            yield batch
+from monai.data import DataLoader, list_data_collate
 
 
 def main():
@@ -59,6 +54,15 @@ def main():
     ap.add_argument("--val-positive", action="store_true",
                     help="validate on tumor-positive cases only (meaningful lesion Dice)")
     ap.add_argument("--resume", default=None)
+    ap.add_argument("--stop-after-step", type=int, default=None,
+                    help="operational stop: end the loop at this global step while keeping --max-iters "
+                         "as the LR-scheduler horizon (so you can pause a long run and continue later "
+                         "with the SAME schedule). e.g. --max-iters 24000 --stop-after-step 12000")
+    ap.add_argument("--strict-resume", dest="strict_resume", action="store_true", default=None,
+                    help="fail closed on resume: require matching recipe metadata + optimizer/scheduler "
+                         "state (default ON for anatomy5, OFF otherwise)")
+    ap.add_argument("--no-strict-resume", dest="strict_resume", action="store_false",
+                    help="allow lenient resume (fresh optimizer fallback) even for anatomy5")
     ap.add_argument("--patch", type=int, default=None,
                     help="override cube patch size for training AND sliding-window eval (e.g. 128)")
     ap.add_argument("--num-samples", type=int, default=None,
@@ -77,6 +81,21 @@ def main():
                     help="EXP-18: override the loss. tversky/tversky_focal penalize false positives to fight over-segmentation")
     ap.add_argument("--tversky-alpha", type=float, default=None, help="Tversky FALSE-POSITIVE weight (raise to fight over-segmentation, e.g. 0.7)")
     ap.add_argument("--tversky-beta", type=float, default=None, help="Tversky false-negative weight (e.g. 0.3)")
+    # ---- EXP-26 anatomy-aware ----
+    ap.add_argument("--label-mode", choices=["pancreas_lesion", "anatomy5"], default=None,
+                    help="anatomy5 = 5-class model (bg/head/body/tail/lesion) with the collapsed "
+                         "primary + head/body/tail auxiliary loss")
+    ap.add_argument("--pancreas-resolver", choices=["combined", "hbt_union"], default=None,
+                    help="how the pancreas organ mask is built (decoupled from label-mode)")
+    ap.add_argument("--lambda-anat", type=float, default=None,
+                    help="EXP-26 auxiliary weight: 26A control = 0.0, 26B treatment = 0.3")
+    ap.add_argument("--init-weights", default=None,
+                    help="load this frozen init checkpoint (scripts/make_init_checkpoint.py) so both "
+                         "arms start byte-identical; records its SHA-256 in the run metadata")
+    ap.add_argument("--train-ids", default=None, help="explicit frozen training cohort id file (bypasses --split)")
+    ap.add_argument("--val-ids", default=None, help="explicit frozen validation cohort id file (bypasses --val-split/--val-positive)")
+    ap.add_argument("--report-ids", default=None, help="frozen report cohort id file (hashed into metadata; not trained on)")
+    ap.add_argument("--neg-ids", default=None, help="frozen tumor-free report cohort id file (hashed into metadata)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -113,16 +132,56 @@ def main():
     if args.tversky_beta is not None:
         cfg.setdefault("loss", {})["tversky_beta"] = args.tversky_beta
         print(f"[override] tversky beta (false-negative weight) -> {args.tversky_beta}")
+    # ---- EXP-26 anatomy-aware wiring ----
+    if args.label_mode:
+        cfg["label_mode"] = args.label_mode
+        if args.label_mode == "anatomy5":
+            cfg["model"]["out_channels"] = 5
+            cfg.setdefault("loss", {})["name"] = "anatomy_aware"   # build_loss also auto-detects label_mode
+            # anatomy5's pancreas is head∪body∪tail; crop to that organ box, no lesion leak.
+            cfg["preprocessing"]["roi_source"] = cfg["preprocessing"].get("roi_source", "pancreas")
+        print(f"[override] label_mode -> {args.label_mode} (out_channels={cfg['model']['out_channels']})")
+    if args.pancreas_resolver:
+        cfg["pancreas_resolver"] = args.pancreas_resolver
+        print(f"[override] pancreas_resolver -> {args.pancreas_resolver}")
+    if args.lambda_anat is not None:
+        cfg.setdefault("loss", {})["lambda_anat"] = args.lambda_anat
+        print(f"[override] lambda_anat -> {args.lambda_anat}  ({'26A control' if args.lambda_anat == 0 else '26B treatment' if args.lambda_anat == 0.3 else 'custom'})")
     set_seed(int(get(cfg, "seed", 42)))
     device = T.get_device(cfg)
     dp = P.data_paths(cfg)
+
+    # EXP-26 anatomy5 must run with the shared init + all four frozen cohorts (Codex safeguard #3):
+    # missing files must ABORT, never silently become empty sets or a random init.
+    if cfg.get("label_mode") == "anatomy5":
+        _required = {"--init-weights": args.init_weights, "--train-ids": args.train_ids,
+                     "--val-ids": args.val_ids, "--report-ids": args.report_ids, "--neg-ids": args.neg_ids}
+        _missing = [k for k, v in _required.items() if not v]
+        assert not _missing, f"anatomy5 REQUIRES {_missing} (shared init + frozen cohorts) — refusing to run."
+        for k, v in _required.items():
+            assert Path(v).exists(), f"anatomy5 {k} file not found: {v}"
+        print("[anatomy5] shared init + 4 frozen cohort files present  OK")
 
     # SAFETY GUARD (Codex audit 2026-07-19): a TRAINING split must never intersect val/test.
     # This is the assertion that would have caught the make_scaled_split leakage before it ever trained.
     def _read_ids(name):
         f = Path(dp["splits_dir"]) / f"{name}.txt"
         return {x.strip() for x in f.read_text().split() if x.strip()} if f.exists() else set()
-    if args.split not in ("val", "test"):
+    def _read_ids_file(path):
+        return {x.strip() for x in Path(path).read_text().split() if x.strip()} if path and Path(path).exists() else set()
+
+    if args.train_ids:
+        # EXP-26 frozen-cohort guard: the explicit training cohort must be disjoint from EVERY
+        # evaluated cohort (val20 / report40 / report40_neg) AND the official test split.
+        _tr = _read_ids_file(args.train_ids)
+        _others = {"val-ids": _read_ids_file(args.val_ids), "report-ids": _read_ids_file(args.report_ids),
+                   "neg-ids": _read_ids_file(args.neg_ids), "official-test": _read_ids("test")}
+        for _name, _s in _others.items():
+            _leak = _tr & _s
+            assert not _leak, (f"LEAKAGE ABORT: --train-ids shares {len(_leak)} case(s) with {_name} "
+                               f"(e.g. {sorted(_leak)[:5]}).")
+        print(f"[cohort-check] --train-ids ({len(_tr)} cases) disjoint from val/report/neg/test  OK")
+    elif args.split not in ("val", "test"):
         _train_ids = _read_ids(args.split)
         _leak = _train_ids & (_read_ids("val") | _read_ids("test"))
         assert not _leak, (f"LEAKAGE ABORT: training split '{args.split}' shares {len(_leak)} case(s) with "
@@ -148,20 +207,58 @@ def main():
         print(f"[cache] mode={cache_mode}")
 
     # --- data ---
+    seed = int(get(cfg, "seed", 42))
     override_ids = None
-    if args.positive:
+    split_label = args.split
+    if args.train_ids:
+        override_ids = [x.strip() for x in Path(args.train_ids).read_text().split() if x.strip()]
+        split_label = f"ids:{Path(args.train_ids).stem}"
+        print(f"[cohort] training on {len(override_ids)} cases from {args.train_ids}")
+    elif args.positive:
         import pandas as pd
         m = pd.read_csv(dp["manifest"])
         override_ids = m[(m["split"] == "train") & (m["has_lesion"].astype(bool))]["case_id"].tolist()
         print(f"[positive] {len(override_ids)} tumor-positive train cases available")
     ds = get_dataset(cfg, args.split, train=True, cache=cache_mode,
                      limit=args.overfit, ids=override_ids)
-    loader = DataLoader(ds, batch_size=int(get(cfg, "training.batch_size", 1)),
-                        shuffle=True, num_workers=0)
-    print(f"device={device}  split={args.split}  cases={len(ds)}  total_iters={total_iters}")
+    n_cases = len(ds)
+
+    # DETERMINISTIC, RESUMABLE data pipeline. The (case index, augmentation) at global step S is a
+    # pure function of (seed, S): each epoch's shuffle is seeded by (seed, epoch), and the MONAI
+    # random-transform stream is reseeded per step by (seed, S). Consequences:
+    #   * a Ctrl-C + --resume reproduces the SAME trajectory as an uninterrupted run (step S always
+    #     uses the same case + same augmentation), so interruptions are scientifically invisible;
+    #   * both EXP-26 arms see identical data per step regardless of how each is interrupted, so the
+    #     ONLY difference between them stays lambda_anat.
+    _perm_cache = {}
+    _SEED_MOD = 2_147_483_647
+
+    def _epoch_perm(e):
+        if e not in _perm_cache:
+            g = torch.Generator().manual_seed((seed * 1_000_003 + e) % _SEED_MOD)
+            _perm_cache[e] = torch.randperm(n_cases, generator=g).tolist()
+        return _perm_cache[e]
+
+    def get_batch(step):
+        e, pos = divmod(step, n_cases)
+        idx = _epoch_perm(e)[pos]
+        try:
+            ds.transform.set_random_state(seed=(seed * 1_000_003 + step) % _SEED_MOD)
+        except Exception as ex:
+            if cfg.get("label_mode") == "anatomy5":
+                raise RuntimeError(f"anatomy5 requires a seedable transform RNG; set_random_state failed: {ex}")
+        return list_data_collate([ds[idx]])
+
+    print(f"device={device}  split={split_label}  cases={n_cases}  total_iters={total_iters}")
 
     val_loader = None
-    if args.val_limit > 0:
+    if args.val_ids:
+        # explicit frozen validation cohort (bypasses --val-split/--val-positive/--val-limit)
+        val_ids = [x.strip() for x in Path(args.val_ids).read_text().split() if x.strip()]
+        val_ds = get_dataset(cfg, args.val_split, train=False, cache=cache_mode, ids=val_ids)
+        val_loader = DataLoader(val_ds, batch_size=1, shuffle=False, num_workers=0)
+        print(f"validation: {len(val_ds)} cases from {args.val_ids} every {args.val_every} iters (sliding-window)")
+    elif args.val_limit > 0:
         val_ids = None
         if args.val_positive:
             import pandas as pd
@@ -179,12 +276,20 @@ def main():
         use_pretrained = False
     if args.transfer:
         use_pretrained = True
-    model = build_model(cfg).to(device)
-    if use_pretrained and dp["pretrained_weights"].exists():
-        load_suprem(model, dp["pretrained_weights"])
-    elif use_pretrained:
-        print(f"[warn] pretrained weights missing at {dp['pretrained_weights']} — training from scratch")
-        use_pretrained = False
+    model = build_model(cfg)
+    init_sha = None
+    if args.init_weights:
+        # EXP-26: both arms load ONE frozen init file -> byte-identical weights at step 0.
+        init_sha = load_init_weights(model, args.init_weights)
+        use_pretrained = True   # this init is SuPreM-derived
+        print(f"[init] loaded frozen init {args.init_weights}  sha256={init_sha}")
+    model = model.to(device)
+    if not args.init_weights:
+        if use_pretrained and dp["pretrained_weights"].exists():
+            load_suprem(model, dp["pretrained_weights"])
+        elif use_pretrained:
+            print(f"[warn] pretrained weights missing at {dp['pretrained_weights']} — training from scratch")
+            use_pretrained = False
 
     # optional encoder freeze for transfer warm-up
     freeze_iters = 0
@@ -200,33 +305,106 @@ def main():
         min_lr_ratio = 1.0  # flat LR (no decay) so it can fully memorize the overfit set
     scheduler = T.build_scheduler(optimizer, warmup, total_iters, min_lr_ratio)
     loss_fn = build_loss(cfg)
-    evaluator = DiceEvaluator(num_classes=int(get(cfg, "model.out_channels", 3)))
+    is_anat = cfg.get("label_mode") == "anatomy5"
+    evaluator = DiceEvaluator(num_classes=int(get(cfg, "model.out_channels", 3)),
+                              collapse=("anatomy5" if is_anat else None))
 
-    start = 0
-    best = -1.0
-    best_panc = 0.0
-    best_val = -1.0
-    if args.resume:
-        start, best = T.load_checkpoint(args.resume, model, optimizer, scheduler, map_location=device)
-        if freeze_iters and start >= freeze_iters:
-            set_encoder_requires_grad(model, True)
-        print(f"resumed from {args.resume} at step {start}")
-
-    # --- run identity (computed ONCE, used for BOTH MLflow and the on-disk archive) ---
-    # This is deliberately independent of MLflow: EXP-12 was lost because it ran without
-    # MLflow AND its best.pt was overwritten by later runs. The per-run archive below now
-    # preserves every keeper checkpoint even when MLflow is unavailable.
+    # --- run identity + checkpoint metadata (built BEFORE resume so we can verify the checkpoint
+    #     we resume actually belongs to THIS recipe — Codex resume-identity fix) ---
     import datetime
     loss_cfg = cfg.get("loss", {})
     samp_cfg = cfg.get("sampling", {})
     patch_sz = (samp_cfg.get("patch_size") or [96])[0]
     box_tag = "_wholebox" if get(cfg, "preprocessing.whole_box", False) else ""
+    lam_tag = f"_lam{loss_cfg.get('lambda_anat', 0.0)}" if is_anat else ""
     run_name = args.run_name or (
         f"{'transfer' if use_pretrained else 'scratch'}_{loss_cfg.get('name', 'dice_ce')}"
         f"_bg{int(bool(loss_cfg.get('include_background', False)))}"
-        f"_p{patch_sz}{box_tag}_{samp_cfg.get('strategy', 'posneg')}_{total_iters}i"
+        f"_p{patch_sz}{box_tag}{lam_tag}_{samp_cfg.get('strategy', 'posneg')}_{total_iters}i"
     )
     run_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    def _hash(path):
+        return sha256_file(path) if path and Path(path).exists() else None
+    out_ch = int(get(cfg, "model.out_channels", 3))
+    class_names = (["bg", "head", "body", "tail", "lesion"] if is_anat
+                   else ["bg", "pancreas", "lesion"][:out_ch])
+    run_meta = {
+        "label_mode": cfg.get("label_mode", "pancreas_lesion"),
+        "pancreas_resolver": cfg.get("pancreas_resolver", "combined") if not is_anat else "hbt_union",
+        "out_channels": out_ch,
+        "class_names": class_names,
+        "collapse_map": ({"1": "pancreas", "2": "pancreas", "3": "pancreas", "4": "lesion"} if is_anat else None),
+        # full spatial recipe — eval MUST match these or the numbers are invalid (Codex fix #3)
+        "patch_size": list(get(cfg, "sampling.patch_size", [96, 96, 96])),
+        "sw_roi_size": list(get(cfg, "inference.sw_roi_size", [96, 96, 96])),
+        "target_spacing": list(get(cfg, "preprocessing.target_spacing", [1.5, 1.5, 1.5])),
+        "crop_native_margin_vox": get(cfg, "preprocessing.crop_native_margin_vox"),
+        "crop_to_pancreas_margin_mm": get(cfg, "preprocessing.crop_to_pancreas_margin_mm"),
+        "roi_source": get(cfg, "preprocessing.roi_source", "union"),
+        "whole_box": bool(get(cfg, "preprocessing.whole_box", False)),
+        "lambda_anat": float(loss_cfg.get("lambda_anat", 0.0)),
+        "loss_name": loss_cfg.get("name"),
+        "seed": seed,
+        "total_iters": total_iters,        # LR-scheduler horizon (Codex: verify on resume)
+        "val_every": args.val_every,
+        "init_weights": args.init_weights,
+        "init_sha256": init_sha,
+        "cohort_sha256": {
+            "train": _hash(args.train_ids), "val20": _hash(args.val_ids),
+            "report40": _hash(args.report_ids), "report40_neg": _hash(args.neg_ids),
+        },
+    }
+    if is_anat:
+        print(f"[meta] anatomy5  out_channels={out_ch}  lambda_anat={run_meta['lambda_anat']}  "
+              f"init_sha={str(init_sha)[:12]}  cohort_sha(train)={str(run_meta['cohort_sha256']['train'])[:12]}")
+
+    # per-arm ACTIVE checkpoint dir for anatomy5 so 26A and 26B never share best.pt/last.pt
+    # (prevents one arm from clobbering — or being resumed from — the other's checkpoint).
+    ckpt_dir = dp["output_dir"] / "checkpoints" / get(cfg, "mlflow.experiment", "run")
+    if is_anat:
+        ckpt_dir = ckpt_dir / run_name
+
+    # --- resume (identity-verified; strict optimizer/scheduler for anatomy5) ---
+    strict_resume = is_anat if args.strict_resume is None else args.strict_resume
+    start = 0
+    best = -1.0
+    best_panc = 0.0
+    best_val = -1.0
+    if args.resume:
+        # Verify the checkpoint belongs to THIS recipe BEFORE restoring anything, so you can never
+        # accidentally resume 26A from a 26B checkpoint, a different horizon, cohort, init, or crop.
+        _ck = torch.load(str(args.resume), map_location="cpu", weights_only=False)
+        _meta = _ck.get("extra", {}) if isinstance(_ck, dict) else {}
+        _keys = ["label_mode", "lambda_anat", "init_sha256", "cohort_sha256", "seed",
+                 "patch_size", "sw_roi_size", "target_spacing", "crop_native_margin_vox",
+                 "crop_to_pancreas_margin_mm", "whole_box", "roi_source", "loss_name",
+                 "total_iters", "val_every"]
+        _mism = {k: (_meta.get(k), run_meta.get(k)) for k in _keys if str(_meta.get(k)) != str(run_meta.get(k))}
+        if strict_resume and (not _meta or _mism):
+            _lines = "\n".join(f"    {k}: checkpoint={a!r}  now={b!r}" for k, (a, b) in _mism.items())
+            raise SystemExit("RESUME ABORT: checkpoint recipe does not match the current command:\n"
+                             + (_lines or "    (checkpoint has no metadata)")
+                             + "\nResume with the EXACT original command + --resume, or fix the mismatch.")
+        start, best = T.load_checkpoint(args.resume, model, optimizer, scheduler,
+                                        map_location=device, strict=strict_resume)
+        # last.pt now stores best_val directly (self-contained); still cross-check the sibling best.pt.
+        if best is not None and best >= 0:
+            best_val = float(best)
+        sib = Path(args.resume).parent / "best.pt"
+        if sib.exists() and sib.resolve() != Path(args.resume).resolve():
+            try:
+                bv = torch.load(str(sib), map_location="cpu", weights_only=False).get("best")
+                if bv is not None and float(bv) > best_val:
+                    best_val = float(bv)
+            except Exception as e:
+                print(f"[resume] could not read sibling best.pt ({e}); using loaded best_val")
+        if not (start < total_iters):
+            raise SystemExit(f"RESUME ABORT: checkpoint step {start} >= total_iters {total_iters} "
+                             f"(already complete — nothing to resume).")
+        if freeze_iters and start >= freeze_iters:
+            set_encoder_requires_grad(model, True)
+        print(f"resumed from {args.resume} at step {start}; best_val restored to {best_val:.4f}")
 
     # --- MLflow ---
     ml = None
@@ -264,7 +442,7 @@ def main():
     else:
         print("[MLflow] skipped (--no-mlflow). Run still recorded in the on-disk archive + run_ledger.csv.")
 
-    ckpt_dir = dp["output_dir"] / "checkpoints" / get(cfg, "mlflow.experiment", "run")
+    # ckpt_dir was set above (per-arm for anatomy5); do NOT reassign here.
 
     # --- per-run checkpoint archive (the fix for the EXP-12 loss) ---
     # Every run still writes the shared best.pt/last.pt (so existing eval/resume runbooks
@@ -290,16 +468,35 @@ def main():
     )
     print(f"[archive] keeper checkpoints for this run -> {run_dir}")
 
-    it = cycle(loader)
+    # Graceful pause: first Ctrl-C finishes the current step, saves last.pt atomically, and exits
+    # cleanly so --resume picks up exactly where it stopped. A second Ctrl-C force-quits.
+    _stop = {"flag": False}
+
+    def _on_sigint(signum, frame):
+        if _stop["flag"]:
+            raise KeyboardInterrupt
+        _stop["flag"] = True
+        print("\n[SIGINT] finishing current step, saving last.pt, then exiting cleanly. "
+              "Press Ctrl-C again to force-quit.")
+    signal.signal(signal.SIGINT, _on_sigint)
+
+    # Operational stop: end the loop early while keeping total_iters as the LR-schedule horizon,
+    # so a long run can be split across sessions and continued later with the SAME cosine schedule.
+    stop_at = min(total_iters, args.stop_after_step) if args.stop_after_step else total_iters
+    if stop_at < total_iters:
+        print(f"[stop-after] loop stops at step {stop_at}; LR-schedule horizon stays {total_iters}. "
+              f"Resume with the same command to continue toward {total_iters}.")
+    paused = False
+
     model.train()
     t0 = time.time()
     running = 0.0
-    for step in range(start, total_iters):
+    for step in range(start, stop_at):
         if freeze_iters and step == freeze_iters:
             set_encoder_requires_grad(model, True)
             print(f"[transfer] encoder unfrozen at step {step}")
 
-        batch = next(it)
+        batch = get_batch(step)
         img = batch["image"].to(device)
         lab = batch["label"].to(device)
         optimizer.zero_grad(set_to_none=True)
@@ -323,23 +520,32 @@ def main():
             print(f"step {step+1}/{total_iters}  loss {avg:.4f}  "
                   f"dice[panc {d.get('pancreas',0):.3f} | lesion {les_str}]  "
                   f"lr {lr:.2e}  {rate:.2f} it/s")
+            comp = getattr(loss_fn, "last", None)
+            if comp:
+                # smoke-scale diagnostic: watch primary vs aux magnitudes early (Codex asked for this
+                # BEFORE committing to lambda_anat=0.3). If aux >> primary in the first ~100 steps, revisit.
+                print(f"    [loss] primary {comp.get('primary', 0):.4f} "
+                      f"(dice {comp.get('dice', 0):.4f} focal {comp.get('focal', 0):.4f})  "
+                      f"aux {comp.get('aux', 0):.4f}")
             if ml:
                 metrics = {"train/loss": avg, "train/dice_pancreas": d.get("pancreas", 0), "lr": lr}
                 if les is not None:
                     metrics["train/dice_lesion"] = les
+                if comp:
+                    metrics.update({f"train/loss_{k}": v for k, v in comp.items()})
                 ml.log_metrics(metrics, step=step + 1)
             best_panc = max(best_panc, d.get("pancreas", 0.0))
             if val_loader is None and d["mean"] > best:  # train-dice best only when not validating
                 best = d["mean"]
-                T.save_checkpoint(ckpt_dir / "best.pt", model, optimizer, scheduler, step + 1, best)
-                T.save_checkpoint(run_dir / "best.pt", model, optimizer, scheduler, step + 1, best)  # immutable archive copy
+                T.save_checkpoint(ckpt_dir / "best.pt", model, optimizer, scheduler, step + 1, best, extra=run_meta)
+                T.save_checkpoint(run_dir / "best.pt", model, optimizer, scheduler, step + 1, best, extra=run_meta)  # immutable archive copy
 
         if val_loader is not None and (step + 1) % args.val_every == 0:
             from src.inference.sliding_window import validate
             vd = validate(model, val_loader, evaluator, cfg, device)
             vp, vl = vd.get("pancreas", 0.0), vd.get("lesion")
             vl_str = f"{vl:.3f}" if vl is not None else " n/a "
-            print(f"  [val @ {step+1}] dice  pancreas {vp:.3f} | lesion {vl_str}  (n={args.val_limit})")
+            print(f"  [val @ {step+1}] dice  pancreas {vp:.3f} | lesion {vl_str}  (n={len(val_loader.dataset)})")
             if ml:
                 vm = {"val/dice_pancreas": vp}
                 if vl is not None:
@@ -348,27 +554,55 @@ def main():
             score = vl if vl is not None else vd.get("mean", 0.0)
             if score > best_val:
                 best_val = score
-                T.save_checkpoint(ckpt_dir / "best.pt", model, optimizer, scheduler, step + 1, best_val)
-                T.save_checkpoint(run_dir / "best.pt", model, optimizer, scheduler, step + 1, best_val)  # immutable archive copy
+                T.save_checkpoint(ckpt_dir / "best.pt", model, optimizer, scheduler, step + 1, best_val, extra=run_meta)
+                T.save_checkpoint(run_dir / "best.pt", model, optimizer, scheduler, step + 1, best_val, extra=run_meta)  # immutable archive copy
                 print(f"  [val] new best (lesion {score:.3f}) -> saved best.pt (+ archive)")
 
+        # last.pt stores best_val (the val keeper) so a resume is self-contained (Codex fix #4)
+        keeper = best_val if val_loader is not None else best
         if (step + 1) % args.ckpt_every == 0:
-            T.save_checkpoint(ckpt_dir / "last.pt", model, optimizer, scheduler, step + 1, best)
+            T.save_checkpoint(ckpt_dir / "last.pt", model, optimizer, scheduler, step + 1, keeper, extra=run_meta)
 
-    T.save_checkpoint(ckpt_dir / "last.pt", model, optimizer, scheduler, total_iters, best)
-    T.save_checkpoint(run_dir / "last.pt", model, optimizer, scheduler, total_iters, best)  # immutable archive copy
+        if _stop["flag"]:
+            # save at the EXACT stopping step (not total_iters) so --resume continues correctly
+            T.save_checkpoint(ckpt_dir / "last.pt", model, optimizer, scheduler, step + 1, keeper, extra=run_meta)
+            T.save_checkpoint(run_dir / "last.pt", model, optimizer, scheduler, step + 1, keeper, extra=run_meta)
+            paused = True
+            end_step = step + 1
+            print(f"[SIGINT] paused + saved last.pt at step {end_step}. Resume with the SAME command + "
+                  f"--resume {ckpt_dir / 'last.pt'}")
+            break
+    else:
+        end_step = stop_at   # loop finished naturally (no break)
+
+    # Only stamp the checkpoint as "reached end_step" when NOT paused. A paused run already saved
+    # its true step above; overwriting here with a higher step was the bug that made resume a no-op.
+    if not paused:
+        keeper = best_val if val_loader is not None else best
+        T.save_checkpoint(ckpt_dir / "last.pt", model, optimizer, scheduler, end_step, keeper, extra=run_meta)
+        T.save_checkpoint(run_dir / "last.pt", model, optimizer, scheduler, end_step, keeper, extra=run_meta)
+
+    status = "paused" if paused else ("stopped" if end_step < total_iters else "complete")
 
     # persistent, MLflow-independent record of every run (one row per run, never overwritten)
     ledger = ckpt_dir / "run_ledger.csv"
     new_ledger = not ledger.exists()
     with open(ledger, "a") as f:
         if new_ledger:
-            f.write("timestamp,run_name,split,mode,total_iters,best_val_lesion,archive_dir\n")
+            f.write("timestamp,run_name,split,mode,end_step,total_iters,status,best_val_lesion,archive_dir\n")
         bv = f"{best_val:.4f}" if best_val >= 0 else ""
         f.write(f"{run_stamp},{run_name},{args.split},"
-                f"{'transfer' if use_pretrained else 'scratch'},{total_iters},{bv},{run_dir.name}\n")
+                f"{'transfer' if use_pretrained else 'scratch'},{end_step},{total_iters},{status},{bv},{run_dir.name}\n")
 
-    print(f"\nDone. shared checkpoints in {ckpt_dir}")
+    print(f"\n{status.upper()} at step {end_step}/{total_iters}. shared checkpoints in {ckpt_dir}")
+    if end_step < total_iters:
+        _rp = ckpt_dir / "last.pt"
+        if paused:
+            print(f"[continue] Ctrl-C pause: rerun the SAME command + --resume {_rp}")
+        else:
+            print(f"[continue] reached the --stop-after-step limit. To train toward {total_iters}: "
+                  f"rerun with --resume {_rp} and REMOVE --stop-after-step (or set it to {total_iters}). "
+                  f"Rerunning with the same --stop-after-step {args.stop_after_step} would do 0 steps.")
     print(f"[archive] keeper copies safe in {run_dir}  (best.pt + last.pt + run_info.txt)")
     print(f"[ledger]  run appended to {ledger}")
     if best_val >= 0:

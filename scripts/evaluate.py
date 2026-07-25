@@ -26,10 +26,11 @@ from src.utils.config import load_config, get
 from src.utils.seed import set_seed
 from src.utils import paths as P
 from src.data.dataset import get_dataset
-from src.models.segresnet import build_model
+from src.models.segresnet import build_model, sha256_file
 from src.training import trainer as T
 from src.inference.sliding_window import predict_volume, predict_probs_tta
 from src.inference.postprocess import postprocess
+from src.inference.collapse import is_anatomy5, collapse_probs_np, collapse_label_np
 
 from monai.data import DataLoader
 
@@ -90,9 +91,25 @@ def main():
                     help="test-time augmentation: average predictions over flips (no retrain); 8 views")
     ap.add_argument("--roi-source", choices=["union", "pancreas"], default=None,
                     help="ROI crop source; MUST match training (union=legacy, pancreas=organ only)")
+    ap.add_argument("--label-mode", choices=["pancreas_lesion", "anatomy5"], default=None,
+                    help="anatomy5 = 5-class model; predictions are collapsed to bg/pancreas/lesion "
+                         "for scoring. MUST match how the checkpoint was trained.")
+    ap.add_argument("--pos-ids", default=None,
+                    help="score EXACTLY these tumor-positive cases (frozen cohort, e.g. "
+                         "configs/cohorts/exp26/report40.txt) instead of the first --n-pos val positives")
+    ap.add_argument("--neg-ids", default=None,
+                    help="score EXACTLY these tumor-free cases (frozen cohort, e.g. report40_neg.txt)")
+    ap.add_argument("--per-case-csv", default=None,
+                    help="write per-case pancreas/lesion Dice here (for the paired 26B-26A bootstrap)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
+    if args.label_mode:
+        cfg["label_mode"] = args.label_mode
+        if args.label_mode == "anatomy5":
+            cfg["model"]["out_channels"] = 5
+            cfg["preprocessing"]["roi_source"] = cfg["preprocessing"].get("roi_source", "pancreas")
+        print(f"[override] label_mode -> {args.label_mode} (out_channels={cfg['model']['out_channels']})")
     if args.roi:
         cfg["sampling"]["patch_size"] = [args.roi, args.roi, args.roi]
         cfg["inference"]["sw_roi_size"] = [args.roi, args.roi, args.roi]
@@ -120,6 +137,41 @@ def main():
     min_mm3 = (args.min_lesion_mm3 if args.min_lesion_mm3 is not None
                else float(get(cfg, "inference.postprocess.lesion_min_volume_mm3", 50)))
 
+    # --- enforce checkpoint metadata BEFORE building anything (Codex fix #3) ---
+    _blob = torch.load(args.ckpt, map_location="cpu", weights_only=False)
+    meta = _blob.get("extra", {}) if isinstance(_blob, dict) else {}
+    if cfg.get("label_mode") == "anatomy5" and not meta:
+        raise SystemExit(f"ABORT: {args.ckpt} has no embedded metadata — cannot verify anatomy5 recipe.")
+    if meta:
+        checks = {
+            "label_mode": (meta.get("label_mode"), cfg.get("label_mode", "pancreas_lesion")),
+            "out_channels": (meta.get("out_channels"), int(get(cfg, "model.out_channels", 3))),
+            "target_spacing": (meta.get("target_spacing"), list(get(cfg, "preprocessing.target_spacing", [1.5, 1.5, 1.5]))),
+            "sw_roi_size": (meta.get("sw_roi_size"), list(get(cfg, "inference.sw_roi_size", [96, 96, 96]))),
+            "whole_box": (meta.get("whole_box"), bool(get(cfg, "preprocessing.whole_box", False))),
+            "roi_source": (meta.get("roi_source"), get(cfg, "preprocessing.roi_source", "union")),
+            "crop_native_margin_vox": (meta.get("crop_native_margin_vox"), get(cfg, "preprocessing.crop_native_margin_vox")),
+            "crop_to_pancreas_margin_mm": (meta.get("crop_to_pancreas_margin_mm"), get(cfg, "preprocessing.crop_to_pancreas_margin_mm")),
+        }
+        mism = {k: v for k, v in checks.items() if str(v[0]) != str(v[1])}
+        if mism:
+            lines = "\n".join(f"    {k}: checkpoint={a!r}  eval-cfg={b!r}" for k, (a, b) in mism.items())
+            raise SystemExit(f"ABORT: eval recipe disagrees with the checkpoint metadata:\n{lines}\n"
+                             f"Re-run with matching flags (see the trained run's run_info.txt).")
+        print(f"[meta] eval recipe matches checkpoint metadata ({len(checks)} fields)  OK")
+        # cohort-hash verification for the frozen paired design
+        ch = meta.get("cohort_sha256", {})
+        if cfg.get("label_mode") == "anatomy5":
+            if not (args.pos_ids and args.neg_ids):
+                raise SystemExit("ABORT: anatomy5 eval requires --pos-ids report40.txt --neg-ids report40_neg.txt")
+            for flag, path, key in (("--pos-ids", args.pos_ids, "report40"), ("--neg-ids", args.neg_ids, "report40_neg")):
+                want = ch.get(key)
+                got = sha256_file(path)
+                if want and want != got:
+                    raise SystemExit(f"ABORT: {flag} sha256 {got[:12]} != checkpoint {key} {str(want)[:12]} "
+                                     f"(scoring a different cohort than trained/registered).")
+            print(f"[meta] frozen cohort hashes verified against checkpoint  OK")
+
     model = build_model(cfg).to(device)
     step, _ = T.load_checkpoint(args.ckpt, model, map_location=device)
     model.eval()
@@ -127,20 +179,39 @@ def main():
     print(f"loaded {args.ckpt} (step {step}) on {device}   min-lesion={min_mm3:.0f} mm3"
           f"{'   [TTA: 8-view flips]' if use_tta else ''}\n")
 
+    anat = is_anatomy5(cfg)
+
     def infer_probs(image):
-        """Softmax probabilities (C,H,W,D) for one volume, with or without flip TTA."""
+        """Softmax probabilities (C,H,W,D) for one volume, with or without flip TTA.
+        For the 5-class anatomy model, collapse to 3-class (bg/pancreas/lesion) so all the
+        downstream lesion logic (probs[2], pred==2) is unchanged."""
         if use_tta:
-            return predict_probs_tta(model, image, cfg, device)
-        with torch.no_grad():
-            return softmax_np(predict_volume(model, image, cfg, device))
+            probs = predict_probs_tta(model, image, cfg, device)
+        else:
+            with torch.no_grad():
+                probs = softmax_np(predict_volume(model, image, cfg, device))
+        return collapse_probs_np(probs) if anat else probs
 
     man = pd.read_csv(dp["manifest"])
-    vset = {x.strip() for x in (dp["splits_dir"] / f"{args.split}.txt").read_text().split() if x.strip()}
-    vdf = man[man["case_id"].isin(vset)]
-    pos = vdf[vdf["has_lesion"].astype(bool)]["case_id"].tolist()[:args.n_pos]
-    neg = vdf[~vdf["has_lesion"].astype(bool)]["case_id"].tolist()[:args.n_neg]
-    print(f"scoring {len(pos)} tumor-positive + {len(neg)} tumor-free {args.split} cases "
-          f"(sliding-window, takes a bit)...")
+
+    def _read_ids(path):
+        return [x.strip() for x in Path(path).read_text().split() if x.strip()]
+
+    if args.pos_ids or args.neg_ids:
+        # score the EXACT frozen cohort (order preserved) — required for the paired 26B-26A comparison
+        pos = _read_ids(args.pos_ids) if args.pos_ids else []
+        neg = _read_ids(args.neg_ids) if args.neg_ids else []
+        print(f"scoring FROZEN cohort: {len(pos)} positive"
+              + (f" ({args.pos_ids})" if args.pos_ids else "")
+              + f" + {len(neg)} tumor-free"
+              + (f" ({args.neg_ids})" if args.neg_ids else "") + " (sliding-window)...")
+    else:
+        vset = {x.strip() for x in (dp["splits_dir"] / f"{args.split}.txt").read_text().split() if x.strip()}
+        vdf = man[man["case_id"].isin(vset)]
+        pos = vdf[vdf["has_lesion"].astype(bool)]["case_id"].tolist()[:args.n_pos]
+        neg = vdf[~vdf["has_lesion"].astype(bool)]["case_id"].tolist()[:args.n_neg]
+        print(f"scoring {len(pos)} tumor-positive + {len(neg)} tumor-free {args.split} cases "
+              f"(sliding-window, takes a bit)...")
 
     thresholds = [float(x) for x in args.thresholds.split(",") if x.strip()] if args.sweep else []
     within = args.lesion_within_pancreas_mm
@@ -149,18 +220,26 @@ def main():
     sweep_neg = {t: 0 for t in thresholds}
 
     # --- tumor-positive: pancreas + lesion Dice, raw vs cleaned ---
-    p_d, l_raw, l_pp = [], [], []
+    p_d, l_raw, l_pp, case_ids = [], [], [], []
     for b in DataLoader(get_dataset(cfg, args.split, train=False, cache=False, ids=pos),
                         batch_size=1, num_workers=0):
         probs = infer_probs(b["image"].to(device))       # (C,H,W,D), computed once (TTA-aware)
         pred = probs.argmax(0)
         gt = b["label"][0, 0].cpu().numpy()
+        if anat:
+            gt = collapse_label_np(gt, "anatomy5")     # 5-class GT -> bg/pancreas/lesion (explicit mode)
+        cid = b.get("case_id", ["?"])
+        case_ids.append(cid[0] if isinstance(cid, (list, tuple)) else str(cid))
         p_d.append(dice(pred == 1, gt == 1))
         l_raw.append(dice(pred == 2, gt == 2))
         l_pp.append(dice(postprocess(pred, spacing, lesion_min_mm3=min_mm3,
                                      lesion_within_pancreas_mm=within) == 2, gt == 2))
         for t in thresholds:
             sweep_pos[t].append(dice(label_from_probs(probs, t) == 2, gt == 2))
+    if args.per_case_csv:
+        pd.DataFrame({"case_id": case_ids, "pancreas_dice": p_d,
+                      "lesion_raw": l_raw, "lesion_cleaned": l_pp}).to_csv(args.per_case_csv, index=False)
+        print(f"[per-case] wrote {args.per_case_csv}  (for the paired 26B-26A bootstrap)")
     n_excl = int(np.isnan(l_raw).sum())
     print(f"\n[TUMOR-POSITIVE cases, n={len(pos)}]"
           + (f"  ({n_excl} excluded: lesion empty after preprocessing)" if n_excl else ""))

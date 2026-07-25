@@ -2,7 +2,7 @@
 
 **Living doc.** The front-end a user actually touches. Framing: radiologist / imaging-annotator **annotation-assist** + **CADe** presentation ("there could be a tumor here"). Not a diagnostic device — a human accepts / edits / rejects.
 
-> **Stack decision (2026-07-01):** **React + NiiVue** (dropped Streamlit — too prototype-looking). Build in **Week 5**, after the model works, from *saved predictions* — so UI effort can never sink the ML core.
+> **Stack decision (2026-07-01):** **React + NiiVue** for a polished, purpose-built medical-imaging experience. Build in **Week 5**, after the model works, from *saved predictions* — so UI effort can never sink the ML core.
 
 ---
 

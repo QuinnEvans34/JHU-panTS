@@ -1,4 +1,11 @@
-"""Global seeding for reproducible runs (Python / NumPy / torch / MPS)."""
+"""Global seeding for reproducible runs (Python / NumPy / torch / MPS).
+
+Called once at the top of every run (seed 42). Reproducibility is not just tidiness here — the
+whole experiment method is single-variable comparisons (change one flag, hold everything else
+fixed), which only works if two runs with the same seed see the same weight init, data order, and
+augmentations. Combined with the deterministic per-step data pipeline in train.py, this is what lets
+26A and 26B differ by exactly one knob.
+"""
 from __future__ import annotations
 
 import os

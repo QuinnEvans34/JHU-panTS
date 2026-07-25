@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.utils.config import load_config
 from src.utils import paths as P
 

@@ -28,13 +28,13 @@ Never commit raw data · split by patient not slice · full-volume sliding-windo
 - **2nd-opinion refinements (adopted):** match SuPreM's input normalization; test wider HU window vs `[-100,300]`; harder negatives near pancreas; add NSD + per-case CC lesion sensitivity, `ignore_empty`; stitch sliding-window output on CPU (MPS memory); treat SuPreM repo as checkpoint-source-only (old deps). **Anatomy-context ablation** (add a few neighbor structures) is high-value: PanTS shows +10pp tumor Dice from richer anatomy labels.
 - **Metrics:** report pancreas & lesion Dice separately; headline = patient-wise sensitivity + specificity (CADe). SOTA reference: tumor Dice ~0.53, P-sens ~80%, spec ~90% → lesion Dice ~0.35–0.50 is a respectable target.
 - **Training recipe (LOCKED, 2026-07-01):** Track A starting recipe in `docs/training.md` §0 — SegResNet (init_filters=16, GroupNorm, match SuPreM), spacing 1.5³, HU [-100,300]→[0,1], ROI 96³, RandCropByPosNegLabel num_samples=4 pos:neg 2:1, DiceCELoss, AdamW wd 1e-5, LR 2e-4 scratch / 1e-4 transfer (freeze encoder 2-3 ep), warmup 2ep→cosine, fp32 on MPS, seed 42, 1 epoch=250 iters, val every 5 ep, best-by-lesion-Dice. Stage 0 overfit gate → Stage 1 pancreas → Stage 2 L4.5 → Stage 3 lesion-focus → Stage 4 sliding-window eval. Confirm SuPreM's exact config/spacing/normalization at code time.
-- **UI (LOCKED, 2026-07-01):** **React + NiiVue** (WebGL NIfTI viewer) + Tailwind/shadcn — NOT Streamlit (Quinn dislikes the look). **Static-first:** pipeline pre-computes predictions (NIfTI + `results.json`); UI reads saved files, no backend for the demo. Live FastAPI inference = capstone stretch. Build in **Week 5** after the model works; `scripts/peek_case.py` PNGs are the fallback. Design in `docs/ui.md`.
+- **UI (LOCKED, 2026-07-01):** **React + NiiVue** (WebGL NIfTI viewer) + Tailwind/shadcn. **Static-first:** pipeline pre-computes predictions (NIfTI + `results.json`); UI reads saved files, no backend for the demo. Live FastAPI inference = capstone stretch. Build in **Week 5** after the model works; `scripts/peek_case.py` PNGs are the fallback. Design in `docs/ui.md`.
 
 ## Design docs (the plan)
 - `docs/architecture.md` — master design doc + index (scope ladder, 3D handling, model, transfer learning, metrics, capstone scope).
 - `docs/training.md` — model/norm/deep-supervision, loss, AdamW+schedule, sampling, ROI cascade, training-time, checkpoint/resume.
 - `docs/experiment-tracking.md` — MLflow (required): local setup, what to log, scratch-vs-transfer comparison.
-- `docs/ui.md` — Streamlit: CADe summary + 3D mesh (marching cubes) + tri-planar viewer + mask export.
+- `docs/ui.md` — React + NiiVue clinical review experience: CADe summary + 3D mesh (marching cubes) + tri-planar viewer + mask export.
 - `docs/data-pipeline.md` — **finalized against real files** (on-disk layout, manifest schema, label remapping per level, splits, dev subset).
 
 ## Current state (as of 2026-06-30, Week 1)
