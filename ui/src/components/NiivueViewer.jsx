@@ -123,37 +123,44 @@ export default function NiivueViewer({
           nv.updateGLVolume()
         } else {
           clearMeshes(nv)
-          const volumes = [{
+          // 3D shows the marching-cubes SURFACE MESHES (pancreas + lesion) exported
+          // per case, with the CT rendered faintly behind them for context. The meshes
+          // are world-aligned (mm) via the CT affine, so they land in the right place.
+          await nv.loadVolumes([{
             url: `${BASE}/${ctPath}`,
             colormap: 'gray',
             opacity: ctOpacity,
-          }]
+          }])
 
+          const meshFiles = caseData.files.mesh || {}
+          const meshLayers = []
           sources.forEach((source) => {
-            const maskPath = caseData.files[source]
-            if (maskPath) {
-              volumes.push({
-                url: `${BASE}/${maskPath}`,
-                colormap: 'warm',
-                opacity: overlayOpacity,
-                cal_min: 0,
-                cal_max: 2,
+            const colors = SOURCE_COLORS[source]
+            const pancreasMesh = meshFiles[`pancreas_${source}`]
+            const lesionMesh = meshFiles[`lesion_${source}`]
+            // Pancreas semi-transparent so a lesion inside it stays visible; lesion solid.
+            if (showPancreas && pancreasMesh) {
+              meshLayers.push({
+                url: `${BASE}/${pancreasMesh}`,
+                rgba255: [colors.pancreas[0], colors.pancreas[1], colors.pancreas[2], 150],
+              })
+            }
+            if (showLesion && lesionMesh) {
+              meshLayers.push({
+                url: `${BASE}/${lesionMesh}`,
+                rgba255: [colors.lesion[0], colors.lesion[1], colors.lesion[2], 255],
               })
             }
           })
+          if (meshLayers.length) {
+            await nv.loadMeshes(meshLayers)
+          }
 
-          await nv.loadVolumes(volumes)
-          sources.forEach((source, sourceIndex) => {
-            const volume = nv.volumes[sourceIndex + 1]
-            if (!volume) return
-            volume.setColormapLabel(labelColormap(source, showPancreas, showLesion))
-            nv.setOpacity(sourceIndex + 1, overlayOpacity)
-          })
           nv.setSliceType(nv.sliceTypeRender)
           nv.setRenderAzimuthElevation(120, 15)
           nv.setOpacity(0, ctOpacity)
-          // Cut only the CT context. Pancreas and lesion overlays remain fully
-          // visible, and the clipping surface itself stays transparent.
+          // Cut only the CT context; the surface meshes stay whole, and the
+          // clipping surface itself stays transparent.
           nv.setClipPlaneColor([0, 0, 0, 0])
           nv.setClipPlane(clip?.enabled
             ? [clip.depth, clip.azimuth, clip.elevation]

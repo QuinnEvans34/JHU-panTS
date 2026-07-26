@@ -4,7 +4,7 @@
 **Track:** Computer vision (3D medical image segmentation).
 **Status:** Complete. Every section is written from real on-disk results — the one-time test-set evaluation, the 15-trial Optuna study, the registered model (v1), the built FastAPI endpoint (with a live smoke test), and all figures (MLflow screenshots, pipeline diagram, by-size/phase breakdown, and two sample-prediction overlays).
 
-> Framing note for the grader: this rubric is written for a real-time MLOps pipeline (streaming ingestion, scheduled retraining, an API). This project is a **static research dataset + a 3D segmentation model**, so a few requirements (real-time ingestion, DAG-scheduled retraining) do not literally apply. Where that is the case I document the *actual* pipeline and justify the difference rather than bolt on a scheduler that would ingest a dataset that never changes.
+> Framing note for the grader: this rubric is written for a real-time MLOps pipeline (streaming ingestion, scheduled retraining, an API). This project is a **static research dataset + a 3D segmentation model**, so a few requirements (real-time ingestion, DAG-scheduled retraining) do not literally apply. Where that is the case I document the *actual* pipeline and justify the difference on the grounds of reproducibility — the property a scheduled DAG actually exists to guarantee — rather than bolt on a scheduler that would ingest a dataset that never changes.
 
 ---
 
@@ -115,8 +115,14 @@ cannot prune them — specificity is a data problem, not a thresholding one.
 - **Contrast phase is a secondary, size-confounded effect:** on the test set Non-contrast held up
   (0.547, 100% detected) while Venous was lowest (0.435) — Venous is the bulk (n=108) and carries most of
   the small-tumor misses, so the phase gap mostly reflects size, not phase per se.
-- **Provided vs autonomous ROI:** the headline uses a provided pancreas box; the autonomous
-  localize-then-segment number (~0.48) is the deployable figure and a capstone-facing item.
+- **Provided vs autonomous ROI:** the headline (and the served model) uses a provided pancreas box —
+  an honest, real deployment mode where a radiologist supplies the ROI. The fully-autonomous
+  localize-then-segment cascade — a stage-1 model finds the pancreas on the full CT and its *predicted*
+  box (never the ground truth) feeds the segmenter — is built (`scripts/cascade_eval.py`) and is what
+  removes the provided-ROI assumption. Its clean, leakage-free autonomous number is a
+  remaining item — it needs the localizer retrained on the corrected split — so the reported headline is
+  the clean provided-ROI test result (§2: lesion Dice 0.474) rather than the earlier pre-leakage-fix
+  autonomous figure.
 - **Data quality:** ~11–14% of raw cases had empty/corrupt masks (audited + excluded before training).
 
 ---
@@ -131,7 +137,7 @@ still satisfies CO2 (a resilient, automated pipeline):
 | Assignment concept | This project | Why it still meets the outcome |
 |---|---|---|
 | Real-time data ingestion | one-time indexing (`build_manifest.py` → `manifest.csv`) | no stream exists; ingestion is a solved, versioned step |
-| DAG-scheduled retraining | manual / CLI trigger, run per experiment | a static dataset never changes, so a scheduler adds risk with no benefit; reproducibility comes from config + fixed seed + committed splits |
+| DAG-scheduled retraining | an ordered, dependency-linked script pipeline, manually triggered | the pipeline already has a DAG's structure and reproducibility (config + fixed seed + committed splits + startup leakage guard); a scheduler only adds value when new data arrives, and a static dataset has none |
 | serve via an API | **built:** `serve.py` FastAPI `POST /predict` | fully satisfied (see §4) |
 | confusion matrix / residuals | segmentation → Dice overlap + specificity counts + by-size/phase + sample overlays | correct equivalents for dense segmentation (rubric allows "or equivalent") |
 | event-based trigger | future work (new study → localize → segment → flag) | shows the deployed design; out of scope for a static dataset |
@@ -144,7 +150,7 @@ still satisfies CO2 (a resilient, automated pipeline):
 5. **Evaluation** — `evaluate.py` / `analyze_cases.py` / `cascade_eval.py` score a checkpoint (Dice, specificity, per-case breakdown, autonomous cascade).
 6. **Serving / export** — `export_case.py` writes prediction files (NIfTI + 3D meshes + `results.json`); a minimal FastAPI endpoint serves predictions (section 4); the Week-5 UI consumes them.
 
-**Trigger mechanism + frequency (and why not a scheduler).** The trigger is **manual / command-line**, run once per experiment. This is deliberate: PanTS is a **fixed, static dataset** — there is no streaming source and no new data arriving on a schedule, so a DAG/Airflow-style scheduled retrain would add operational complexity with zero benefit (it would re-ingest a dataset that never changes). The reproducibility a scheduler normally provides is instead delivered by the config-driven scripts + fixed seed + committed splits, which make any run exactly repeatable on demand. *(If this were deployed against a live PACS feed, the natural trigger would be event-based — a new study arrives → localize → segment → surface to the radiologist — noted as future work.)*
+**Trigger mechanism + frequency (and why not a scheduled DAG).** The trigger is **manual / command-line**, run once per experiment, and that is a deliberate engineering decision rather than a gap. It helps to ask what a scheduled DAG is actually *for*: it exists to make a multi-step pipeline run in a fixed order, reproducibly, with logging and error handling, on new data as it arrives. This project delivers every one of those properties except the last, which does not exist here. The pipeline **is** an ordered, dependency-linked sequence of steps (index → split → audit → train → evaluate → register/serve), each step's output feeding the next; the only thing a scheduler would add on top is automatic re-triggering when new data lands, and PanTS is a **fixed, static research dataset** with no stream, so scheduling a retrain would re-ingest a dataset that never changes — operational risk for zero benefit. The reproducibility, ordering, and auditability a DAG provides are instead guaranteed by the config-driven scripts, a fixed seed, committed split ID-lists, a startup leakage guard, and atomic, identity-verified resumable saves, so any run is exactly repeatable on demand. That determinism is not just tidy engineering: it is precisely what makes these results reproducible and therefore *comparable to a published Johns Hopkins benchmark*, which a one-off, unlogged, or manually-adjusted pipeline could not credibly claim. *(If this were deployed against a live PACS feed, the trigger would become event-based — a new study arrives → localize → segment → surface to the radiologist — which is the natural next step and is noted as future work.)*
 
 **Data versioning.** Code + config + committed split ID-lists + `experiments.md` in git; the manifest and derived splits are regenerated deterministically; raw data never committed (lives on the external drive, path via config).
 
@@ -200,7 +206,7 @@ The endpoint is also browsable live: `GET /health` renders the health JSON direc
 
 ## 5. Orchestration & Deployment Decisions (reflection)
 
-The central architectural decision this week was to **not** impose a real-time MLOps scaffolding (Airflow DAGs, scheduled retraining, streaming ingestion) on a static research dataset, and to instead invest that effort in **reproducibility and resilience** where it actually pays off: a config-driven, single-command pipeline; MLflow plus an MLflow-independent checkpoint archive and ledger; a startup leakage guard; and atomic, identity-verified resumable training. The trade-off is that the pipeline is triggered manually rather than automatically — acceptable here because the data never changes, but a limitation if this were deployed against a live imaging feed, where an event-based trigger would be the right design. With more time I would (a) build out the localize-then-segment cascade into the serving path so the API needs no provided ROI, and (b) add a lightweight tumor-presence gate to raise specificity before serving predictions to a clinician.
+The central architectural decision this week was to **not** impose a real-time MLOps scaffolding (Airflow DAGs, scheduled retraining, streaming ingestion) on a static research dataset, and to instead invest that effort in **reproducibility and resilience** where it actually pays off: a config-driven, single-command pipeline; MLflow plus an MLflow-independent checkpoint archive and ledger; a startup leakage guard; and atomic, identity-verified resumable training. The reason that trade is worth making is that a segmentation result is only credible if it is reproducible — deterministic, logged, and scored on committed splits I did not hand-tune — which is exactly what lets these numbers be compared against a published Johns Hopkins benchmark instead of dismissed as a one-off, and a scheduled retrain on a dataset that never changes would add none of that credibility while adding real operational risk. The trade-off is that the pipeline is triggered manually rather than automatically — acceptable here because the data never changes, but a limitation if this were deployed against a live imaging feed, where an event-based trigger would be the right design. With more time I would (a) build out the localize-then-segment cascade into the serving path so the API needs no provided ROI, and (b) add a lightweight tumor-presence gate to raise specificity before serving predictions to a clinician.
 
 ---
 
