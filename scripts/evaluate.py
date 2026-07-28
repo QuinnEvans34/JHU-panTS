@@ -63,6 +63,34 @@ def label_from_probs(probs: np.ndarray, lesion_thresh: float) -> np.ndarray:
     return out
 
 
+def _avg_ranks(x: np.ndarray) -> np.ndarray:
+    """1-based average ranks (tied values share the mean rank) for a tie-correct AUC."""
+    order = np.argsort(x, kind="mergesort")
+    sx = x[order]
+    ranks = np.empty(len(x), dtype=float)
+    i = 0
+    while i < len(x):
+        j = i
+        while j + 1 < len(x) and sx[j + 1] == sx[i]:
+            j += 1
+        ranks[order[i:j + 1]] = (i + j) / 2.0 + 1.0
+        i = j + 1
+    return ranks
+
+
+def auc_score(labels, scores) -> float:
+    """Patient-level ROC-AUC via the Mann-Whitney U statistic (no sklearn dependency).
+    labels: 1 = tumor present, 0 = tumor-free; scores: per-case lesion-presence score.
+    Returns P(score of a random positive > score of a random negative)."""
+    labels = np.asarray(labels).astype(int)
+    scores = np.asarray(scores, dtype=float)
+    n_pos, n_neg = int((labels == 1).sum()), int((labels == 0).sum())
+    if n_pos == 0 or n_neg == 0:
+        return float("nan")
+    ranks = _avg_ranks(scores)
+    return float((ranks[labels == 1].sum() - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/level45.yaml")
@@ -101,6 +129,13 @@ def main():
                     help="score EXACTLY these tumor-free cases (frozen cohort, e.g. report40_neg.txt)")
     ap.add_argument("--per-case-csv", default=None,
                     help="write per-case pancreas/lesion Dice here (for the paired 26B-26A bootstrap)")
+    ap.add_argument("--full-benchmark", action="store_true",
+                    help="score a JHU-style row over ALL cases: pancreas Dice on every case, "
+                         "whole-cohort lesion Dice (both conventions), patient-level AUC, and "
+                         "false-positive volume. Run on the full official test cohorts "
+                         "(--split test --pos-ids ... --neg-ids ..., or --n-pos/--n-neg large enough).")
+    ap.add_argument("--full-csv", default=None,
+                    help="with --full-benchmark, write the per-case full-suite table here (all cases).")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -218,6 +253,8 @@ def main():
     # per-threshold accumulators: lesion Dice on positives, correct-not-flagged count on negatives
     sweep_pos = {t: [] for t in thresholds}
     sweep_neg = {t: 0 for t in thresholds}
+    fb = args.full_benchmark          # full-suite benchmark: extra per-case rows over ALL cases
+    fb_rows = []
 
     # --- tumor-positive: pancreas + lesion Dice, raw vs cleaned ---
     p_d, l_raw, l_pp, case_ids = [], [], [], []
@@ -236,6 +273,14 @@ def main():
                                      lesion_within_pancreas_mm=within) == 2, gt == 2))
         for t in thresholds:
             sweep_pos[t].append(dice(label_from_probs(probs, t) == 2, gt == 2))
+        if fb:
+            vol = int((pred == 2).sum()) * vox_mm3
+            fb_rows.append({
+                "case_id": case_ids[-1], "cohort": "positive", "gt_has_lesion": 1,
+                "pancreas_dice": p_d[-1], "lesion_dice_pos": l_raw[-1],
+                "wc_lesion_dice": l_raw[-1], "pred_lesion_mm3": vol,
+                "peak_lesion_conf": float(probs[2].max()),
+            })
     if args.per_case_csv:
         pd.DataFrame({"case_id": case_ids, "pancreas_dice": p_d,
                       "lesion_raw": l_raw, "lesion_cleaned": l_pp}).to_csv(args.per_case_csv, index=False)
@@ -263,6 +308,21 @@ def main():
             for t in thresholds:
                 if int((label_from_probs(probs, t) == 2).sum()) * vox_mm3 < min_mm3:
                     sweep_neg[t] += 1
+            if fb:
+                gt = b["label"][0, 0].cpu().numpy()   # healthy scans still carry a pancreas mask
+                if anat:
+                    gt = collapse_label_np(gt, "anatomy5")
+                vol = int((pred == 2).sum()) * vox_mm3
+                cidn = b.get("case_id", ["?"])
+                fb_rows.append({
+                    "case_id": cidn[0] if isinstance(cidn, (list, tuple)) else str(cidn),
+                    "cohort": "negative", "gt_has_lesion": 0,
+                    "pancreas_dice": dice(pred == 1, gt == 1),
+                    "lesion_dice_pos": float("nan"),
+                    "wc_lesion_dice": 1.0 if vol < min_mm3 else 0.0,   # correct-empty = 1.0, false-positive = 0.0
+                    "pred_lesion_mm3": vol,
+                    "peak_lesion_conf": float(probs[2].max()),
+                })
         print(f"\n[MASK-NEGATIVE cases, n={n}]  (specificity@{min_mm3:.0f}mm3 = predicted lesion below threshold)")
         print(f"  specificity (raw)     : {clean_raw}/{n} = {100*clean_raw/n:.0f}%")
         print(f"  specificity (cleaned) : {clean_pp}/{n} = {100*clean_pp/n:.0f}%")
@@ -276,6 +336,38 @@ def main():
             ld = np.nanmean(sweep_pos[t]) if sweep_pos[t] else float("nan")
             sp = f"{sweep_neg[t]}/{n} = {100*sweep_neg[t]/n:.0f}%" if n else "n/a"
             print(f"  {t:>7.2f} | {ld:>18.3f} | {sp:>18}")
+
+    # --- FULL-SUITE BENCHMARK (opt-in): one JHU-style row over ALL cases ---
+    if fb and fb_rows:
+        dfb = pd.DataFrame(fb_rows)
+        if args.full_csv:
+            dfb.to_csv(args.full_csv, index=False)
+            print(f"\n[full-suite] wrote {args.full_csv}  ({len(dfb)} cases)")
+        labels = dfb["gt_has_lesion"].to_numpy().astype(int)
+        pos_m, neg_m = labels == 1, labels == 0
+        npos, nneg = int(pos_m.sum()), int(neg_m.sum())
+        vols = dfb["pred_lesion_mm3"].to_numpy(dtype=float)
+        panc_all = float(np.nanmean(dfb["pancreas_dice"].to_numpy(dtype=float)))
+        lesion_pos = float(np.nanmean(dfb.loc[pos_m, "lesion_dice_pos"].to_numpy(dtype=float)))
+        wc = dfb["wc_lesion_dice"].to_numpy(dtype=float)
+        wc_incl = float(np.nanmean(wc))                        # correct-empty negatives count as 1.0
+        keepB = ~(neg_m & (vols < min_mm3))                    # drop correctly-empty negatives
+        wc_excl = float(np.nanmean(wc[keepB]))                 # scored only where GT or prediction is non-empty
+        det = int((vols[pos_m] >= min_mm3).sum())
+        spec = int((vols[neg_m] < min_mm3).sum())
+        auc = auc_score(labels, dfb["peak_lesion_conf"].to_numpy(dtype=float))
+        fp = vols[neg_m][vols[neg_m] >= min_mm3]
+        print(f"\n[FULL-SUITE BENCHMARK]  raw predictions over ALL cases (the JHU-style row)")
+        print(f"  cohort                                : {npos} positive + {nneg} negative = {npos + nneg}")
+        print(f"  pancreas Dice (ALL {npos + nneg} cases)     : {panc_all:.3f}")
+        print(f"  lesion Dice (tumor-positive only)     : {lesion_pos:.3f}")
+        print(f"  lesion Dice (whole-cohort, empty=1.0) : {wc_incl:.3f}")
+        print(f"  lesion Dice (whole-cohort, empty excl): {wc_excl:.3f}")
+        print(f"  detection sensitivity (positives)     : {det}/{npos} = {100 * det / npos:.0f}%")
+        print(f"  specificity (negatives)               : {spec}/{nneg} = {100 * spec / nneg:.0f}%")
+        print(f"  patient-level AUC (peak lesion conf)  : {auc:.3f}")
+        print(f"  mean predicted lesion vol / negative  : {vols[neg_m].mean():.0f} mm3")
+        print(f"  mean false-positive vol (flagged negs): {fp.mean() if len(fp) else 0.0:.0f} mm3  (n={len(fp)})")
 
     cleaned_note = "largest component + volume threshold"
     if within is not None:

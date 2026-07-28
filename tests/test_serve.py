@@ -2,12 +2,14 @@
     python tests/test_serve.py
 
 Tests the route functions directly (populating serve.STATE) to avoid the lifespan model load:
-404 unknown case, 422 invalid split, 503 not-loaded / data-missing, and /health fields.
+404 unknown case, 422 invalid split, 503 not-loaded / demo-missing, catalog, and /health fields.
 """
+import json
 import sys
 import threading
 import unittest.mock as m
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi import HTTPException
@@ -26,7 +28,8 @@ def _status(fn, *a, **k):
 def _ok_state():
     return dict(model=object(), cfg={}, device="cpu", lock=threading.Lock(),
                 ckpt_step=24000, ckpt_sha="abcd" * 16, label_mode="pancreas_lesion",
-                roi=[128, 128, 128], spacing=[1.5, 1.5, 1.5], roi_source="pancreas", data_root_ok=True)
+                roi=[128, 128, 128], spacing=[1.5, 1.5, 1.5], roi_source="pancreas",
+                data_root_ok=True, demo_transform=object())
 
 
 def test_predict_503_when_not_loaded():
@@ -48,14 +51,15 @@ def test_predict_422_bad_split():
 
 def test_predict_404_unknown_case():
     serve.STATE.clear(); serve.STATE.update(_ok_state())
-    with m.patch.object(serve, "predict_case", side_effect=KeyError("nope")):
+    with m.patch.object(serve, "predict_demo_case", side_effect=KeyError("nope")):
         assert _status(serve.predict, serve.PredictRequest(case_id="X", split="test")) == 404
     serve.STATE.clear()
 
 
 def test_predict_ok_adds_latency():
     serve.STATE.clear(); serve.STATE.update(_ok_state())
-    with m.patch.object(serve, "predict_case", return_value={"case_id": "X", "lesion_flagged": False, "_mask": 1}):
+    with m.patch.object(serve, "predict_demo_case",
+                        return_value={"case_id": "X", "lesion_flagged": False, "_mask": 1}):
         res = serve.predict(serve.PredictRequest(case_id="X", split="test"))
     assert "_mask" not in res and "inference_seconds" in res and res["checkpoint_step"] == 24000
     serve.STATE.clear()
@@ -68,6 +72,54 @@ def test_health_fields():
               "roi", "spacing", "device", "data_root_available"):
         assert k in h
     serve.STATE.clear()
+
+
+def test_cases_returns_sorted_sanitized_catalog():
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        for case_id in ("PanTS_00000002", "PanTS_00000001"):
+            case_dir = root / case_id
+            case_dir.mkdir()
+            (case_dir / "ct.nii.gz").touch()
+            (case_dir / "gt.nii.gz").touch()
+        incomplete = root / "PanTS_00000003"
+        incomplete.mkdir()
+        (incomplete / "ct.nii.gz").touch()
+        (root / "results.json").write_text(json.dumps({
+            "PanTS_00000002": {"label": "Small false positive"},
+        }))
+        with m.patch.object(serve, "_DEMO_CASES_DIR", root):
+            assert serve.list_cases() == [
+                {"case_id": "PanTS_00000001", "split": "test", "label": "PanTS 00000001"},
+                {"case_id": "PanTS_00000002", "split": "test", "label": "Small false positive"},
+            ]
+
+
+def test_cases_missing_catalog_returns_generic_503():
+    with TemporaryDirectory() as tmp:
+        missing = Path(tmp) / "does-not-exist.txt"
+        with m.patch.object(serve, "_DEMO_CASES_DIR", missing):
+            try:
+                serve.list_cases()
+                raise AssertionError("expected HTTPException")
+            except HTTPException as exc:
+                assert exc.status_code == 503
+                assert exc.detail == "case catalog unavailable"
+                assert str(missing) not in exc.detail
+
+
+def test_cases_never_returns_a_path_as_a_label():
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        case_dir = root / "PanTS_00000001"
+        case_dir.mkdir()
+        (case_dir / "ct.nii.gz").touch()
+        (case_dir / "gt.nii.gz").touch()
+        (root / "results.json").write_text(json.dumps({
+            "PanTS_00000001": {"label": "/private/data/secret.nii.gz"},
+        }))
+        with m.patch.object(serve, "_DEMO_CASES_DIR", root):
+            assert serve.list_cases()[0]["label"] == "PanTS 00000001"
 
 
 def _run_all():

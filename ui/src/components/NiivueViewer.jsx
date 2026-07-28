@@ -27,6 +27,91 @@ function labelColormap(source, showPancreas, showLesion) {
   }
 }
 
+function voxelToWorld(volume, voxel) {
+  const affine = volume?.hdr?.affine
+  if (!Array.isArray(affine) || !Array.isArray(affine[0])) return null
+
+  const [x, y, z] = voxel
+  const world = [
+    affine[0][0] * x + affine[0][1] * y + affine[0][2] * z + affine[0][3],
+    affine[1][0] * x + affine[1][1] * y + affine[1][2] * z + affine[1][3],
+    affine[2][0] * x + affine[2][1] * y + affine[2][2] * z + affine[2][3],
+  ]
+  return world.every(Number.isFinite) ? world : null
+}
+
+function pancreasCentroidMM(volume) {
+  const image = volume?.img
+  const dims = volume?.hdr?.dims
+  if (!image || !dims || dims.length < 4) return null
+
+  const nx = Number(dims[1])
+  const ny = Number(dims[2])
+  const nz = Number(dims[3])
+  const voxelCount = nx * ny * nz
+  if (!Number.isFinite(voxelCount) || voxelCount <= 0 || image.length < voxelCount) return null
+
+  let pancreasCount = 0
+  let pancreasX = 0
+  let pancreasY = 0
+  let pancreasZ = 0
+  let foregroundCount = 0
+  let foregroundX = 0
+  let foregroundY = 0
+  let foregroundZ = 0
+
+  for (let index = 0; index < voxelCount; index += 1) {
+    const value = Math.round(Number(image[index]))
+    if (value <= 0) continue
+
+    const x = index % nx
+    const yz = Math.floor(index / nx)
+    const y = yz % ny
+    const z = Math.floor(yz / ny)
+    foregroundCount += 1
+    foregroundX += x
+    foregroundY += y
+    foregroundZ += z
+
+    if (value === 1) {
+      pancreasCount += 1
+      pancreasX += x
+      pancreasY += y
+      pancreasZ += z
+    }
+  }
+
+  if (pancreasCount > 0) {
+    return voxelToWorld(volume, [
+      pancreasX / pancreasCount,
+      pancreasY / pancreasCount,
+      pancreasZ / pancreasCount,
+    ])
+  }
+  if (foregroundCount > 0) {
+    return voxelToWorld(volume, [
+      foregroundX / foregroundCount,
+      foregroundY / foregroundCount,
+      foregroundZ / foregroundCount,
+    ])
+  }
+  return null
+}
+
+function focusOnWorldPoint(nv, worldMM, mode) {
+  if (!worldMM) return false
+  const fraction = nv.mm2frac(worldMM, 0, true)
+  if (!fraction || !Array.from(fraction).every(Number.isFinite)) return false
+
+  nv.scene.crosshairPos = new Float32Array(Array.from(fraction, (value) => (
+    Math.min(1, Math.max(0, value))
+  )))
+  if (mode === '3d') {
+    nv.pivot3D = [...worldMM]
+  }
+  return true
+}
+
 function clearMeshes(nv) {
   ;(nv.meshes || []).slice().forEach((mesh) => {
     try {
@@ -53,6 +138,7 @@ export default function NiivueViewer({
 }) {
   const canvasRef = useRef(null)
   const nvRef = useRef(null)
+  const focusMmRef = useRef(null)
   const [state, setState] = useState({ status: 'loading', message: 'Preparing viewer' })
 
   useEffect(() => {
@@ -85,10 +171,12 @@ export default function NiivueViewer({
     async function loadScene() {
       try {
         setState({ status: 'loading', message: 'Loading prepared scan' })
+        focusMmRef.current = null
 
         const ctPath = showFull && caseData.files.ct_full
           ? caseData.files.ct_full
           : caseData.files.ct
+        const overlaySources = sources.filter((source) => caseData.files[source])
 
         if (mode === '2d') {
           clearMeshes(nv)
@@ -98,21 +186,19 @@ export default function NiivueViewer({
             opacity: 1,
           }]
 
-          sources.forEach((source) => {
+          overlaySources.forEach((source) => {
             const maskPath = caseData.files[source]
-            if (maskPath) {
-              volumes.push({
-                url: `${BASE}/${maskPath}`,
-                colormap: 'warm',
-                opacity: overlayOpacity,
-                cal_min: 0,
-                cal_max: 2,
-              })
-            }
+            volumes.push({
+              url: `${BASE}/${maskPath}`,
+              colormap: 'warm',
+              opacity: overlayOpacity,
+              cal_min: 0,
+              cal_max: 2,
+            })
           })
 
           await nv.loadVolumes(volumes)
-          sources.forEach((source, sourceIndex) => {
+          overlaySources.forEach((source, sourceIndex) => {
             const volume = nv.volumes[sourceIndex + 1]
             if (!volume) return
             volume.setColormapLabel(labelColormap(source, showPancreas, showLesion))
@@ -120,17 +206,34 @@ export default function NiivueViewer({
           })
           nv.setSliceType(nv.sliceTypeMultiplanar)
           nv.setCrosshairColor([0.42, 0.52, 0.64, 0.8])
+          if (showFull && nv.volumes[1]) {
+            focusMmRef.current = pancreasCentroidMM(nv.volumes[1])
+            focusOnWorldPoint(nv, focusMmRef.current, mode)
+          }
           nv.updateGLVolume()
+          nv.drawScene()
         } else {
           clearMeshes(nv)
           // 3D shows the marching-cubes SURFACE MESHES (pancreas + lesion) exported
           // per case, with the CT rendered faintly behind them for context. The meshes
           // are world-aligned (mm) via the CT affine, so they land in the right place.
-          await nv.loadVolumes([{
+          const volumes = [{
             url: `${BASE}/${ctPath}`,
             colormap: 'gray',
             opacity: ctOpacity,
-          }])
+          }]
+          // The hidden label volume supplies a reliable world-space pancreas centroid.
+          // It stays invisible in 3D; the exported surface meshes remain the visible result.
+          if (showFull && overlaySources.length) {
+            volumes.push({
+              url: `${BASE}/${caseData.files[overlaySources[0]]}`,
+              colormap: 'warm',
+              opacity: 0,
+              cal_min: 0,
+              cal_max: 2,
+            })
+          }
+          await nv.loadVolumes(volumes)
 
           const meshFiles = caseData.files.mesh || {}
           const meshLayers = []
@@ -165,6 +268,10 @@ export default function NiivueViewer({
           nv.setClipPlane(clip?.enabled
             ? [clip.depth, clip.azimuth, clip.elevation]
             : [2, 0, 0])
+          if (showFull && nv.volumes[1]) {
+            focusMmRef.current = pancreasCentroidMM(nv.volumes[1])
+            focusOnWorldPoint(nv, focusMmRef.current, mode)
+          }
           nv.updateGLVolume()
           nv.drawScene()
         }
@@ -214,8 +321,11 @@ export default function NiivueViewer({
     } else {
       nv.setSliceType(nv.sliceTypeMultiplanar)
     }
+    if (showFull && focusMmRef.current) {
+      focusOnWorldPoint(nv, focusMmRef.current, mode)
+    }
     nv.drawScene()
-  }, [resetToken, mode])
+  }, [resetToken, mode, showFull])
 
   return (
     <div className={`niivue-frame${compact ? ' niivue-frame--compact' : ''}`}>

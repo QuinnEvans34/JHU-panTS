@@ -74,5 +74,208 @@
       },
       "ct_full": "PanTS_00000029/ct_full.nii.gz"
     }
+  },
+  "PanTS_00009005": {
+    "case_id": "PanTS_00009005",
+    "gt_has_lesion": true,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 15629.6,
+    "dice_pancreas": 0.855,
+    "dice_lesion": 0.919,
+    "confidence": 0.972,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00009005/ct.nii.gz",
+      "gt": "PanTS_00009005/gt.nii.gz",
+      "pred": "PanTS_00009005/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00009005/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00009005/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00009005/mesh/pancreas_gt.obj",
+        "lesion_gt": "PanTS_00009005/mesh/lesion_gt.obj"
+      },
+      "ct_full": "PanTS_00009005/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00009258": {
+    "case_id": "PanTS_00009258",
+    "gt_has_lesion": true,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 33615.0,
+    "dice_pancreas": 0.826,
+    "dice_lesion": 0.907,
+    "confidence": 0.97,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00009258/ct.nii.gz",
+      "gt": "PanTS_00009258/gt.nii.gz",
+      "pred": "PanTS_00009258/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00009258/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00009258/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00009258/mesh/pancreas_gt.obj",
+        "lesion_gt": "PanTS_00009258/mesh/lesion_gt.obj"
+      },
+      "ct_full": "PanTS_00009258/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00009787": {
+    "case_id": "PanTS_00009787",
+    "gt_has_lesion": true,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 20212.9,
+    "dice_pancreas": 0.883,
+    "dice_lesion": 0.884,
+    "confidence": 0.97,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00009787/ct.nii.gz",
+      "gt": "PanTS_00009787/gt.nii.gz",
+      "pred": "PanTS_00009787/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00009787/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00009787/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00009787/mesh/pancreas_gt.obj",
+        "lesion_gt": "PanTS_00009787/mesh/lesion_gt.obj"
+      },
+      "ct_full": "PanTS_00009787/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00009510": {
+    "case_id": "PanTS_00009510",
+    "gt_has_lesion": true,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 17904.4,
+    "dice_pancreas": 0.469,
+    "dice_lesion": 0.495,
+    "confidence": 0.967,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00009510/ct.nii.gz",
+      "gt": "PanTS_00009510/gt.nii.gz",
+      "pred": "PanTS_00009510/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00009510/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00009510/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00009510/mesh/pancreas_gt.obj",
+        "lesion_gt": "PanTS_00009510/mesh/lesion_gt.obj"
+      },
+      "ct_full": "PanTS_00009510/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00009687": {
+    "case_id": "PanTS_00009687",
+    "gt_has_lesion": true,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 7026.8,
+    "dice_pancreas": 0.839,
+    "dice_lesion": 0.029,
+    "confidence": 0.955,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00009687/ct.nii.gz",
+      "gt": "PanTS_00009687/gt.nii.gz",
+      "pred": "PanTS_00009687/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00009687/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00009687/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00009687/mesh/pancreas_gt.obj",
+        "lesion_gt": "PanTS_00009687/mesh/lesion_gt.obj"
+      },
+      "ct_full": "PanTS_00009687/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00009016": {
+    "case_id": "PanTS_00009016",
+    "gt_has_lesion": false,
+    "pred_has_lesion": false,
+    "lesion_volume_mm3": 0.0,
+    "dice_pancreas": 0.889,
+    "dice_lesion": 1.0,
+    "confidence": 0.0,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00009016/ct.nii.gz",
+      "gt": "PanTS_00009016/gt.nii.gz",
+      "pred": "PanTS_00009016/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00009016/mesh/pancreas_pred.obj",
+        "pancreas_gt": "PanTS_00009016/mesh/pancreas_gt.obj"
+      },
+      "ct_full": "PanTS_00009016/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00009026": {
+    "case_id": "PanTS_00009026",
+    "gt_has_lesion": false,
+    "pred_has_lesion": false,
+    "lesion_volume_mm3": 0.0,
+    "dice_pancreas": 0.795,
+    "dice_lesion": 1.0,
+    "confidence": 0.0,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00009026/ct.nii.gz",
+      "gt": "PanTS_00009026/gt.nii.gz",
+      "pred": "PanTS_00009026/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00009026/mesh/pancreas_pred.obj",
+        "pancreas_gt": "PanTS_00009026/mesh/pancreas_gt.obj"
+      },
+      "ct_full": "PanTS_00009026/ct_full.nii.gz"
+    }
+  },
+  "PanTS_00009220": {
+    "case_id": "PanTS_00009220",
+    "gt_has_lesion": false,
+    "pred_has_lesion": true,
+    "lesion_volume_mm3": 51681.4,
+    "dice_pancreas": 0.66,
+    "dice_lesion": 0.0,
+    "confidence": 0.937,
+    "spacing_mm": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "files": {
+      "ct": "PanTS_00009220/ct.nii.gz",
+      "gt": "PanTS_00009220/gt.nii.gz",
+      "pred": "PanTS_00009220/pred.nii.gz",
+      "mesh": {
+        "pancreas_pred": "PanTS_00009220/mesh/pancreas_pred.obj",
+        "lesion_pred": "PanTS_00009220/mesh/lesion_pred.obj",
+        "pancreas_gt": "PanTS_00009220/mesh/pancreas_gt.obj"
+      },
+      "ct_full": "PanTS_00009220/ct_full.nii.gz"
+    }
   }
 }
