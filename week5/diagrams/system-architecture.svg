@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 760" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 z" fill="#4E6472"/>
+    </marker>
+    <marker id="arwT" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 z" fill="#26C5A6"/>
+    </marker>
+  </defs>
+  <style>
+    .bg{fill:#071019}
+    .panel{fill:#0E1A26;stroke:#213444;stroke-width:1;rx:10}
+    .panelhi{fill:#13212F;stroke:#2A4356;stroke-width:1;rx:10}
+    .h1{fill:#EDF5F7;font-size:25px;font-weight:bold}
+    .sub{fill:#7C919D;font-size:13px}
+    .layer{fill:#26C5A6;font-size:11.5px;font-weight:bold;letter-spacing:1.6px}
+    .box{fill:#EDF5F7;font-size:13.5px;font-weight:bold}
+    .note{fill:#8FA3AE;font-size:11.5px}
+    .mono{fill:#BFD0D6;font-size:11.5px;font-family:'IBM Plex Mono',Consolas,monospace}
+    .flow{stroke:#4E6472;stroke-width:1.6;fill:none}
+    .flowT{stroke:#26C5A6;stroke-width:2;fill:none}
+    .cross{fill:#F4BC55;font-size:11.5px;font-weight:bold;letter-spacing:1.4px}
+  </style>
+
+  <rect class="bg" x="0" y="0" width="1280" height="760"/>
+  <text class="h1" x="40" y="46">System architecture</text>
+  <text class="sub" x="40" y="70">From 9,901 raw CT volumes to a contour a radiologist accepts, edits, or rejects.</text>
+
+  <!-- ============ 1 DATA ============ -->
+  <text class="layer" x="40" y="112">1 · DATA</text>
+  <rect class="panel" x="40" y="124" width="272" height="330"/>
+
+  <rect class="panelhi" x="58" y="144" width="236" height="66"/>
+  <text class="box" x="74" y="168">PanTS dataset</text>
+  <text class="note" x="74" y="188">9,901 CT volumes + masks</text>
+  <text class="note" x="74" y="203">~380 GB · external drive · never in git</text>
+
+  <rect class="panelhi" x="58" y="222" width="236" height="62"/>
+  <text class="mono" x="74" y="244">build_manifest.py</text>
+  <text class="note" x="74" y="263">indexes every case →</text>
+  <text class="note" x="74" y="277">manifest.csv (1 row per scan)</text>
+
+  <rect class="panelhi" x="58" y="296" width="236" height="62"/>
+  <text class="mono" x="74" y="318">create_splits.py</text>
+  <text class="note" x="74" y="337">patient-level, tumor-stratified</text>
+  <text class="note" x="74" y="351">train / val / held-out test</text>
+
+  <rect class="panelhi" x="58" y="370" width="236" height="62"/>
+  <text class="mono" x="74" y="392">audit_subregions.py</text>
+  <text class="note" x="74" y="411">excludes empty / misaligned</text>
+  <text class="note" x="74" y="425">masks (~1 in 8 scans)</text>
+
+  <!-- ============ 2 TRAINING ============ -->
+  <text class="layer" x="352" y="112">2 · TRAINING</text>
+  <rect class="panel" x="352" y="124" width="272" height="330"/>
+
+  <rect class="panelhi" x="370" y="144" width="236" height="66"/>
+  <text class="box" x="386" y="168">Whole-box preprocessing</text>
+  <text class="note" x="386" y="188">crop to the pancreas box →</text>
+  <text class="note" x="386" y="203">resample 1.5 mm → 128³ cube</text>
+
+  <rect class="panelhi" x="370" y="222" width="236" height="76"/>
+  <text class="box" x="386" y="246">SegResNet (3D)</text>
+  <text class="note" x="386" y="266">fine-tuned from SuPreM weights</text>
+  <text class="note" x="386" y="281">3 classes: bg / pancreas / lesion</text>
+  <text class="note" x="386" y="295">DiceFocal loss · Apple Silicon MPS</text>
+
+  <rect class="panelhi" x="370" y="310" width="236" height="62"/>
+  <text class="box" x="386" y="333">MLflow tracking</text>
+  <text class="note" x="386" y="352">params + metrics for every run</text>
+  <text class="note" x="386" y="366">26 numbered experiments</text>
+
+  <rect class="panelhi" x="370" y="384" width="236" height="48"/>
+  <text class="note" x="386" y="405">Checkpoint archive + run ledger</text>
+  <text class="note" x="386" y="420">immutable per-run, atomic saves</text>
+
+  <!-- ============ 3 EVALUATION & REGISTRY ============ -->
+  <text class="layer" x="664" y="112">3 · EVALUATION · REGISTRY</text>
+  <rect class="panel" x="664" y="124" width="272" height="330"/>
+
+  <rect class="panelhi" x="682" y="144" width="236" height="66"/>
+  <text class="mono" x="698" y="166">evaluate.py</text>
+  <text class="note" x="698" y="185">full-volume sliding window on</text>
+  <text class="note" x="698" y="200">the untouched 901-case test set</text>
+
+  <rect class="panelhi" x="682" y="222" width="236" height="90"/>
+  <text class="box" x="698" y="245">Held-out results</text>
+  <text class="mono" x="698" y="266">lesion Dice   0.474</text>
+  <text class="mono" x="698" y="283">pancreas Dice 0.827</text>
+  <text class="mono" x="698" y="300">detection      96%</text>
+
+  <rect class="panelhi" x="682" y="324" width="236" height="62"/>
+  <text class="mono" x="698" y="346">analyze_cases.py</text>
+  <text class="note" x="698" y="365">failure analysis by tumor size</text>
+  <text class="note" x="698" y="379">and contrast phase</text>
+
+  <rect class="panelhi" x="682" y="398" width="236" height="40"/>
+  <text class="box" x="698" y="423">MLflow Model Registry — v1</text>
+
+  <!-- ============ 4 SERVING & INTERFACE ============ -->
+  <text class="layer" x="976" y="112">4 · SERVING · INTERFACE</text>
+  <rect class="panel" x="976" y="124" width="264" height="330"/>
+
+  <rect class="panelhi" x="994" y="144" width="228" height="80"/>
+  <text class="mono" x="1010" y="166">serve.py — FastAPI</text>
+  <text class="note" x="1010" y="185">GET /health · GET /cases</text>
+  <text class="note" x="1010" y="200">POST /predict → CADe summary</text>
+  <text class="note" x="1010" y="215">~0.6 s per scan</text>
+
+  <rect class="panelhi" x="994" y="236" width="228" height="80"/>
+  <text class="box" x="1010" y="259">React + NiiVue</text>
+  <text class="note" x="1010" y="279">tri-planar CT · 3D surfaces</text>
+  <text class="note" x="1010" y="294">live analyze · reveal truth</text>
+  <text class="note" x="1010" y="309">cached fallback if offline</text>
+
+  <rect class="panelhi" x="994" y="328" width="228" height="106" stroke="#26C5A6"/>
+  <text class="box" x="1010" y="352" fill="#26C5A6">Radiologist / annotator</text>
+  <text class="note" x="1010" y="374">reviews every proposed contour</text>
+  <text class="note" x="1010" y="391">accept · edit · reject</text>
+  <text class="note" x="1010" y="412">exports the mask to finish</text>
+  <text class="note" x="1010" y="427" fill="#F4BC55">human in the loop, always</text>
+
+  <!-- flow arrows between layers -->
+  <path class="flow" d="M316,289 L348,289" marker-end="url(#arw)"/>
+  <path class="flow" d="M628,289 L660,289" marker-end="url(#arw)"/>
+  <path class="flowT" d="M940,289 L972,289" marker-end="url(#arwT)"/>
+
+  <!-- ============ cross-cutting ============ -->
+  <text class="cross" x="40" y="500">CROSS-CUTTING — WHAT MAKES IT REPRODUCIBLE</text>
+  <rect class="panel" x="40" y="512" width="1200" height="96"/>
+
+  <text class="box" x="66" y="542">Config-driven</text>
+  <text class="note" x="66" y="562">One YAML defines the recipe.</text>
+  <text class="note" x="66" y="578">Dataset path via config or env —</text>
+  <text class="note" x="66" y="594">never hardcoded.</text>
+
+  <text class="box" x="368" y="542">Deterministic</text>
+  <text class="note" x="368" y="562">Fixed seed, committed split files,</text>
+  <text class="note" x="368" y="578">every run logged. Any result can</text>
+  <text class="note" x="368" y="594">be reproduced on demand.</text>
+
+  <text class="box" x="670" y="542">Guarded</text>
+  <text class="note" x="670" y="562">Startup abort if a training split</text>
+  <text class="note" x="670" y="578">touches validation. Atomic saves.</text>
+  <text class="note" x="670" y="594">Identity-verified resume.</text>
+
+  <text class="box" x="972" y="542">Trigger</text>
+  <text class="note" x="972" y="562">Manual / command line — the</text>
+  <text class="note" x="972" y="578">dataset is static, so a scheduler</text>
+  <text class="note" x="972" y="594">would add risk, not value.</text>
+
+  <!-- ============ scope footer ============ -->
+  <rect class="panelhi" x="40" y="628" width="1200" height="56" stroke="#3A4F5E"/>
+  <text class="note" x="66" y="652" font-size="12.5">
+    <tspan fill="#F4BC55" font-weight="bold">Scope. </tspan>
+    <tspan>The model is given the pancreas region and asked to find any tumor inside it — the annotation-assist workflow this is built for.</tspan>
+  </text>
+  <text class="note" x="66" y="672" font-size="12.5">A fully autonomous localize-then-segment cascade was built and evaluated, but the reported numbers are the provided-region ones.</text>
+
+  <text class="note" x="40" y="716" font-size="11">Registered model: pancreas-lesion-segmenter v1 · checkpoint step 18000 · SegResNet + SuPreM transfer · whole-box 128³ @ 1.5 mm</text>
+  <text class="note" x="40" y="736" font-size="11" fill="#5F7783">Research use only — a segmentation and annotation-assist tool, not a diagnostic system.</text>
+</svg>

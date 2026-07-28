@@ -121,4 +121,90 @@ Cases where AI output needed correction or specific instruction:
 Honest status heading into Week 5:
 
 - Complete: the model itself (leakage-free lesion Dice 0.415, detection 95%), the full experiment record including the honestly-rejected anatomy experiment, the Optuna tuning study, and the M4A1 deployment code (inference API, FastAPI endpoint, MLflow registration, test-cohort builder) — Codex-approved with 21 passing tests.
+- (Week 4 status as of Sunday submission is recorded below; the Week 5 entry and the final project retrospective follow it.)
 - Done as of Sunday submission: the one-time held-out test-set evaluation is complete (official 901-case test: lesion Dice 0.474 [95% CI 0.42–0.52], pancreas 0.827, detection 96%, specificity 17%), the final model is registered in MLflow as `pancreas-lesion-segmenter` v1 with the tuning-run and registered-model screenshots captured, the pipeline diagram and the by-size/phase and sample-prediction figures are in `week4/img/`, the FastAPI endpoint is live smoke-tested (health page + `/predict`), and the report plus these AI-documentation files are written. As a bonus, the pre-registered specificity experiment (EXP-25, more healthy data) ran and was honestly rejected — it cleared specificity 17%→46% but missed the ≥90% detection floor (88%), so the plain whole-box model stays the headline. Nothing on M4A1 is outstanding; the remaining risk is entirely Week 5 (the React + NiiVue UI), not this deliverable.
+
+---
+
+## Week 5 — Jul 27 onward (the interface, the demo, and the final package)
+
+**Tasks assisted.** Week 5 split cleanly into two tracks and I ran a different AI on each, which is the
+first time I deliberately assigned tools by strength. Codex drove the React and NiiVue interface,
+because I had built up enough context in that conversation that it could make multi-file front-end
+changes reliably, and because its frontier model is stronger at UI work than what I had available in
+the other session. Claude drove the deliverables: repository cleanup, the README, the user guide, the
+UI walkthrough, the project retrospective, and the presentation prep. Running both at once is the only
+reason a five-day week with a presentation in the middle of it was survivable.
+
+**Specific things AI did well this week.** The interface work was the standout. Codex built the live
+inference path end to end, adding CORS and a `/cases` route to the FastAPI service, a scan picker, an
+"Analyze scan" flow with a live-scored timestamp badge, and a graceful fallback to cached results when
+the endpoint is offline, which is exactly the behavior I want for a demo I cannot afford to have hang.
+On the other side, Claude caught a bug in that same work that I would not have caught until the demo
+embarrassed me: the server was re-cropping and re-resampling scans that had already been preprocessed
+into the model's exact input format, so it was double-processing them and would have quietly served
+wrong predictions. That is the same class of train-and-serve mismatch that bit me in Week 2, and the
+fix was to feed the prepared cube straight through. Claude also fixed the 3D viewer, which was loading
+the label volume instead of the exported surface meshes, so the marching-cubes pancreas and lesion my
+instructor specifically liked were never actually being rendered.
+
+**Where AI output needed correction.** Twice, and both were the same failure mode: an AI assuming the
+shape of data it had not actually inspected. Codex assumed the demo folder held raw CT scans when it
+held finished model inputs. Earlier in the week an AI summary of my metrics conflated "we ran the model
+on all 901 test cases" with "every metric is computed over all 901 cases," which are different claims,
+and I pushed back until it separated them precisely, because that distinction is exactly what a grader
+would probe. The check I kept applying all week is the one that has served me best: make the AI verify
+against the actual files in the repository before it asserts anything, and treat any claim it makes
+about my own data as unverified until it shows me the command output.
+
+**Honest status heading into the final submission.** Complete: the model, the full experiment record,
+the deployment endpoint, the live-scoring UI, the Week 5 written deliverables, and the repository
+cleanup. Remaining: UI screenshots, the final presentation rehearsal, and the last commit.
+
+---
+
+## Final retrospective — how I used AI across the whole project
+
+My use of AI changed shape three times over five weeks, and the change was the point.
+
+**It started as a research and planning partner.** In Week 1 I used ChatGPT's deep research mode to
+pressure-test my model choice before I wrote any code, and it independently agreed with fine-tuning
+SuPreM's SegResNet, which mattered because I was making a locked-in architectural decision with no way
+to cheaply reverse it later. That set the pattern of using AI to *stress-test a decision before
+committing*, not to make the decision for me. In Weeks 2 and 3 the dominant use was as an explainer.
+I was moving from 2D CNNs into 3D medical imaging, and being able to ask what a voxel actually is, how
+Dice is computed, why a class occupying 0.04 percent of a volume breaks a normal loss, and to get an
+answer at exactly my level, compressed weeks of reading into days. The learning use was probably the
+highest-leverage thing AI did for me on this project, and it is the least visible in the repository.
+
+**Then it became a code generator that I stopped trusting.** The turning point was Week 3, when an
+adversarial AI audit of my repository found that my data-scaling script sampled from the wrong column
+and had been leaking validation cases into training, which meant my headline number was inflated. AI
+found the bug, but AI had also written the bug. Both of those facts are true and I have tried to hold
+them together honestly. From that point I stopped treating generated code as done when it ran, and
+built the loop I used for everything afterward: write a spec, have a second AI review the plan
+adversarially, revise until it is approved, write the code, have it reviewed again, then require a
+regression test for every issue found. The deployment code in Week 4 went through three review rounds
+and the reviews caught genuine production bugs, a registration step that claimed to log config but did
+not, a data subset that would have overwritten my canonical cohort files, and a test that validated a
+hand-built dictionary instead of the real function. None of those would have survived to production,
+but all of them would have cost me hours to find alone.
+
+**Finally it became two specialists running in parallel.** By Week 5 I was assigning work by tool
+strength, Codex on the interface, Claude on analysis and documentation, and having each one check the
+other's output. That is where I found the most value per hour, and it is also where the failure mode
+became clearest: AI is confident about data it has not inspected. Every real error I hit, the double
+processing, the wrong-column split, the conflated metric claim, was an assumption about the shape of my
+data rather than a coding mistake. So the habit I am taking forward is verification-first: make it read
+the file, run the command, and show me the output before it tells me what is true.
+
+**Net effect on quality and speed.** Speed, unambiguously: I do not think a solo five-week project
+covering a 3D training pipeline, twenty-six documented experiments, hyperparameter search, model
+registration, a serving endpoint, and a clinical review interface is achievable in that window without
+it. Quality is more interesting. AI made my code faster to write and my documentation far better, but
+the two things I am proudest of, the whole-box idea that fixed over-prediction and the decision to
+train an experiment to convergence rather than report a flattering intermediate, were both mine, and in
+the second case I was arguing against a result an AI had helped me produce. The most useful thing AI
+did for my quality was not writing code, it was being a reviewer harsh enough to find my leakage bug
+before an outside evaluator did. I would rather work with a tool that tells me my number is wrong than
+one that helps me publish it.

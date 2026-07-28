@@ -5,4 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: { port: 5173, open: true },
+  build: {
+    // Sites registers static files from the conventional client directory.
+    // Keeping the Worker entry beside it lets the same bundle run locally
+    // with `vite preview` and in the hosted Cloudflare environment.
+    outDir: 'dist/client',
+  },
 })

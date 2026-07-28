@@ -106,6 +106,46 @@ Week 4 update — tuning, orchestration, deployment (M4A1, 2026-07-23). The mode
 Week 4 close — final status heading into Week 5 (2026-07-25). The remaining M4A1 items are now done or down to visual artifacts. The one-time held-out TEST evaluation is complete on the full official 901-case split (151 tumor-positive + 750 tumor-free): lesion Dice 0.474 raw / 0.472 cleaned with a 95% bootstrap CI [0.42, 0.52], pancreas Dice 0.827, detection sensitivity 96%, specificity 17% — right against the ~0.53 published reference on a split I did not choose, and the honest headline number. The final model is registered in MLflow as `pancreas-lesion-segmenter` v1. As bonus weekend work I also ran the pre-registered specificity experiment (EXP-25): retraining on the full 1:9 healthy prevalence lifted specificity 17%→46% but dropped detection 96%→88%, below the pre-set 90% floor, so it was REJECTED as a headline — a valuable reject that proves the low specificity is a movable data property (cost concentrated in small tumors), carried into Week 5 as an operating-point question. COMPLETE for submission: the report (all five sections), the pipeline diagram, the by-size/phase figure, the endpoint code, the registered model, and all three AI-docs updates. AT RISK / manual-only: the three visual artifacts I still have to capture and paste — two MLflow screenshots and 2–3 sample-prediction overlays — plus the live endpoint smoke-test output, and the git branch-and-merge. None require modeling; they are capture-and-commit. Heading into Week 5: build the React + NiiVue static demo on the precomputed predictions, and optionally chase the EXP-25 operating point (milder 1:3 ratio + lower detection threshold) as upside.
 
 ### Week 5 (Jul 27 – Aug 2): evaluation, demo, and delivery.
+
+**FINAL STATUS — did I hit the MVP? (2026-07-28)** Yes, with one scope caveat I have documented
+everywhere rather than hidden. The MVP I proposed in Week 1 was a Level 4.5 segmentation model
+(background / pancreas / lesion) wrapped in a CADe "there could be a tumor here" flag, a transfer-vs-
+scratch comparison to justify the model choice, MLflow tracking, and a React + NiiVue interface built
+on saved predictions. All five shipped.
+
+**Completed.** The segmentation model works and is measured honestly on the untouched official test
+set of 901 cases: lesion Dice 0.474 (95% CI 0.42–0.52), pancreas Dice 0.827, detection sensitivity
+96%, specificity 17%, against a published PanTS reference near 0.53. The CADe layer is real, not a
+label: a possible-lesion flag with a volume and a confidence, surfaced through an interface that frames
+it as a prompt for review. The transfer-vs-scratch comparison (EXP-09) was decisive and defends the
+SuPreM choice, +0.13 lesion Dice over from-scratch. Twenty-six numbered experiments with pre-registered
+accept/reject bars are logged in `experiments.md`, all runs in MLflow. Three things exceeded the plan:
+a formal Optuna Bayesian hyperparameter search, a registered model plus a FastAPI serving endpoint
+(added for M4A1), and a UI that does **live** inference against that endpoint rather than only reading
+precomputed files as originally scoped.
+
+**Descoped, and why.** (1) *The autonomous localize-then-segment cascade.* Built and evaluated
+(EXP-20/22, `cascade_eval.py`), but its clean leakage-free number requires retraining the localizer on
+the corrected splits, which I did not have compute for after the leakage fix consumed a week. The
+headline therefore stays **provided-ROI** — the model is handed the pancreas box — and I label it that
+way in every document rather than implying autonomy I did not verify. This is the single most important
+caveat on my results and it is capstone item number one. (2) *Level 5 multi-structure segmentation* —
+deliberately gated behind Level 4.5 working, per my own guardrail, and 4.5 absorbed the full five weeks.
+The anatomy-aware experiment (EXP-26) was the first step toward it and was honestly rejected at
+convergence. (3) *Tumor-type classification* — always flagged as research-only stretch; never started.
+(4) *The specificity gate* — identified, quantified (a volume gate lifts specificity from 17% to ~43%
+at 90% detection with no retraining), but not built into the product.
+
+**Why the descoping happened.** Two real constraints. Compute: every training run is roughly 7–14 hours
+on a laptop MPS backend, so I got one meaningful experiment per night, which caps how many hypotheses a
+five-week project can test. Correctness: finding and fixing the validation leakage in Week 3 cost a full
+week of retraining and re-evaluation, and I chose to spend it rather than report a contaminated number.
+I would make that trade again.
+
+**Heading into capstone.** The order is set by evidence, not guesswork: finish the autonomous cascade
+(removes the oracle), add a dedicated tumor-presence classifier as a gate (the AUC of 0.804 shows the
+signal exists and I proved retraining the segmenter for specificity is the wrong fix), and scale
+training to all 9,000 cases, since data scale was the only lever that consistently moved accuracy.
 Failure-case analysis with three-view overlays. Build the React and NiiVue static demo (reads precomputed predictions, no live backend). Write the final report with honest limitations and the non-diagnostic framing. Week 5 one-on-one check-in on the interface and final prep.
 
 ---

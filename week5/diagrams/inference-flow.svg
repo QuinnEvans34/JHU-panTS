@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 700" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 z" fill="#4E6472"/>
+    </marker>
+    <marker id="at" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 z" fill="#26C5A6"/>
+    </marker>
+    <marker id="ab" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 z" fill="#6CB9DC"/>
+    </marker>
+  </defs>
+  <style>
+    .bg{fill:#071019}
+    .lane{fill:#0B1520;stroke:#1D2E3D;stroke-width:1;rx:10}
+    .panel{fill:#0E1A26;stroke:#213444;stroke-width:1;rx:9}
+    .panelhi{fill:#13212F;stroke:#2A4356;stroke-width:1;rx:9}
+    .h1{fill:#EDF5F7;font-size:25px;font-weight:bold}
+    .sub{fill:#7C919D;font-size:13px}
+    .lanelbl{fill:#7C919D;font-size:11px;font-weight:bold;letter-spacing:1.6px}
+    .box{fill:#EDF5F7;font-size:13px;font-weight:bold}
+    .note{fill:#8FA3AE;font-size:11px}
+    .mono{fill:#BFD0D6;font-size:11px;font-family:'IBM Plex Mono',Consolas,monospace}
+    .num{fill:#071019;font-size:11px;font-weight:bold}
+  </style>
+
+  <rect class="bg" x="0" y="0" width="1280" height="700"/>
+  <text class="h1" x="40" y="46">What happens when you press “Analyze”</text>
+  <text class="sub" x="40" y="70">One live prediction, end to end — about 0.6 seconds.</text>
+
+  <!-- ================= BROWSER LANE ================= -->
+  <rect class="lane" x="40" y="96" width="1200" height="132"/>
+  <text class="lanelbl" x="60" y="120">BROWSER — REACT + NIIVUE</text>
+
+  <rect class="panelhi" x="66" y="132" width="250" height="76"/>
+  <circle cx="86" cy="152" r="10" fill="#26C5A6"/><text class="num" x="83" y="156">1</text>
+  <text class="box" x="104" y="156">User clicks Analyze</text>
+  <text class="note" x="82" y="178">An unmarked scan is on screen —</text>
+  <text class="note" x="82" y="194">CT only, nothing drawn yet.</text>
+
+  <rect class="panelhi" x="906" y="132" width="308" height="76" stroke="#26C5A6"/>
+  <circle cx="926" cy="152" r="10" fill="#26C5A6"/><text class="num" x="923" y="156">7</text>
+  <text class="box" x="944" y="156" fill="#26C5A6">Finding panel updates</text>
+  <text class="note" x="922" y="178">Flag · volume · confidence · Dice,</text>
+  <text class="note" x="922" y="194">with a “Live · scored 10:31:59 · 0.6 s” badge.</text>
+
+  <!-- request / response arrows -->
+  <path d="M191,212 L191,268" stroke="#6CB9DC" stroke-width="2" fill="none" marker-end="url(#ab)"/>
+  <text class="mono" x="200" y="244" fill="#6CB9DC">POST /predict {case_id}</text>
+
+  <path d="M1060,548 L1060,214" stroke="#26C5A6" stroke-width="2" fill="none" marker-end="url(#at)"/>
+  <text class="mono" x="1074" y="252" fill="#26C5A6">200 OK — CADe summary (JSON)</text>
+  <text class="mono" x="1074" y="268" fill="#26C5A6">numbers only, no mask</text>
+
+  <!-- ================= SERVER LANE ================= -->
+  <rect class="lane" x="40" y="276" width="1200" height="286"/>
+  <text class="lanelbl" x="60" y="300">SERVER — FASTAPI (scripts/serve.py)</text>
+
+  <rect class="panel" x="66" y="316" width="204" height="120"/>
+  <circle cx="86" cy="338" r="10" fill="#6CB9DC"/><text class="num" x="83" y="342">2</text>
+  <text class="box" x="104" y="342">Receive + validate</text>
+  <text class="note" x="82" y="366">Unknown case → 404</text>
+  <text class="note" x="82" y="382">Model not ready → 503</text>
+  <text class="note" x="82" y="398">Bad body → 422</text>
+  <text class="note" x="82" y="420" fill="#F4BC55">Never leaks file paths</text>
+
+  <rect class="panel" x="294" y="316" width="204" height="120"/>
+  <circle cx="314" cy="338" r="10" fill="#6CB9DC"/><text class="num" x="311" y="342">3</text>
+  <text class="box" x="332" y="342">Load the scan</text>
+  <text class="mono" x="310" y="366">ct.nii.gz</text>
+  <text class="mono" x="310" y="382">gt.nii.gz  → pancreas box</text>
+  <text class="note" x="310" y="404">From the local case folder,</text>
+  <text class="note" x="310" y="420">so no drive is needed.</text>
+
+  <rect class="panel" x="522" y="316" width="204" height="120"/>
+  <circle cx="542" cy="338" r="10" fill="#6CB9DC"/><text class="num" x="539" y="342">4</text>
+  <text class="box" x="560" y="342">Whole-box input</text>
+  <text class="note" x="538" y="366">Already prepared as the</text>
+  <text class="note" x="538" y="382">exact 128³ @1.5 mm cube</text>
+  <text class="note" x="538" y="398">the model was trained on —</text>
+  <text class="note" x="538" y="420" fill="#F4BC55">fed straight through</text>
+
+  <rect class="panelhi" x="750" y="316" width="204" height="120" stroke="#26C5A6"/>
+  <circle cx="770" cy="338" r="10" fill="#26C5A6"/><text class="num" x="767" y="342">5</text>
+  <text class="box" x="788" y="342" fill="#26C5A6">SegResNet forward</text>
+  <text class="note" x="766" y="366">Registered model v1,</text>
+  <text class="note" x="766" y="382">step 18000, on MPS.</text>
+  <text class="note" x="766" y="398">Softmax → argmax over</text>
+  <text class="note" x="766" y="420">3 classes.</text>
+
+  <rect class="panel" x="978" y="316" width="204" height="120"/>
+  <circle cx="998" cy="338" r="10" fill="#6CB9DC"/><text class="num" x="995" y="342">6</text>
+  <text class="box" x="1016" y="342">CADe post-process</text>
+  <text class="note" x="994" y="366">Largest connected region</text>
+  <text class="note" x="994" y="382">+ 50 mm³ volume floor.</text>
+  <text class="note" x="994" y="404">Below the floor → no</text>
+  <text class="note" x="994" y="420">lesion is flagged.</text>
+
+  <!-- step arrows -->
+  <path d="M274,376 L290,376" stroke="#4E6472" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+  <path d="M502,376 L518,376" stroke="#4E6472" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+  <path d="M730,376 L746,376" stroke="#4E6472" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+  <path d="M958,376 L974,376" stroke="#4E6472" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+
+  <!-- server notes -->
+  <rect class="panelhi" x="66" y="456" width="558" height="88"/>
+  <text class="box" x="88" y="480">Loaded once, not per request</text>
+  <text class="note" x="88" y="502">The checkpoint is read at startup and held in memory. A lock serialises</text>
+  <text class="note" x="88" y="518">inference because there is one GPU, so the server runs with a single worker.</text>
+  <text class="note" x="88" y="534" fill="#F4BC55">That is why a prediction costs ~0.6 s and not the ~20 s a cold load would.</text>
+
+  <rect class="panelhi" x="648" y="456" width="534" height="88"/>
+  <text class="box" x="670" y="480">Returned to the browser</text>
+  <text class="mono" x="670" y="502">lesion_flagged · lesion_volume_mm3 · confidence</text>
+  <text class="mono" x="670" y="518">pancreas_dice_cleaned · lesion_dice_cleaned · inference_seconds</text>
+  <text class="note" x="670" y="534">Numbers only — the endpoint returns no mask.</text>
+
+  <!-- ================= honesty footer ================= -->
+  <rect class="panel" x="40" y="580" width="1200" height="86" stroke="#3A4F5E"/>
+  <text class="box" x="66" y="606" fill="#F4BC55">What is live, and what is not</text>
+  <text class="note" x="66" y="628" font-size="12">
+    <tspan fill="#26C5A6" font-weight="bold">Live: </tspan>
+    <tspan>the model genuinely runs on every click, and every number in the panel comes from that run.</tspan>
+  </text>
+  <text class="note" x="66" y="648" font-size="12">
+    <tspan fill="#6CB9DC" font-weight="bold">Pre-rendered: </tspan>
+    <tspan>the contour drawn on screen is a cached copy of that same prediction — identical output, loaded instantly so the 3D view does not stall.</tspan>
+  </text>
+</svg>

@@ -3,65 +3,58 @@ import {
   Activity,
   BadgeCheck,
   BookOpen,
-  Box,
   Check,
   ChevronRight,
   CircleAlert,
-  Crosshair,
   Database,
-  Download,
   Eye,
   Info,
-  Layers3,
   LayoutGrid,
-  LoaderCircle,
   MessageSquareWarning,
   Microscope,
   Radio,
-  RotateCcw,
   ScanLine,
   ShieldCheck,
-  SlidersHorizontal,
   Target,
-  WifiOff,
   X,
 } from 'lucide-react'
+import ReviewWorkspace from './components/ReviewWorkspace.jsx'
 const NiivueViewer = lazy(() => import('./components/NiivueViewer.jsx'))
 
 const BASE = '/cases'
 const API_BASE = 'http://localhost:8000'
 const STORAGE_KEY = 'pants-review-status-v1'
-const CURATED_CASE_IDS = ['PanTS_00000029', 'PanTS_00000008', 'PanTS_00000011']
+const CURATED_CASE_IDS = ['PanTS_00009005', 'PanTS_00009016', 'PanTS_00009220']
 const CURATED_CASE_SET = new Set(CURATED_CASE_IDS)
 
 const CASE_PROFILES = {
-  PanTS_00000029: {
+  PanTS_00009005: {
     label: 'Strong overlap',
     eyebrow: 'True-positive showcase',
     summary: 'The model and source of truth identify the same lesion.',
-    interpretation: 'Strong pancreas segmentation and good lesion localization, with modest boundary differences.',
-    strength: 'Correctly localized the lesion and closely followed the pancreatic boundary.',
-    limitation: 'The predicted lesion boundary does not exactly match the reference contour.',
+    interpretation: 'The model finds the tumor and outlines it closely — lesion Dice 0.919, pancreas Dice 0.855.',
+    strength: 'Correctly localized the lesion with a tight boundary around it.',
+    limitation: 'The predicted boundary still differs slightly from the reference contour.',
     tone: 'positive',
     order: 1,
   },
-  PanTS_00000008: {
-    label: 'Small false positive',
-    eyebrow: 'Failure analysis',
-    summary: 'The model flags a very small region where the source of truth contains no lesion.',
-    interpretation: 'Pancreas segmentation remains strong, but a tiny false-positive lesion is introduced.',
-    strength: 'Maintains a strong pancreas outline on a lesion-negative case.',
-    limitation: 'Flags a 47 mm³ region that is absent from the source-of-truth mask.',
-    tone: 'caution',
+  PanTS_00009016: {
+    label: 'Correctly silent',
+    eyebrow: 'True-negative showcase',
+    summary: 'A tumor-free scan where the model correctly predicts no lesion.',
+    interpretation: 'The model segments the pancreas well (Dice 0.889) and raises no false alarm.',
+    strength: 'Strong pancreas segmentation with no lesion predicted on a healthy scan.',
+    limitation: 'Correct silence on healthy scans is the model’s least reliable behavior overall.',
+    tone: 'positive',
     order: 2,
   },
-  PanTS_00000011: {
+  PanTS_00009220: {
     label: 'Large false positive',
     eyebrow: 'Failure analysis',
-    summary: 'The model over-calls a larger lesion-like region on a lesion-negative case.',
+    summary: 'The model flags a large lesion-like region on a scan with no tumor.',
     interpretation: 'A useful example of why detection specificity and human review remain important.',
-    strength: 'Produces a high-quality pancreas segmentation.',
-    limitation: 'Predicts a substantial lesion region where the source of truth has none.',
+    strength: 'Still produces a usable pancreas outline on a lesion-negative case.',
+    limitation: 'Predicts roughly 51 cm³ of lesion where the source of truth has none.',
     tone: 'caution',
     order: 3,
   },
@@ -148,17 +141,6 @@ function StatusPill({ status }) {
   )
 }
 
-function LayerSwitch({ checked, onChange, label, color }) {
-  return (
-    <label className="layer-switch">
-      <span className={`layer-swatch layer-swatch--${color}`} aria-hidden="true" />
-      <span>{label}</span>
-      <input type="checkbox" checked={checked} onChange={onChange} />
-      <span className="switch-track" aria-hidden="true"><span /></span>
-    </label>
-  )
-}
-
 function ViewerSuspense({ children }) {
   return (
     <Suspense fallback={<div className="viewer-module-loading" role="status">Preparing medical viewer…</div>}>
@@ -183,16 +165,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('queue')
   const [caseId, setCaseId] = useState(null)
   const [reviewStatuses, setReviewStatuses] = useState(readStoredStatuses)
-  const [reviewMode, setReviewMode] = useState('2d')
   const [comparisonMode, setComparisonMode] = useState('2d')
-  const [showFull, setShowFull] = useState(false)
-  const [showPancreas, setShowPancreas] = useState(true)
-  const [showLesion, setShowLesion] = useState(true)
-  const [overlayOpacity, setOverlayOpacity] = useState(0.68)
-  const [ctOpacity, setCtOpacity] = useState(0.18)
-  const [clipEnabled, setClipEnabled] = useState(true)
-  const [clipDepth, setClipDepth] = useState(0)
-  const [resetToken, setResetToken] = useState(0)
   const [showAbout, setShowAbout] = useState(false)
   const [apiCases, setApiCases] = useState([])
   const [endpointStatus, setEndpointStatus] = useState('checking')
@@ -261,20 +234,6 @@ export default function App() {
     [cases],
   )
 
-  const scanOptions = useMemo(() => {
-    const liveOptions = apiCases
-      .filter((item) => cases[item.case_id])
-      .map((item) => ({
-        caseId: item.case_id,
-        label: friendlyScanLabel(item.case_id, item.label),
-      }))
-    if (liveOptions.length) return liveOptions
-    return caseIds.map((id) => ({
-      caseId: id,
-      label: friendlyScanLabel(id, null),
-    }))
-  }, [apiCases, caseIds, cases])
-
   const libraryCases = useMemo(() => {
     const source = apiCases.length
       ? apiCases
@@ -289,21 +248,27 @@ export default function App() {
     }))
   }, [apiCases, cases])
 
+  const reviewCaseItems = useMemo(
+    () => caseIds.map((id) => ({
+      id,
+      shortId: id.replace('PanTS_', ''),
+      label: CASE_PROFILES[id]?.label || 'Unmarked scan',
+      tone: CASE_PROFILES[id]?.tone || 'neutral',
+      status: reviewStatuses[id] || 'unreviewed',
+    })),
+    [caseIds, reviewStatuses],
+  )
+
   const currentCase = caseId ? cases[caseId] : null
   const currentLive = caseId ? liveResults[caseId] : null
   const isAnalyzing = inferenceState.status === 'loading' && inferenceState.caseId === caseId
   const hasLiveResult = Boolean(currentLive)
   const isCuratedCase = CURATED_CASE_SET.has(caseId)
-  const isTruthRevealed = !isCuratedCase && hasLiveResult && truthRevealedCaseId === caseId
-  const revealStage = isCuratedCase ? null : isTruthRevealed ? 3 : hasLiveResult ? 2 : 1
-  const reviewSources = isCuratedCase
-    ? ['pred']
-    : isTruthRevealed
-      ? ['pred', 'gt']
-      : hasLiveResult
-        ? ['pred']
-        : []
-  const showModelOverlay = reviewSources.includes('pred')
+  // Once truth is revealed for this case it stays revealed. `hasLiveResult` is deliberately
+  // NOT part of this: reveal can only be triggered when a live result exists, and gating on
+  // it here meant anything that cleared liveResults silently re-locked truth and pulled the
+  // gt mask back out of the viewer after it had already loaded.
+  const isTruthRevealed = !isCuratedCase && truthRevealedCaseId === caseId
   const overlapPancreas = Number.isFinite(currentLive?.result?.dice_pancreas)
     ? currentLive.result.dice_pancreas
     : currentCase?.dice_pancreas
@@ -349,7 +314,7 @@ export default function App() {
 
   async function analyzeScan(targetCaseId) {
     const requestedCaseId = typeof targetCaseId === 'string' ? targetCaseId : caseId
-    if (!requestedCaseId || inferenceState.status === 'loading') return
+    if (!requestedCaseId || inferenceState.status === 'loading') return null
 
     setTruthRevealedCaseId(null)
     setLiveResults((previous) => {
@@ -383,18 +348,36 @@ export default function App() {
         [requestedCaseId]: {
           result,
           scoredAt: formatScoreTime(),
+          source: 'live',
         },
       }))
       setEndpointStatus('online')
       setInferenceState({ status: 'complete', caseId: requestedCaseId })
+      return { source: 'live', result }
     } catch {
-      setLiveResults((previous) => {
-        const next = { ...previous }
-        delete next[requestedCaseId]
-        return next
-      })
+      const cachedCase = cases[requestedCaseId]
+      if (cachedCase) {
+        const cachedResult = {
+          case_id: requestedCaseId,
+          lesion_flagged: Boolean(cachedCase.pred_has_lesion),
+          lesion_volume_mm3: Number(cachedCase.lesion_volume_mm3 || 0),
+          global_peak_lesion_confidence: Number(cachedCase.confidence || 0),
+          inference_seconds: null,
+          dice_pancreas: cachedCase.dice_pancreas,
+          dice_lesion: cachedCase.dice_lesion,
+        }
+        setLiveResults((previous) => ({
+          ...previous,
+          [requestedCaseId]: {
+            result: cachedResult,
+            scoredAt: null,
+            source: 'cached',
+          },
+        }))
+      }
       setEndpointStatus('offline')
       setInferenceState({ status: 'offline', caseId: requestedCaseId })
+      return cachedCase ? { source: 'cached' } : null
     }
   }
 
@@ -405,10 +388,9 @@ export default function App() {
   }
 
   function revealSourceOfTruth() {
-    if (isCuratedCase || !hasLiveResult || !caseId) return
-    setShowPancreas(true)
-    setShowLesion(true)
+    if (isCuratedCase || !hasLiveResult || !caseId) return false
     setTruthRevealedCaseId(caseId)
+    return true
   }
 
   function resetUnmarkedScan() {
@@ -420,9 +402,6 @@ export default function App() {
     })
     setTruthRevealedCaseId(null)
     setInferenceState({ status: 'idle', caseId: null })
-    setShowPancreas(true)
-    setShowLesion(true)
-    setResetToken((value) => value + 1)
   }
 
   function setReviewStatus(status) {
@@ -678,400 +657,33 @@ export default function App() {
       )}
 
       {activeTab === 'review' && currentCase && (
-        <main className="workspace">
-          <aside className="case-rail" aria-label="Prepared cases">
-            <div className="rail-heading">
-              <span className="eyebrow">Scan library</span>
-              <strong>{caseIds.length} studies</strong>
-            </div>
-            <div className="rail-list">
-              {caseIds.map((id) => {
-                const profile = CASE_PROFILES[id] || { label: 'Unmarked scan', tone: 'neutral' }
-                return (
-                  <button
-                    key={id}
-                    className={`rail-case ${id === caseId ? 'active' : ''}`}
-                    onClick={() => selectScan(id)}
-                  >
-                    <span className={`case-indicator case-indicator--${profile.tone}`} aria-hidden="true" />
-                    <span>
-                      <strong>{formatCaseId(id)}</strong>
-                      <small>{profile.label}</small>
-                    </span>
-                    <StatusPill status={reviewStatuses[id] || 'unreviewed'} />
-                  </button>
-                )
-              })}
-            </div>
-            {isCuratedCase ? (
-              <button className="rail-comparison" onClick={() => setActiveTab('comparison')}>
-                <Microscope size={16} aria-hidden="true" />
-                Open scientific comparison
-              </button>
-            ) : (
-              <button className="rail-comparison" onClick={() => setActiveTab('library')}>
-                <LayoutGrid size={16} aria-hidden="true" />
-                Return to scan library
-              </button>
-            )}
-          </aside>
-
-          <section className="viewer-workspace">
-            <header className="workspace-toolbar">
-              <div>
-                <span className="eyebrow">
-                  {isCuratedCase
-                    ? currentProfile.eyebrow
-                    : revealStage === 3
-                      ? 'Stage 3 · Source of truth'
-                      : revealStage === 2
-                        ? 'Stage 2 · Live prediction'
-                        : 'Stage 1 · Unmarked'}
-                </span>
-                <strong>{formatCaseId(caseId)} · {currentProfile.label}</strong>
-              </div>
-              <div className="toolbar-actions">
-                <div className="segmented-control" aria-label="Viewer mode">
-                  <button className={reviewMode === '2d' ? 'active' : ''} onClick={() => setReviewMode('2d')}>
-                    <Crosshair size={15} aria-hidden="true" /> Three planes
-                  </button>
-                  <button className={reviewMode === '3d' ? 'active' : ''} onClick={() => setReviewMode('3d')}>
-                    <Box size={15} aria-hidden="true" /> 3D
-                  </button>
-                </div>
-                <button className="tool-button" onClick={() => setResetToken((value) => value + 1)}>
-                  <RotateCcw size={15} aria-hidden="true" /> Reset view
-                </button>
-              </div>
-            </header>
-
-            <div className="primary-viewer">
-              <ViewerSuspense>
-                <NiivueViewer
-                  caseData={currentCase}
-                  sources={reviewSources}
-                  mode={reviewMode}
-                  showFull={showFull}
-                  overlayOpacity={overlayOpacity}
-                  ctOpacity={ctOpacity}
-                  showPancreas={showPancreas}
-                  showLesion={showLesion}
-                  clip={{
-                    enabled: clipEnabled,
-                    depth: clipDepth,
-                    azimuth: 0,
-                    elevation: 0,
-                  }}
-                  resetToken={resetToken}
-                  label={`${formatCaseId(caseId)} ${
-                    isTruthRevealed
-                      ? 'model prediction and source of truth'
-                      : showModelOverlay
-                        ? 'model prediction'
-                        : 'unmarked CT'
-                  }`}
-                />
-              </ViewerSuspense>
-              <div className="viewer-legend">
-                {showModelOverlay ? (
-                  <>
-                    <span><i className="legend-dot legend-dot--pancreas" /> Model pancreas</span>
-                    <span><i className="legend-dot legend-dot--lesion" /> Model lesion</span>
-                  </>
-                ) : (
-                  <span className="viewer-unmarked"><ScanLine size={12} aria-hidden="true" /> CT only · model layers concealed</span>
-                )}
-                {isTruthRevealed && (
-                  <>
-                    <span><i className="legend-dot legend-dot--truth-pancreas" /> Truth pancreas</span>
-                    <span><i className="legend-dot legend-dot--truth-lesion" /> Truth lesion</span>
-                  </>
-                )}
-                <span className="viewer-instructions">
-                  {reviewMode === '3d' ? 'Drag to rotate · scroll to zoom' : 'Scroll slices · drag crosshair to synchronize planes'}
-                </span>
-              </div>
-            </div>
-          </section>
-
-          <aside className="finding-panel">
-            <section className="live-inference">
-              <div className="panel-title"><Radio size={15} aria-hidden="true" /><span>Live inference</span></div>
-              {!isCuratedCase && (
-                <div className="reveal-progress" aria-label={`Progressive reveal, stage ${revealStage} of 3`}>
-                  {[
-                    ['01', 'Unmarked'],
-                    ['02', 'Prediction'],
-                    ['03', 'Truth'],
-                  ].map(([number, label], index) => {
-                    const stage = index + 1
-                    const state = revealStage === stage ? 'active' : revealStage > stage ? 'complete' : 'pending'
-                    return (
-                      <div className={`reveal-progress__step reveal-progress__step--${state}`} key={number}>
-                        <span>{state === 'complete' ? <Check size={11} aria-hidden="true" /> : number}</span>
-                        <small>{label}</small>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-              <div className="scan-analyzer">
-                <label>
-                  <span className="sr-only">Select a scan to analyze</span>
-                  <select
-                    value={caseId || ''}
-                    onChange={(event) => selectScan(event.target.value)}
-                    aria-label="Scan picker"
-                  >
-                    {scanOptions.map((option) => (
-                      <option value={option.caseId} key={option.caseId}>
-                        {formatCaseId(option.caseId)} · {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  className="analyze-button"
-                  type="button"
-                  onClick={analyzeScan}
-                  disabled={!caseId || isAnalyzing}
-                >
-                  {isAnalyzing
-                    ? <LoaderCircle size={15} className="spin" aria-hidden="true" />
-                    : <Activity size={15} aria-hidden="true" />}
-                  {isAnalyzing ? 'Analyzing' : 'Analyze scan'}
-                </button>
-              </div>
-              {endpointStatus === 'offline' && !isAnalyzing && (
-                <p className="endpoint-note endpoint-note--offline" role="status">
-                  <WifiOff size={13} aria-hidden="true" />
-                  {isCuratedCase
-                    ? 'endpoint offline — showing cached result'
-                    : 'endpoint offline — live analysis unavailable'}
-                </p>
-              )}
-              {isAnalyzing && (
-                <div className="inference-loading" role="status" aria-live="polite">
-                  <LoaderCircle size={18} className="spin" aria-hidden="true" />
-                  <span>
-                    <strong>Scoring local scan</strong>
-                    <small>Running the whole-box model…</small>
-                  </span>
-                </div>
-              )}
-              {!isCuratedCase && revealStage > 1 && !isAnalyzing && (
-                <button className="reset-scan-button" type="button" onClick={resetUnmarkedScan}>
-                  <RotateCcw size={13} aria-hidden="true" /> Reset / new scan
-                </button>
-              )}
-            </section>
-
-            {!isCuratedCase && !hasLiveResult ? (
-              <section className={`unmarked-finding${isAnalyzing ? ' unmarked-finding--loading' : ''}`}>
-                <span className="unmarked-badge"><ScanLine size={12} aria-hidden="true" /> Unmarked scan</span>
-                <div className="unmarked-finding__icon"><Crosshair size={24} aria-hidden="true" /></div>
-                <h2>{isAnalyzing ? 'Analyzing clean CT…' : 'Ready for model analysis'}</h2>
-                <p>
-                  {isAnalyzing
-                    ? 'The CT remains unmarked while the live endpoint computes its score.'
-                    : 'No prediction or reference contour is visible. Select Analyze scan to reveal the model proposal.'}
-                </p>
-                <span className="unmarked-finding__rule">CT only · no hidden ground-truth view</span>
-              </section>
-            ) : (
-              <>
-                <div className="finding-heading">
-                  <div className="finding-badges">
-                    <span className="proposal-badge"><Activity size={13} aria-hidden="true" /> Model proposal</span>
-                    <span className={`result-source-badge${hasLiveResult ? ' result-source-badge--live' : ''}`}>
-                      {hasLiveResult ? <Radio size={12} aria-hidden="true" /> : <Database size={12} aria-hidden="true" />}
-                      {hasLiveResult
-                        ? isCuratedCase
-                          ? `Live · scored ${currentLive.scoredAt}`
-                          : `Live · scored ${currentLive.scoredAt} · ${currentLive.result.inference_seconds.toFixed(1)}s`
-                        : 'Precomputed'}
-                    </span>
-                  </div>
-                  <h2>{findingHasLesion ? 'Possible finding' : 'No finding flagged'}</h2>
-                  <p>
-                    {findingHasLesion
-                      ? 'Review the highlighted region within the pancreas in every available view.'
-                      : 'The current score did not retain a possible-lesion region.'}
-                  </p>
-                </div>
-
-                <div className={`measurement-list${isAnalyzing ? ' measurement-list--loading' : ''}`}>
-                  <div><span>CADe flag</span><strong>{findingHasLesion ? 'Possible lesion' : 'Not flagged'}</strong></div>
-                  <div><span>Approx. diameter</span><strong>{approxDiameterMm(findingVolumeMm3)} mm</strong></div>
-                  <div><span>Predicted volume</span><strong>{(findingVolumeMm3 / 1000).toFixed(2)} cm³</strong></div>
-                  <div><span>Confidence</span><strong>{Math.round(findingConfidence * 100)}%</strong></div>
-                  <div><span>Location</span><strong>Pancreatic region</strong></div>
-                  {hasLiveResult && (
-                    <div className="inference-time">
-                      <span>Inference</span>
-                      <strong>scored in {currentLive.result.inference_seconds.toFixed(1)}s</strong>
-                    </div>
-                  )}
-                  {hasLiveResult && (
-                    <p className="live-viewer-note">Live measurements · prepared model contour revealed in the viewer.</p>
-                  )}
-                </div>
-              </>
-            )}
-
-            {!isCuratedCase && hasLiveResult && !isTruthRevealed && (
-              <section className="truth-reveal-cta">
-                <div className="truth-reveal-cta__icon"><BookOpen size={20} aria-hidden="true" /></div>
-                <span className="eyebrow">Stage 3 is ready</span>
-                <h2>Put the prediction to the test.</h2>
-                <p>
-                  Reveal the independent reference contours beside the model proposal in the same
-                  synchronized 2D and 3D views.
-                </p>
-                <button className="reveal-truth-button" type="button" onClick={revealSourceOfTruth}>
-                  <Microscope size={16} aria-hidden="true" /> Reveal source of truth
-                  <ChevronRight size={15} aria-hidden="true" />
-                </button>
-              </section>
-            )}
-
-            {isTruthRevealed && (
-              <section
-                className="truth-payoff"
-                aria-label={`Overlap with source of truth — pancreas Dice ${overlapPancreas?.toFixed(3)}, lesion Dice ${overlapLesion?.toFixed(3)}`}
-              >
-                <div className="truth-payoff__heading">
-                  <span className="truth-payoff__icon"><ShieldCheck size={18} aria-hidden="true" /></span>
-                  <div>
-                    <span className="eyebrow">Stage 3 · Scientific payoff</span>
-                    <h2>Overlap with source of truth</h2>
-                  </div>
-                </div>
-                <div className="truth-payoff__metrics">
-                  <div>
-                    <span><i className="legend-dot legend-dot--truth-pancreas" /> Pancreas Dice</span>
-                    <strong>{overlapPancreas?.toFixed(3) ?? '—'}</strong>
-                  </div>
-                  <div>
-                    <span><i className="legend-dot legend-dot--truth-lesion" /> Lesion Dice</span>
-                    <strong>{overlapLesion?.toFixed(3) ?? '—'}</strong>
-                  </div>
-                </div>
-                <p className="truth-payoff__summary">
-                  Prediction remains teal/red. Source of truth is now overlaid in blue/amber so
-                  agreement and boundary error are visible together.
-                </p>
-              </section>
-            )}
-
-            <section className="panel-section">
-              <div className="panel-title"><Layers3 size={15} aria-hidden="true" /><span>Visible layers</span></div>
-              {showModelOverlay ? (
-                <>
-                  <LayerSwitch
-                    checked={showPancreas}
-                    onChange={(event) => setShowPancreas(event.target.checked)}
-                    label="Pancreas"
-                    color="pancreas"
-                  />
-                  <LayerSwitch
-                    checked={showLesion}
-                    onChange={(event) => setShowLesion(event.target.checked)}
-                    label="Possible lesion"
-                    color="lesion"
-                  />
-                  <label className="range-control">
-                    <span>Overlay opacity <strong>{Math.round(overlayOpacity * 100)}%</strong></span>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="1"
-                      step="0.05"
-                      value={overlayOpacity}
-                      onChange={(event) => setOverlayOpacity(Number(event.target.value))}
-                    />
-                  </label>
-                </>
-              ) : (
-                <p className="layers-locked"><ScanLine size={13} aria-hidden="true" /> Model layers unlock after a successful live analysis.</p>
-              )}
-            </section>
-
-            <section className="panel-section">
-              <div className="panel-title"><SlidersHorizontal size={15} aria-hidden="true" /><span>View controls</span></div>
-              <label className="layer-switch">
-                <span className="control-icon"><ScanLine size={14} aria-hidden="true" /></span>
-                <span>Full abdominal CT</span>
-                <input
-                  type="checkbox"
-                  checked={showFull}
-                  disabled={!currentCase.files.ct_full}
-                  onChange={(event) => setShowFull(event.target.checked)}
-                />
-                <span className="switch-track" aria-hidden="true"><span /></span>
-              </label>
-              {reviewMode === '3d' && (
-                <>
-                  <label className="range-control">
-                    <span>CT volume opacity <strong>{Math.round(ctOpacity * 100)}%</strong></span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="0.75"
-                      step="0.05"
-                      value={ctOpacity}
-                      onChange={(event) => setCtOpacity(Number(event.target.value))}
-                    />
-                  </label>
-                  <label className="layer-switch">
-                    <span className="control-icon"><Crosshair size={14} aria-hidden="true" /></span>
-                    <span>Cut away CT</span>
-                    <input
-                      type="checkbox"
-                      checked={clipEnabled}
-                      onChange={(event) => setClipEnabled(event.target.checked)}
-                    />
-                    <span className="switch-track" aria-hidden="true"><span /></span>
-                  </label>
-                  {clipEnabled && (
-                    <label className="range-control">
-                      <span>CT cut depth <strong>{clipDepth.toFixed(2)}</strong></span>
-                      <input
-                        type="range"
-                        min="-0.5"
-                        max="0.5"
-                        step="0.01"
-                        value={clipDepth}
-                        onChange={(event) => setClipDepth(Number(event.target.value))}
-                      />
-                    </label>
-                  )}
-                </>
-              )}
-            </section>
-
-            <section className="review-actions">
-              <div className="review-actions__row">
-                <button className="primary-button" onClick={() => setReviewStatus('reviewed')}>
-                  <Check size={16} aria-hidden="true" /> Mark reviewed
-                </button>
-                <button className="secondary-button" onClick={() => setReviewStatus('discussion')}>
-                  <MessageSquareWarning size={16} aria-hidden="true" /> Discuss
-                </button>
-              </div>
-              {showModelOverlay && (
-                <a className="export-button" href={`${BASE}/${currentCase.files.pred}`} download>
-                  <Download size={16} aria-hidden="true" /> Export predicted mask
-                </a>
-              )}
-              {isCuratedCase && (
-                <button className="comparison-link" onClick={() => setActiveTab('comparison')}>
-                  Compare with source of truth <ChevronRight size={15} aria-hidden="true" />
-                </button>
-              )}
-            </section>
-          </aside>
-        </main>
+        <ReviewWorkspace
+          caseId={caseId}
+          caseData={currentCase}
+          profile={currentProfile}
+          caseItems={reviewCaseItems}
+          isCurated={isCuratedCase}
+          hasLiveResult={hasLiveResult}
+          liveResult={currentLive}
+          isAnalyzing={isAnalyzing}
+          endpointStatus={endpointStatus}
+          truthRevealed={isTruthRevealed}
+          reviewStatus={reviewStatuses[caseId] || 'unreviewed'}
+          finding={{
+            lesionFlagged: findingHasLesion,
+            volumeMm3: findingVolumeMm3,
+            confidence: findingConfidence,
+            diameterMm: approxDiameterMm(findingVolumeMm3),
+          }}
+          overlap={{ pancreas: overlapPancreas, lesion: overlapLesion }}
+          onSelectScan={selectScan}
+          onAnalyze={analyzeScan}
+          onRevealTruth={revealSourceOfTruth}
+          onResetScan={resetUnmarkedScan}
+          onSetReviewStatus={setReviewStatus}
+          onOpenComparison={() => setActiveTab('comparison')}
+          onOpenLibrary={() => setActiveTab('library')}
+        />
       )}
 
       {activeTab === 'comparison' && currentCase && isCuratedCase && (

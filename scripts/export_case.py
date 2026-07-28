@@ -61,12 +61,43 @@ def save_nifti(arr, affine, path):
     nib.save(nib.Nifti1Image(np.asarray(arr), affine), str(path))
 
 
+def _vertex_normals(verts, faces):
+    """Area-weighted smooth vertex normals for stable web lighting."""
+    verts = np.asarray(verts, dtype=np.float64)
+    faces = np.asarray(faces, dtype=np.int64)
+    normals = np.zeros_like(verts)
+    tri = verts[faces]
+    face_normals = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    for corner in range(3):
+        np.add.at(normals, faces[:, corner], face_normals)
+    lengths = np.linalg.norm(normals, axis=1)
+    lengths[lengths == 0] = 1.0
+    return (normals / lengths[:, None]).astype(np.float32)
+
+
 def write_obj(verts, faces, path):
-    """Minimal OBJ writer (NiiVue reads .obj). Faces are 1-indexed."""
+    """OBJ writer with explicit smooth normals. Faces are 1-indexed."""
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [f"v {v[0]:.3f} {v[1]:.3f} {v[2]:.3f}" for v in verts]
-    lines += [f"f {t[0]+1} {t[1]+1} {t[2]+1}" for t in faces]
+    normals = _vertex_normals(verts, faces)
+    lines += [f"vn {n[0]:.6f} {n[1]:.6f} {n[2]:.6f}" for n in normals]
+    lines += [
+        f"f {t[0]+1}//{t[0]+1} {t[1]+1}//{t[1]+1} {t[2]+1}//{t[2]+1}"
+        for t in faces
+    ]
     path.write_text("\n".join(lines) + "\n")
+
+
+def rewrite_obj_with_normals(path):
+    """Upgrade a prepared OBJ in place without changing its vertices or faces."""
+    verts, faces = [], []
+    for line in path.read_text().splitlines():
+        if line.startswith("v "):
+            verts.append([float(value) for value in line.split()[1:4]])
+        elif line.startswith("f "):
+            faces.append([int(token.split("/")[0]) - 1 for token in line.split()[1:4]])
+    if verts and faces:
+        write_obj(np.asarray(verts, dtype=np.float32), np.asarray(faces, dtype=np.int64), path)
 
 
 def _taubin_smooth(verts, faces, iters=12, lam=0.53, mu=-0.53):
@@ -111,6 +142,93 @@ def surface(field, affine, iso=0.5, presmooth=0.7, taubin=12):
     return world, faces
 
 
+def export_difference_assets(pred, gt, affine, out, cid, files, presmooth=0.35, taubin=6):
+    """Create presentation-only agreement/discrepancy assets from authoritative masks."""
+    files.setdefault("difference", {})
+    files.setdefault("mesh", {})
+
+    anatomy_masks = {
+        "pancreas": (pred > 0, gt > 0),
+        "lesion": (pred == 2, gt == 2),
+    }
+    for anatomy, (pred_mask, gt_mask) in anatomy_masks.items():
+        agreement = pred_mask & gt_mask
+        pred_only = pred_mask & ~gt_mask
+        gt_only = gt_mask & ~pred_mask
+        label = np.zeros(pred.shape, dtype=np.int16)
+        label[agreement] = 1
+        label[pred_only] = 2
+        label[gt_only] = 3
+
+        nifti_rel = f"{cid}/difference/{anatomy}.nii.gz"
+        save_nifti(label, affine, out / nifti_rel)
+        files["difference"][anatomy] = nifti_rel
+
+        for region, field in (
+            ("agreement", agreement),
+            ("pred_only", pred_only),
+            ("gt_only", gt_only),
+        ):
+            mesh = surface(
+                field.astype(np.float32),
+                affine,
+                iso=0.5,
+                presmooth=presmooth,
+                taubin=taubin,
+            )
+            if mesh is None:
+                continue
+            name = f"{anatomy}_{region}"
+            rel = f"{cid}/mesh/{name}.obj"
+            write_obj(mesh[0], mesh[1], out / rel)
+            files["mesh"][name] = rel
+
+
+def derive_existing_demo_assets(out, presmooth=0.35, taubin=6):
+    """Retrofit discrepancy volumes/meshes and explicit normals into a prepared demo folder."""
+    import nibabel as nib
+
+    results_path = out / "results.json"
+    if not results_path.exists():
+        raise FileNotFoundError(f"No prepared manifest found at {results_path}")
+    results = json.loads(results_path.read_text())
+
+    for cid, item in results.items():
+        files = item.get("files", {})
+        pred_path = out / files.get("pred", "")
+        gt_path = out / files.get("gt", "")
+        if not pred_path.exists() or not gt_path.exists():
+            print(f"  ! skipping {cid}: prepared pred/gt mask missing")
+            continue
+        pred_img = nib.load(str(pred_path))
+        gt_img = nib.load(str(gt_path))
+        pred = np.asarray(pred_img.dataobj).astype(np.int16)
+        gt = np.asarray(gt_img.dataobj).astype(np.int16)
+        if pred.shape != gt.shape:
+            print(f"  ! skipping {cid}: pred/gt shapes differ")
+            continue
+        export_difference_assets(
+            pred,
+            gt,
+            pred_img.affine,
+            out,
+            cid,
+            files,
+            presmooth=presmooth,
+            taubin=taubin,
+        )
+        for mesh_path in files.get("mesh", {}).values():
+            prepared_mesh = out / mesh_path
+            if prepared_mesh.exists():
+                rewrite_obj_with_normals(prepared_mesh)
+        item["files"] = files
+        item["display_mesh_version"] = "v2-explicit-normals-difference"
+        print(f"  + {cid}: discrepancy volumes and meshes")
+
+    results_path.write_text(json.dumps(results, indent=2) + "\n")
+    print(f"updated {results_path} ({len(results)} case(s))")
+
+
 def load_full_ct(cfg, ct_path, downsample_mm=2.0):
     """Load the ORIGINAL full abdomen CT in RAS world space (optionally downsampled for the
     web), windowed to [0,1]. The affine is RAS-consistent with the whole-box meshes, so the
@@ -145,7 +263,7 @@ def infer_case(cfg, model, device, split, case_id):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/level45.yaml")
-    ap.add_argument("--ckpt", required=True)
+    ap.add_argument("--ckpt", default=None)
     ap.add_argument("--case", action="append", default=[], help="case_id to export (repeatable)")
     ap.add_argument("--split", default="val")
     ap.add_argument("--out", default="outputs/ui_cases")
@@ -165,7 +283,19 @@ def main():
                     help="also export the full abdomen CT (fun mode); meshes land on it via world-consistent affines")
     ap.add_argument("--full-ct-mm", type=float, default=2.0,
                     help="downsample spacing for the full CT export, to keep the web volume small")
+    ap.add_argument("--derive-existing", action="store_true",
+                    help="retrofit difference assets into an existing prepared demo folder; no model or dataset required")
     args = ap.parse_args()
+
+    if args.derive_existing:
+        derive_existing_demo_assets(
+            Path(args.out),
+            presmooth=min(args.smooth_sigma, 0.5),
+            taubin=min(args.taubin, 8),
+        )
+        return
+    if not args.ckpt:
+        ap.error("--ckpt is required unless --derive-existing is used")
 
     cfg = load_config(args.config)
     if args.roi:
@@ -225,7 +355,12 @@ def main():
         save_nifti(gt.astype(np.int16), affine, cdir / "gt.nii.gz")
         save_nifti(pred.astype(np.int16), affine, cdir / "pred.nii.gz")
 
-        files = {"ct": f"{cid}/ct.nii.gz", "gt": f"{cid}/gt.nii.gz", "pred": f"{cid}/pred.nii.gz", "mesh": {}}
+        files = {
+            "ct": f"{cid}/ct.nii.gz",
+            "gt": f"{cid}/gt.nii.gz",
+            "pred": f"{cid}/pred.nii.gz",
+            "mesh": {},
+        }
 
         if args.full_ct:
             ctp = man.loc[man["case_id"] == cid, "ct_path"]
@@ -250,6 +385,8 @@ def main():
                 write_obj(m[0], m[1], out / rel)
                 files["mesh"][name] = rel
 
+        export_difference_assets(pred, gt, affine, out, cid, files)
+
         lesion_vox = int((pred == 2).sum())
         results[cid] = {
             "case_id": cid,
@@ -260,6 +397,7 @@ def main():
             "dice_lesion": round(dice(pred == 2, gt == 2), 3),
             "confidence": round(float(probs[2][pred == 2].mean()) if lesion_vox > 0 else 0.0, 3),
             "spacing_mm": spacing.tolist(),
+            "display_mesh_version": "v2-explicit-normals-difference",
             "files": files,
         }
         print(f"  saved CT/gt/pred + {len(files['mesh'])} meshes -> {cdir}")

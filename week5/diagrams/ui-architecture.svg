@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 740" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="u" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto">
+      <path d="M0,0 L6.5,3 L0,6 z" fill="#4E6472"/>
+    </marker>
+    <marker id="ut" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto">
+      <path d="M0,0 L6.5,3 L0,6 z" fill="#26C5A6"/>
+    </marker>
+    <marker id="ub" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto">
+      <path d="M0,0 L6.5,3 L0,6 z" fill="#6CB9DC"/>
+    </marker>
+  </defs>
+  <style>
+    .bg{fill:#071019}
+    .panel{fill:#0E1A26;stroke:#213444;stroke-width:1;rx:9}
+    .panelhi{fill:#13212F;stroke:#2A4356;stroke-width:1;rx:9}
+    .h1{fill:#EDF5F7;font-size:25px;font-weight:bold}
+    .sub{fill:#7C919D;font-size:13px}
+    .lbl{fill:#7C919D;font-size:10.5px;font-weight:bold;letter-spacing:1.5px}
+    .box{fill:#EDF5F7;font-size:13px;font-weight:bold}
+    .note{fill:#8FA3AE;font-size:11px}
+    .mono{fill:#BFD0D6;font-size:10.5px;font-family:'IBM Plex Mono',Consolas,monospace}
+    .link{stroke:#4E6472;stroke-width:1.4;fill:none}
+    .linkT{stroke:#26C5A6;stroke-width:1.6;fill:none}
+    .linkB{stroke:#6CB9DC;stroke-width:1.6;fill:none}
+  </style>
+
+  <rect class="bg" x="0" y="0" width="1280" height="740"/>
+  <text class="h1" x="40" y="46">Interface architecture</text>
+  <text class="sub" x="40" y="70">React + NiiVue. Static files render instantly; the deployed endpoint supplies every number.</text>
+
+  <!-- ===== COMPONENTS ===== -->
+  <text class="lbl" x="40" y="112">COMPONENT TREE</text>
+  <rect class="panel" x="40" y="124" width="440" height="382"/>
+
+  <rect class="panelhi" x="62" y="144" width="396" height="72"/>
+  <text class="mono" x="82" y="168">App.jsx</text>
+  <text class="note" x="82" y="188">Owns which case is open, live results,</text>
+  <text class="note" x="82" y="204">review status, and endpoint health.</text>
+
+  <path class="link" d="M120,220 L120,244" marker-end="url(#u)"/>
+  <path class="link" d="M260,220 L260,244" marker-end="url(#u)"/>
+  <path class="link" d="M400,220 L400,244" marker-end="url(#u)"/>
+
+  <rect class="panelhi" x="62" y="248" width="126" height="66"/>
+  <text class="box" x="78" y="272" font-size="11.5">Case queue</text>
+  <text class="note" x="78" y="292">the three curated</text>
+  <text class="note" x="78" y="306">showcase cases</text>
+
+  <rect class="panelhi" x="200" y="248" width="126" height="66"/>
+  <text class="box" x="216" y="272" font-size="11.5">Scan library</text>
+  <text class="note" x="216" y="292">nine unmarked</text>
+  <text class="note" x="216" y="306">held-out scans</text>
+
+  <rect class="panelhi" x="338" y="248" width="120" height="66"/>
+  <text class="box" x="354" y="272" font-size="11.5">Comparison</text>
+  <text class="note" x="354" y="292">side-by-side</text>
+  <text class="note" x="354" y="306">evidence view</text>
+
+  <path class="link" d="M260,318 L260,342" marker-end="url(#u)"/>
+
+  <rect class="panelhi" x="62" y="346" width="396" height="72" stroke="#26C5A6"/>
+  <text class="mono" x="82" y="370" fill="#26C5A6">ReviewWorkspace.jsx</text>
+  <text class="note" x="82" y="390">The workspace itself — evidence modes, layer</text>
+  <text class="note" x="82" y="406">toggles, focus, and the three-stage reveal.</text>
+
+  <path class="link" d="M260,422 L260,442" marker-end="url(#u)"/>
+
+  <rect class="panelhi" x="62" y="446" width="396" height="46"/>
+  <text class="mono" x="82" y="474">NiivueViewer.jsx — WebGL canvas</text>
+
+  <!-- ===== STATE ===== -->
+  <text class="lbl" x="504" y="112">STATE</text>
+  <rect class="panel" x="504" y="124" width="300" height="382"/>
+
+  <rect class="panelhi" x="526" y="144" width="256" height="130"/>
+  <text class="box" x="546" y="168">App state</text>
+  <text class="mono" x="546" y="192">caseId</text>
+  <text class="mono" x="546" y="210">liveResults[caseId]</text>
+  <text class="mono" x="546" y="228">truthRevealedCaseId</text>
+  <text class="mono" x="546" y="246">endpointStatus</text>
+  <text class="note" x="546" y="266">Review decisions persist in localStorage.</text>
+
+  <rect class="panelhi" x="526" y="288" width="256" height="196" stroke="#26C5A6"/>
+  <text class="box" x="546" y="312" fill="#26C5A6">reviewState reducer</text>
+  <text class="note" x="546" y="332">One reducer drives the whole viewer,</text>
+  <text class="note" x="546" y="348">so every control stays in sync.</text>
+  <text class="mono" x="546" y="374">evidenceMode  ct | prediction</text>
+  <text class="mono" x="546" y="390">              truth | overlap</text>
+  <text class="mono" x="546" y="408">layerVisibility</text>
+  <text class="mono" x="546" y="426">anatomyFocus · sourceFocus</text>
+  <text class="mono" x="546" y="444">selectedObject</text>
+  <text class="note" x="546" y="466">Actions: CASE_CHANGED,</text>
+  <text class="note" x="546" y="480">PREDICTION_READY, SELECT_OBJECT</text>
+
+  <!-- ===== DATA SOURCES ===== -->
+  <text class="lbl" x="828" y="112">DATA SOURCES</text>
+  <rect class="panel" x="828" y="124" width="412" height="382"/>
+
+  <rect class="panelhi" x="850" y="144" width="368" height="150" stroke="#6CB9DC"/>
+  <text class="box" x="870" y="168" fill="#6CB9DC">Static — served by Vite</text>
+  <text class="mono" x="870" y="192">/cases/results.json</text>
+  <text class="mono" x="870" y="210">/cases/&lt;id&gt;/ct.nii.gz</text>
+  <text class="mono" x="870" y="228">/cases/&lt;id&gt;/gt.nii.gz</text>
+  <text class="mono" x="870" y="246">/cases/&lt;id&gt;/pred.nii.gz</text>
+  <text class="mono" x="870" y="264">/cases/&lt;id&gt;/mesh/*.obj</text>
+  <text class="note" x="870" y="284">Volumes and marching-cubes surfaces render instantly.</text>
+
+  <rect class="panelhi" x="850" y="310" width="368" height="120" stroke="#26C5A6"/>
+  <text class="box" x="870" y="334" fill="#26C5A6">Live — FastAPI on :8000</text>
+  <text class="mono" x="870" y="358">GET  /cases    → populates the library</text>
+  <text class="mono" x="870" y="376">POST /predict  → CADe summary</text>
+  <text class="mono" x="870" y="394">GET  /health   → model + freshness</text>
+  <text class="note" x="870" y="416">Every displayed number comes from here.</text>
+
+  <rect class="panelhi" x="850" y="444" width="368" height="46"/>
+  <text class="note" x="870" y="464">Endpoint offline → falls back to the cached result</text>
+  <text class="note" x="870" y="480" fill="#F4BC55">and says so. The interface never stalls.</text>
+
+  <path class="linkB" d="M486,300 L500,300" marker-end="url(#ub)"/>
+  <path class="linkT" d="M810,300 L824,300" marker-end="url(#ut)"/>
+
+  <!-- ===== three-stage reveal ===== -->
+  <text class="lbl" x="40" y="546">THE REVIEW FLOW — WHAT THE USER ACTUALLY DOES</text>
+  <rect class="panel" x="40" y="558" width="1200" height="118"/>
+
+  <rect class="panelhi" x="66" y="578" width="356" height="80"/>
+  <circle cx="90" cy="602" r="11" fill="#7C919D"/>
+  <text x="86" y="606" font-size="11" font-weight="bold" fill="#071019">1</text>
+  <text class="box" x="110" y="606">Unmarked</text>
+  <text class="note" x="88" y="628">The raw CT only — exactly what a radiologist</text>
+  <text class="note" x="88" y="644">sees before anyone has drawn anything.</text>
+
+  <rect class="panelhi" x="444" y="578" width="356" height="80" stroke="#26C5A6"/>
+  <circle cx="468" cy="602" r="11" fill="#26C5A6"/>
+  <text x="464" y="606" font-size="11" font-weight="bold" fill="#071019">2</text>
+  <text class="box" x="488" y="606" fill="#26C5A6">Prediction</text>
+  <text class="note" x="466" y="628">Analyze calls the endpoint live. The model's</text>
+  <text class="note" x="466" y="644">pancreas and lesion appear, scored just now.</text>
+
+  <rect class="panelhi" x="822" y="578" width="392" height="80" stroke="#F4BC55"/>
+  <circle cx="846" cy="602" r="11" fill="#F4BC55"/>
+  <text x="842" y="606" font-size="11" font-weight="bold" fill="#071019">3</text>
+  <text class="box" x="866" y="606" fill="#F4BC55">Source of truth</text>
+  <text class="note" x="844" y="628">The expert contour drops on top. Overlap, over-</text>
+  <text class="note" x="844" y="644">segmentation, and misses become visible at once.</text>
+
+  <path class="link" d="M426,618 L440,618" marker-end="url(#u)"/>
+  <path class="link" d="M804,618 L818,618" marker-end="url(#u)"/>
+
+  <text class="note" x="40" y="708" font-size="11.5" fill="#5F7783">Colour convention throughout — model pancreas teal, model lesion red, reference pancreas blue, reference lesion amber.</text>
+</svg>

@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 700" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto">
+      <path d="M0,0 L6.5,3 L0,6 z" fill="#4E6472"/>
+    </marker>
+    <marker id="mt" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto">
+      <path d="M0,0 L6.5,3 L0,6 z" fill="#26C5A6"/>
+    </marker>
+  </defs>
+  <style>
+    .bg{fill:#071019}
+    .panel{fill:#0E1A26;stroke:#213444;stroke-width:1;rx:9}
+    .panelhi{fill:#13212F;stroke:#2A4356;stroke-width:1;rx:9}
+    .enc{fill:#123240;stroke:#2E5C6E;stroke-width:1;rx:4}
+    .dec{fill:#12302B;stroke:#26C5A6;stroke-width:1;rx:4}
+    .bott{fill:#1C2A3A;stroke:#6CB9DC;stroke-width:1.4;rx:4}
+    .h1{fill:#EDF5F7;font-size:25px;font-weight:bold}
+    .sub{fill:#7C919D;font-size:13px}
+    .lbl{fill:#7C919D;font-size:10.5px;font-weight:bold;letter-spacing:1.4px}
+    .box{fill:#EDF5F7;font-size:13px;font-weight:bold}
+    .note{fill:#8FA3AE;font-size:11px}
+    .mono{fill:#BFD0D6;font-size:10.5px;font-family:'IBM Plex Mono',Consolas,monospace}
+    .tiny{fill:#7C919D;font-size:9.5px;font-family:'IBM Plex Mono',Consolas,monospace}
+    .skip{stroke:#3E5A6B;stroke-width:1.2;stroke-dasharray:4 4;fill:none}
+  </style>
+
+  <rect class="bg" x="0" y="0" width="1280" height="700"/>
+  <text class="h1" x="40" y="46">Model architecture</text>
+  <text class="sub" x="40" y="70">3D SegResNet, fine-tuned from SuPreM — one pancreas region in, three labelled classes out.</text>
+
+  <!-- ============== INPUT ============== -->
+  <text class="lbl" x="40" y="118">INPUT</text>
+  <rect class="panelhi" x="40" y="130" width="188" height="150"/>
+  <rect x="66" y="152" width="82" height="82" fill="#0B1520" stroke="#3E5A6B"/>
+  <path d="M66,152 L92,134 L174,134 L148,152 z" fill="#132433" stroke="#3E5A6B"/>
+  <path d="M148,152 L174,134 L174,216 L148,234 z" fill="#0F1E2B" stroke="#3E5A6B"/>
+  <text class="mono" x="66" y="256">128 × 128 × 128</text>
+  <text class="tiny" x="66" y="272">1 channel · 1.5 mm voxels</text>
+
+  <text class="note" x="40" y="304">The whole pancreas region,</text>
+  <text class="note" x="40" y="320">cropped in native space and</text>
+  <text class="note" x="40" y="336">resampled into one fixed cube.</text>
+  <text class="note" x="40" y="358" fill="#F4BC55">Not random patches — the model</text>
+  <text class="note" x="40" y="374" fill="#F4BC55">always sees the whole organ.</text>
+
+  <!-- ============== ENCODER ============== -->
+  <text class="lbl" x="270" y="118">ENCODER — DOWNSAMPLING</text>
+
+  <rect class="enc" x="270" y="140" width="62" height="150"/>
+  <text class="tiny" x="272" y="304">128³</text>
+  <text class="tiny" x="272" y="318">16 ch</text>
+
+  <rect class="enc" x="348" y="168" width="62" height="122"/>
+  <text class="tiny" x="350" y="304">64³</text>
+  <text class="tiny" x="350" y="318">32 ch</text>
+
+  <rect class="enc" x="426" y="196" width="62" height="94"/>
+  <text class="tiny" x="428" y="304">32³</text>
+  <text class="tiny" x="428" y="318">64 ch</text>
+
+  <rect class="enc" x="504" y="224" width="62" height="66"/>
+  <text class="tiny" x="506" y="304">16³</text>
+  <text class="tiny" x="506" y="318">128 ch</text>
+
+  <!-- bottleneck -->
+  <rect class="bott" x="586" y="240" width="70" height="50"/>
+  <text class="tiny" x="588" y="304" fill="#6CB9DC">8³</text>
+  <text class="tiny" x="588" y="318" fill="#6CB9DC">256 ch</text>
+  <text class="lbl" x="586" y="130" fill="#6CB9DC">BOTTLENECK</text>
+
+  <!-- ============== DECODER ============== -->
+  <text class="lbl" x="676" y="118" fill="#26C5A6">DECODER — UPSAMPLING</text>
+
+  <rect class="dec" x="676" y="224" width="62" height="66"/>
+  <text class="tiny" x="678" y="304">16³</text>
+
+  <rect class="dec" x="754" y="196" width="62" height="94"/>
+  <text class="tiny" x="756" y="304">32³</text>
+
+  <rect class="dec" x="832" y="168" width="62" height="122"/>
+  <text class="tiny" x="834" y="304">64³</text>
+
+  <rect class="dec" x="910" y="140" width="62" height="150"/>
+  <text class="tiny" x="912" y="304">128³</text>
+
+  <!-- flow through -->
+  <path d="M334,215 L344,215" stroke="#4E6472" stroke-width="1.4" marker-end="url(#m)"/>
+  <path d="M412,229 L422,229" stroke="#4E6472" stroke-width="1.4" marker-end="url(#m)"/>
+  <path d="M490,257 L500,257" stroke="#4E6472" stroke-width="1.4" marker-end="url(#m)"/>
+  <path d="M568,265 L582,265" stroke="#4E6472" stroke-width="1.4" marker-end="url(#m)"/>
+  <path d="M658,265 L672,265" stroke="#26C5A6" stroke-width="1.6" marker-end="url(#mt)"/>
+  <path d="M740,257 L750,257" stroke="#26C5A6" stroke-width="1.4" marker-end="url(#mt)"/>
+  <path d="M818,229 L828,229" stroke="#26C5A6" stroke-width="1.4" marker-end="url(#mt)"/>
+  <path d="M896,215 L906,215" stroke="#26C5A6" stroke-width="1.4" marker-end="url(#mt)"/>
+
+  <!-- skip connections -->
+  <path class="skip" d="M301,140 C301,96 941,96 941,140"/>
+  <path class="skip" d="M379,168 C379,120 863,120 863,168"/>
+  <path class="skip" d="M457,196 C457,158 785,158 785,196"/>
+  <path class="skip" d="M535,224 C535,196 707,196 707,224"/>
+  <text class="tiny" x="600" y="92" fill="#5F7783">skip connections carry fine detail across</text>
+
+  <!-- ============== OUTPUT ============== -->
+  <text class="lbl" x="1010" y="118">OUTPUT</text>
+  <rect class="panelhi" x="1010" y="130" width="230" height="150"/>
+  <text class="mono" x="1030" y="156">128 × 128 × 128 × 3</text>
+  <rect x="1030" y="172" width="14" height="14" fill="#33414D"/>
+  <text class="note" x="1054" y="184">0 — background</text>
+  <rect x="1030" y="200" width="14" height="14" fill="#26C5A6"/>
+  <text class="note" x="1054" y="212">1 — pancreas</text>
+  <rect x="1030" y="228" width="14" height="14" fill="#F96363"/>
+  <text class="note" x="1054" y="240">2 — lesion</text>
+  <text class="tiny" x="1030" y="266">softmax → argmax per voxel</text>
+
+  <text class="note" x="1010" y="304">Post-processing keeps the largest</text>
+  <text class="note" x="1010" y="320">lesion region and drops anything</text>
+  <text class="note" x="1010" y="336">under 50 mm³ before it is flagged.</text>
+
+  <!-- ============== detail cards ============== -->
+  <rect class="panel" x="40" y="404" width="386" height="176"/>
+  <text class="box" x="66" y="432">Transfer learning — the decisive choice</text>
+  <text class="note" x="66" y="456">The encoder starts from <tspan fill="#BFD0D6">SuPreM</tspan> weights, pretrained on</text>
+  <text class="note" x="66" y="474">AbdomenAtlas by the same Johns Hopkins lab.</text>
+  <text class="note" x="66" y="498">Measured against an identical from-scratch run:</text>
+  <text class="mono" x="66" y="522" fill="#7C919D">from scratch   lesion Dice 0.120</text>
+  <text class="mono" x="66" y="540" fill="#26C5A6">SuPreM transfer  lesion Dice 0.257</text>
+  <text class="note" x="66" y="564" fill="#F4BC55">+0.13 — the pretraining is what makes it work.</text>
+
+  <rect class="panel" x="446" y="404" width="386" height="176"/>
+  <text class="box" x="472" y="432">Configuration</text>
+  <text class="mono" x="472" y="458">init_filters      16</text>
+  <text class="mono" x="472" y="478">blocks_down       1, 2, 2, 4</text>
+  <text class="mono" x="472" y="498">blocks_up         1, 1, 1</text>
+  <text class="mono" x="472" y="518">normalisation     GroupNorm</text>
+  <text class="mono" x="472" y="538">parameters        ~4.7 M</text>
+  <text class="note" x="472" y="564">Matched to SuPreM exactly, so the weights load cleanly.</text>
+
+  <rect class="panel" x="852" y="404" width="388" height="176"/>
+  <text class="box" x="878" y="432">Training the rare class</text>
+  <text class="note" x="878" y="456">A lesion occupies about <tspan fill="#F96363">0.04%</tspan> of a scan, so an</text>
+  <text class="note" x="878" y="474">accuracy-style loss would ignore it entirely.</text>
+  <text class="mono" x="878" y="500">loss     DiceFocal</text>
+  <text class="mono" x="878" y="520">         include_background = false</text>
+  <text class="mono" x="878" y="540">optim    AdamW · cosine schedule</text>
+  <text class="note" x="878" y="564">Trained on Apple Silicon (MPS) — 7 to 14 h per run.</text>
+
+  <!-- footer -->
+  <text class="note" x="40" y="626" font-size="11.5">Inference runs a full-volume sliding window, then the CADe post-processing above. Registered as <tspan fill="#BFD0D6">pancreas-lesion-segmenter v1</tspan>, checkpoint step 18000.</text>
+  <text class="note" x="40" y="648" font-size="11.5" fill="#5F7783">Swin UNETR was considered as an alternative backbone; SegResNet was chosen for its size and its checkpoint compatibility with SuPreM on this hardware.</text>
+</svg>

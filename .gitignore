@@ -50,3 +50,7 @@ week3/*.jpg
 # ---- Env & OS ----
 .env
 .DS_Store
+
+# ---- Vite build artifacts (auto-generated; preserved locally in ui/.vite-cache/) ----
+ui/.vite-cache/
+vite.config.js.timestamp-*.mjs

@@ -94,8 +94,37 @@ Never commit raw data · split by patient not slice · full-volume sliding-windo
 
 **METRICS AUDIT = CORE CORRECT, ONE REAL FINDING (2026-07-17, Claude + Codex, `docs/codex-metrics-audit.md`):** Two independent audits confirm the Dice/specificity arithmetic is correct, NO train/val leakage (7200/1800 IDs, 0 overlap), healthy cases correctly excluded from lesion Dice via `ignore_empty` (the reason no 1.0s ever appear — that's the correct signature, not a bug). **The one real finding (Moderate): the "oracle pancreas box" is built from pancreas UNION lesion (`_foreground_label`=label>0), so lesion extent leaks into the ROI → lesion Dice is an UPPER BOUND.** Relative conclusions all hold (every run used the same crop); absolute number is optimistic. FIXED behind `preprocessing.roi_source` (union=legacy default | pancreas=organ only), wired `--roi-source` on train/eval, own cache tag, ComposeLabeld keeps `panc_roi`. **EXP-19 pre-registered** = pancreas-only control on scaled300 to quantify the leak (smoke-test first — new crop path). Other findings all Minor/framing: eval `dice()` now returns NaN on empty GT + `nanmean` (FIXED, was latent 1.0-inflation risk, not triggering); relabeled spec@50mm3 / mask-negative / development-validation; analyze_cases full-precision. Report §4 caveats + implementation-plan updated. Queued: embed config in ckpt; full-cohort + CI eval; final held-out test pass. Do NOT change roi_source default (would break comparability + the running scaledmax cache).
 
-## Next session
-Week 3 SUBMITTED (M3P1 report/deck/audience notes + M3A2 standup log, both committed). Headline model: EXP-17c whole-box scaledmax — lesion 0.528 provided-ROI. Data scale-up (EXP-17→17c) proved data is the lever.
+## FINAL STATUS (Week 5, 2026-07-28) — read this first
+
+**Course project COMPLETE.** Weeks 1–4 submitted; Week 5 (M5P1 demo + M5A1 package + M5A2 standups) in flight.
+
+**THE headline number (use this one, everywhere):** official held-out TEST set, 901 cases (151 tumor-positive + 750 tumor-free), scored ONCE with the registered model — **lesion Dice 0.474 raw / 0.472 cleaned [95% CI 0.42–0.52], pancreas Dice 0.827, detection sensitivity 96% (145/151), specificity 17% (128/750)**. Reference: PanTS leaderboard ~0.53 (MedFormer 52.9 / R-Super 53.4). **This is PROVIDED-ROI (oracle pancreas box) — always say so.** ⚠️ **0.528 and 0.483 are CONTAMINATED (pre-leakage-fix) — never cite them.** 0.415 = clean *validation* number (n=40).
+
+**Registered model:** MLflow `pancreas-lesion-segmenter` **v1**, step 18000, sha `62cc72fd…`, archive `runs/transfer_wholebox_scaledmax_CLEAN__20260719_012104/best.pt`. Recipe: SegResNet + SuPreM transfer, whole-box (crop-native 16 → 128³ @1.5mm), DiceFocal bg0, `roi_source=union`.
+
+**Full-suite benchmark row (all 901, 2026-07-27):** pancreas Dice (ALL cases) **0.847**, lesion Dice positives 0.474, whole-cohort lesion Dice 0.221 (empty=1.0) / 0.093 (empty excl), **patient-level AUC 0.804**, mean FP volume 1830 mm³ (622 flagged negatives). The AUC is the key capstone insight: the model *can* discriminate; 17% specificity is a badly-placed threshold, not an inability.
+
+**Capstone levers, in evidence order:** (1) **volume gate** in front of the segmenter — free, no retrain, lifts specificity 17%→43% at 90% detection (AUC on volume = 0.843); (2) **dedicated tumor-presence classifier** as a better gate (the real centerpiece); (3) **autonomous localize→segment cascade** to remove the oracle ROI; (4) **scale to all 9,000 cases**. **RULED OUT:** retraining the segmenter for specificity — EXP-25 (1:9) and the 1:3 run both proved gating the good segmenter dominates a timid one at every matched operating point (1:3 = spec 53%/det 86%/lesion 0.426, still beaten by baseline+gate).
+
+**Live system:** `scripts/serve.py` FastAPI (`/health`, `/cases`, `/predict`, ~0.6s/scan) serving from `ui/public/cases/`; React + NiiVue UI (`ui/`, `npm run dev`) with live Analyze, unmarked-scan → predict → reveal-truth flow, and 3D marching-cubes meshes. UI falls back to cached results when the endpoint is offline.
+
+**Week 5 deliverables:** `week5/` (ui-walkthrough, how-to-use, retrospective, ui-screenshots) + finalized README / ai-usage-log / implementation-plan / this file.
+
+## How AI was actually used on this project (final, vs. how it was planned)
+
+Planned in Week 1: AI as a coding accelerator and explainer. What actually happened was broader and more adversarial.
+
+- **Research / decision stress-testing** (Week 1) — ChatGPT deep research independently validated the SuPreM SegResNet choice *before* it was locked in.
+- **Explainer** (Weeks 2–3) — the highest-leverage and least visible use: 2D→3D concepts, Dice, class imbalance, voxels. Compressed weeks of reading into days.
+- **Adversarial review became the core workflow** (Weeks 3–5) — the loop for anything non-trivial: write a spec → second AI reviews the *plan* → revise → write code → review the *code* → require a regression test per issue found. This caught the validation-leakage bug, three rounds of real deployment bugs, a train/serve double-processing bug, and a 3D viewer loading the wrong data.
+- **Parallel specialists** (Week 5) — Codex on the React/NiiVue UI, Claude on analysis + documentation, each checking the other.
+- **The consistent failure mode:** AI is confident about data it has not inspected. Every real error was an assumption about data shape, not a syntax mistake. Standing rule: make it read the file / run the command / show the output before it asserts anything about this repo.
+- **What stayed human:** the whole-box idea, the decision to train EXP-26 to convergence instead of reporting a flattering intermediate, and every accept/reject call against a pre-registered bar.
+
+Full narrative in `docs/ai-usage-log.md` (final retrospective section).
+
+## Prior session notes (historical)
+Week 3 SUBMITTED (M3P1 report/deck/audience notes + M3A2 standup log, both committed). Headline at the time: EXP-17c whole-box scaledmax — lesion 0.528 provided-ROI (**later found contaminated by validation leakage — superseded by 0.474 above**). Data scale-up (EXP-17→17c) proved data is the lever.
 
 **EXP-26 ANATOMY-AWARE = REJECTED at convergence (2026-07-22).** Full clean single-variable experiment (5-class bg/head/body/tail/lesion, collapsed metrics, frozen hashed cohorts, shared init, deterministic resume; docs/spec-exp26-anatomy-aware.md + docs/exp26-pretraining-readiness.md). **12k looked like an ACCEPT (+0.041 lesion, CI excluded 0) but it was a FALSE POSITIVE** — the anatomy arm converges faster, so it only *looked* ahead at the intermediate. At the pre-registered 24k horizon (report40, n=40): lesion +0.023 but **CI [−0.007,+0.057] includes 0** (14/13/13 win/loss/tie), and pancreas **−0.014 CI excludes 0** (small significant regression). DO NOT ACCEPT. Anatomy shifts the operating point toward SPECIFICITY (38%→48%) but is not an accuracy lever and costs a little pancreas. Lesson banked: don't report intermediate reads; pre-registration + train-to-convergence caught the over-claim. Checkpoints archived (exp26A_lam0__…182106 / exp26B_lam03__…224437); per-case CSVs saved. **New infra from EXP-26 (reusable): anatomy5 label-mode + hbt_union resolver (fixes corrupt combined masks, 0% H/B/T overlap verified), AnatomyAwareLoss, collapse-aware eval, atomic-save + identity-verified strict resume + deterministic step-indexed data + --stop-after-step, frozen-cohort tooling, scripts/legacy/ cleanup, docs/interview-prep.md.**
 

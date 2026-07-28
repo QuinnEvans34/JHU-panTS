@@ -10,7 +10,23 @@ A 3D deep-learning pipeline that takes an abdominal CT scan, segments the **panc
 
 *(This table is the grader's map. Most recent week first.)*
 
-### Week 4 (current) — M4A1: Tuning, Orchestration & Deployment · M4A2: Daily Check-Ins
+### Week 5 (current) — M5P1: Final Demo & Defense · M5A1: Final Deliverable Package · M5A2: Daily Check-Ins
+
+| Assignment / rubric criterion | Deliverable | Location |
+|-----------|-------------|----------|
+| **M5A1 — Business-Facing UI** | UI walkthrough: inputs/outputs, endpoint connection, data freshness, design decisions | [`week5/ui-walkthrough.md`](week5/ui-walkthrough.md) |
+| M5A1 — *UI screenshots* | Full user experience, screen by screen | [`week5/ui-screenshots/`](week5/ui-screenshots/) |
+| **M5A1 — User Guide** | Non-technical, step-by-step guide + how to interpret outputs + limitations | [`week5/how-to-use.md`](week5/how-to-use.md) |
+| **M5A1 — Project Retrospective** | What I'm proud of, biggest challenge, what I'd do with 5 more weeks, Week 1 Takeaway callback | [`week5/retrospective.md`](week5/retrospective.md) |
+| **M5A1 — README** | This file — architecture, tech stack + versions, setup, how to run everything | [`README.md`](README.md) |
+| **M5A1 — AI docs (final)** | Week 5 entry + final AI retrospective · final MVP status · finalized context file | [`docs/ai-usage-log.md`](docs/ai-usage-log.md) · [`docs/implementation-plan.md`](docs/implementation-plan.md) · [`CLAUDE.md`](CLAUDE.md) |
+| **M5P1 — Final Demo & Defense** | Live demo of the running system (see *Run the demo* below) | [`ui/`](ui/) + [`scripts/serve.py`](scripts/serve.py) |
+| M5P1 — *audience deliverable* | Audience notes on peers' final presentations | [`docs/audience-notes-week5.md`](docs/audience-notes-week5.md) |
+| **M5A2 — Daily Check-Ins** | Daily standup log (all 5 weeks + the Week 5 1-on-1 retrospective) | [`docs/standup-log.md`](docs/standup-log.md) |
+
+**Final headline result (held-out official test set, 901 cases, scored once):** lesion Dice **0.474** [95% CI 0.42–0.52], pancreas Dice **0.827**, detection sensitivity **96%**, specificity **17%** — against a published PanTS reference of ~0.53 lesion Dice. Full context and honest limitations in [`week4/tuning-orchestration-report.md`](week4/tuning-orchestration-report.md).
+
+### Week 4 — M4A1: Tuning, Orchestration & Deployment · M4A2: Daily Check-Ins
 
 | Assignment / rubric criterion | Deliverable | Location |
 |-----------|-------------|----------|
@@ -108,11 +124,14 @@ JHU-PanTS/
 ├── README.md              ← you are here (grader map)
 ├── CLAUDE.md              project state/decisions for AI agents
 ├── configs/               level45.yaml (the locked recipe as config)
+├── week5/                 M5A1 deliverables: UI walkthrough, how-to-use guide, retrospective, ui-screenshots/
 ├── week4/                 M4A1 deliverables: tuning/orchestration/deployment report + img/ (diagram, MLflow, eval, samples, endpoint)
 ├── week3/                 M3P1 deliverables: experiment report, slide deck, diagrams
 ├── week2/                 M2A1/M2P2 deliverables: report, EDA notebook, diagrams, run sheet
 ├── docs/                  graded docs (standup, audience notes, plan, schedule, ai-usage)
-│                          + full design docs + experiments.md + metrics audit
+│   │                      + full design docs + experiments.md + metrics audit
+│   ├── assignments/       the assignment briefs each week's work is graded against
+│   └── process/           working artifacts kept for provenance (AI handoffs, research notes)
 ├── ui/                    React + NiiVue static demo viewer (Week 5 build)
 ├── src/
 │   ├── utils/             config, seed, paths
@@ -137,25 +156,133 @@ JHU-PanTS/
 - [`docs/experiment-tracking.md`](docs/experiment-tracking.md) — MLflow plan
 - [`docs/ui.md`](docs/ui.md) — React + NiiVue front-end plan
 
-## Running it (on Apple Silicon)
+## Tech stack
+
+| Layer | Technology | Version |
+|---|---|---|
+| Language | Python | 3.12 (3.14 breaks MLflow — use 3.12) |
+| Deep learning | PyTorch (**MPS** backend, Apple Silicon — not CUDA) | 2.12.1 |
+| Medical imaging / models | MONAI (SegResNet, transforms, sliding-window) | 1.6.0 |
+| Pretrained weights | SuPreM `supervised_suprem_segresnet_2100.pth` (AbdomenAtlas) | — |
+| Medical image I/O | nibabel · SimpleITK | 5.4.2 · ≥2.3 |
+| Data / numerics | NumPy · pandas · scikit-image · scikit-learn | 2.5.0 · 2.3.3 · ≥0.22 · ≥1.3 |
+| Experiment tracking | MLflow (tracking + model registry) | 3.14.0 |
+| Hyperparameter search | Optuna (TPE + median pruner) | 4.9.0 |
+| Serving | FastAPI + Uvicorn | 0.139.0 · 0.49.0 |
+| Front-end | React · Vite · NiiVue (WebGL NIfTI viewer) · lucide-react | 18.3.1 · 5.4.8 · 0.69.0 · 0.468.0 |
+| Hardware used | MacBook Pro M5 Pro, 20-core GPU, 64 GB unified memory | — |
+
+## Setup
+
+### 1. Clone and install
 
 ```bash
+git clone <this-repo> && cd Neuro-data
 python3.12 -m venv .venv312 && source .venv312/bin/activate
 pip install -r requirements.txt
-
-python scripts/build_manifest.py          # scan dataset → outputs/manifest.csv
-python scripts/create_splits.py           # patient-level, tumor-stratified splits
-python scripts/sanity_check_case.py       # Week 1 milestone: 3-view overlays
-
-# train (whole-box ROI, SuPreM transfer) then evaluate on the val set
-PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py --split dev_subset_clean --transfer \
-  --crop-native 16 --whole-box --patch 128 --spacing 1.5 --max-iters 6000 --val-positive
-PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
-  --ckpt outputs/checkpoints/pants-level45/best.pt --n-pos 20 --n-neg 20 \
-  --crop-native 16 --whole-box --roi 128 --spacing 1.5 --sweep
 ```
 
-The dataset path is set in `configs/level45.yaml` (`paths.pants_root`) or via the `PANTS_ROOT` env var — never hardcoded.
+> Use **Python 3.12**. Python 3.14 cannot install MLflow, which the pipeline depends on.
+
+### 2. Get the data (not included in this repo)
+
+The CT volumes are **not committed** — they are ~380 GB of licensed medical imaging from Johns Hopkins,
+and this project's guardrails forbid committing raw patient data. Download it yourself from the
+official source:
+
+**Dataset:** [PanTS — Johns Hopkins (MrGiovanni/PanTS)](https://github.com/MrGiovanni/PanTS)
+
+```bash
+# Follow the download instructions in the PanTS repository README.
+# The Mini release used here = 9,000 train + 901 test CT volumes with
+# pancreas / subregion / lesion masks, plus metadata.xlsx.
+```
+
+Expected on-disk layout once downloaded (see [`docs/data-pipeline.md`](docs/data-pipeline.md) for the full spec):
+
+```
+<PANTS_ROOT>/PanTS/data/
+├── ImageTr/            9,000 training CT volumes (.nii.gz)
+├── ImageTe/            901 test CT volumes
+├── LabelAll/<case_id>/ segmentations/ + combined_labels.nii.gz
+└── metadata.xlsx
+```
+
+Point the pipeline at it — **never hardcoded**, always via config or env var:
+
+```bash
+export PANTS_ROOT=/Volumes/YourDrive/PanTS      # or set paths.pants_root in configs/level45.yaml
+```
+
+> macOS note: extract the shards with plain `tar -xzf` (BSD `tar` rejects the `--checkpoint` flag used
+> in some scripts), and keep the drive mounted with the lid open during long operations.
+
+### 3. Pretrained weights
+
+Download the SuPreM SegResNet checkpoint (`supervised_suprem_segresnet_2100.pth`) from the
+[SuPreM repository](https://github.com/MrGiovanni/SuPreM) into `pretrained_weights/`. Training
+from scratch works without it (`--scratch`), but transfer learning is what makes the model work at
+this data scale (+0.13 lesion Dice — see EXP-09).
+
+## Running it
+
+### The data pipeline
+
+```bash
+python scripts/build_manifest.py     # index the dataset  → outputs/manifest.csv (one row per case)
+python scripts/create_splits.py      # patient-level, tumor-stratified train/val/test → outputs/splits/
+python scripts/sanity_check_case.py  # verify a real case end to end (3-view overlays)
+```
+
+### Train
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
+  --split scaledmax_clean --transfer \
+  --whole-box --crop-native 16 --patch 128 --spacing 1.5 \
+  --max-iters 24000 --val-positive --val-limit 20 --cache disk
+```
+
+### Evaluate (full-volume sliding window on the held-out test set)
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
+  --ckpt outputs/checkpoints/pants-level45/runs/<run>/best.pt --split test \
+  --pos-ids outputs/splits/test_pos.txt --neg-ids outputs/splits/test_neg.txt \
+  --whole-box --crop-native 16 --roi 128 --spacing 1.5 --sweep --full-benchmark
+```
+
+### Serve the model (inference API)
+
+```bash
+MODEL_CKPT=outputs/checkpoints/pants-level45/runs/<run>/best.pt \
+  PYTORCH_ENABLE_MPS_FALLBACK=1 \
+  uvicorn scripts.serve:app --port 8000 --workers 1
+```
+`GET /health` · `GET /cases` · `POST /predict {"case_id": "..."}` → CADe summary JSON (~0.6 s/scan).
+
+### Run the demo UI
+
+```bash
+# 1. export prepared demo cases (needs the dataset + a checkpoint)
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/export_case.py \
+  --ckpt <checkpoint> --split test --out ui/public/cases \
+  --whole-box --crop-native 16 --roi 128 --spacing 1.5 --full-ct \
+  --case PanTS_00009005 --case PanTS_00009687 --case PanTS_00009016
+
+# 2. start the inference API (above), then:
+cd ui && npm install && npm run dev      # → http://localhost:5173
+```
+
+The UI works with **no backend running** (it falls back to cached results), but the live
+*Analyze scan* flow requires the API on port 8000.
+
+### Experiment tracking
+
+```bash
+mlflow ui --backend-store-uri "sqlite:///$(pwd)/outputs/mlflow.db"   # → http://127.0.0.1:5000
+```
+Run it from the repo root in `.venv312` — the DB schema is tied to that MLflow version.
 
 ## Scope & roadmap
 
