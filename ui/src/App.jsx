@@ -126,6 +126,15 @@ function statusLabel(status) {
   return 'Unreviewed'
 }
 
+function validationOutcome(caseData) {
+  const predicted = Boolean(caseData?.pred_has_lesion)
+  const reference = Boolean(caseData?.gt_has_lesion)
+  if (predicted && reference) return 'True positive'
+  if (!predicted && !reference) return 'True negative'
+  if (predicted) return 'False positive'
+  return 'False negative'
+}
+
 function StatusPill({ status }) {
   const icon = status === 'reviewed'
     ? <Check size={13} aria-hidden="true" />
@@ -138,6 +147,53 @@ function StatusPill({ status }) {
       {icon}
       {statusLabel(status)}
     </span>
+  )
+}
+
+function BrandMark({ large = false }) {
+  return (
+    <span className={`brand-mark${large ? ' brand-mark--large' : ''}`} aria-hidden="true">
+      <span>P</span>
+      <i />
+    </span>
+  )
+}
+
+function ScanCard({ scan, endpointStatus, busy, onLoad, featured = false }) {
+  return (
+    <button
+      type="button"
+      className={`scan-card${featured ? ' scan-card--featured' : ''}`}
+      onClick={() => onLoad(scan.caseId)}
+      disabled={!scan.cachedCase || busy}
+      aria-label={`Load ${scan.caseId}, ${scan.label}`}
+    >
+      <span className="scan-card__topline">
+        <span>Study {scan.studyNumber}</span>
+        <span className={scan.curated ? 'scan-card__status scan-card__status--live' : 'scan-card__status'}>
+          {scan.curated ? 'Curated evidence' : endpointStatus === 'online' ? 'Ready to analyze' : 'CT available'}
+        </span>
+      </span>
+      <span className="scan-card__visual" aria-hidden="true">
+        <img src={`${BASE}/${scan.caseId}/thumbnail.webp`} alt="" />
+        <span className="scan-card__visual-scanline" />
+      </span>
+      <span className="scan-card__copy">
+        <strong>{scan.label}</strong>
+        <code>{scan.caseId}</code>
+      </span>
+      <span className="scan-card__meta">
+        <span>{scan.cachedCase?.spacing_mm?.[0]?.toFixed(1) || '1.5'} mm voxels</span>
+        <span>{scan.curated ? 'Prediction + reference' : 'CT only until analyzed'}</span>
+      </span>
+      <span className="scan-card__action">
+        {scan.curated
+          ? <Microscope size={15} aria-hidden="true" />
+          : <ScanLine size={15} aria-hidden="true" />}
+        {scan.curated ? 'Open evidence review' : 'Load clean scan'}
+        <ChevronRight size={15} aria-hidden="true" />
+      </span>
+    </button>
   )
 }
 
@@ -247,6 +303,24 @@ export default function App() {
       studyNumber: String(index + 1).padStart(2, '0'),
     }))
   }, [apiCases, cases])
+  const curatedLibraryCases = useMemo(
+    () => libraryCases
+      .filter((scan) => scan.curated)
+      .map((scan, index) => ({
+        ...scan,
+        studyNumber: String(index + 1).padStart(2, '0'),
+      })),
+    [libraryCases],
+  )
+  const readyLibraryCases = useMemo(
+    () => libraryCases
+      .filter((scan) => !scan.curated)
+      .map((scan, index) => ({
+        ...scan,
+        studyNumber: String(curatedLibraryCases.length + index + 1).padStart(2, '0'),
+      })),
+    [curatedLibraryCases, libraryCases],
+  )
 
   const reviewCaseItems = useMemo(
     () => caseIds.map((id) => ({
@@ -419,17 +493,17 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <button className="brand" type="button" onClick={() => setActiveTab('queue')} aria-label="Open case queue">
-          <span className="brand-mark"><ScanLine size={19} aria-hidden="true" /></span>
+        <button className="brand" type="button" onClick={() => setActiveTab('queue')} aria-label="Open demo cases">
+          <BrandMark />
           <span className="brand-copy">
             <strong>PanTS Review</strong>
-            <span>Pancreas segmentation workspace</span>
+            <span>Pancreas evidence workspace</span>
           </span>
         </button>
 
         <nav className="primary-nav" aria-label="Primary navigation">
           <button className={activeTab === 'queue' ? 'active' : ''} onClick={() => setActiveTab('queue')}>
-            Case queue
+            Demo cases
           </button>
           <button className={activeTab === 'library' ? 'active' : ''} onClick={() => setActiveTab('library')}>
             Scan library
@@ -450,11 +524,15 @@ export default function App() {
           <div className="header-provenance">
             <span className="prepared-badge">
               <Activity size={13} aria-hidden="true" />
-              Model: pancreas-lesion-segmenter v1 · checkpoint step 18000
+              Segmenter v1 · step 18000
             </span>
             <span className="header-freshness">
               <Radio size={11} aria-hidden="true" />
-              Predictions are computed live by a deployed FastAPI endpoint when available, with cached results as fallback.
+              {endpointStatus === 'online'
+                ? 'Live inference connected · cached fallback ready'
+                : endpointStatus === 'offline'
+                  ? 'Prepared results · live endpoint offline'
+                  : 'Checking live inference · cached fallback ready'}
             </span>
           </div>
           <button className="icon-button" onClick={() => setShowAbout(true)} aria-label="About this research interface">
@@ -465,8 +543,8 @@ export default function App() {
 
       <div className="research-notice">
         <ShieldCheck size={14} aria-hidden="true" />
-        <span><strong>Research use only.</strong> Segmentation and annotation-assist interface—not a diagnosis.</span>
-        <span className="notice-detail">Prepared cases work offline; live scores are labeled with their scoring time.</span>
+        <span><strong>Research use only.</strong> Segmentation and annotation assist—not a diagnosis.</span>
+        <span className="notice-detail">Live scores include scoring time and duration.</span>
       </div>
 
       {activeTab === 'queue' && (
@@ -490,8 +568,8 @@ export default function App() {
           <section className="queue-section">
             <div className="section-heading">
               <div>
-                <h2>Case queue</h2>
-                <p>Open a saved scan and its model output instantly—no live inference or waiting.</p>
+                <h2>Demo cases</h2>
+                <p>Three intentional examples: a strong result, correct silence, and a failure analysis.</p>
               </div>
               <button className="text-button" onClick={resetDemo}>Reset review status</button>
             </div>
@@ -606,51 +684,47 @@ export default function App() {
           <section className="library-section">
             <div className="section-heading">
               <div>
-                <h2>Available studies</h2>
-                <p>Unmarked studies move from clean CT, to live prediction, to an optional source-of-truth reveal.</p>
+                <span className="eyebrow">Guided presentation cases</span>
+                <h2>Curated evidence</h2>
+                <p>Open with the prediction, source of truth, and scientific interpretation ready to discuss.</p>
               </div>
-              <span className="library-count"><LayoutGrid size={14} aria-hidden="true" /> {libraryCases.length} scans</span>
+              <span className="library-count"><Microscope size={14} aria-hidden="true" /> {curatedLibraryCases.length} studies</span>
             </div>
 
-            <div className="scan-gallery" aria-label="Available scan library">
-              {libraryCases.map((scan) => {
-                return (
-                  <button
-                    type="button"
-                    className="scan-card"
-                    key={scan.caseId}
-                    onClick={() => loadLibraryScan(scan.caseId)}
-                    disabled={!scan.cachedCase || inferenceState.status === 'loading'}
-                    aria-label={`Load ${scan.caseId}, ${scan.label}`}
-                  >
-                    <span className="scan-card__topline">
-                      <span>Study {scan.studyNumber}</span>
-                      <span className={scan.curated ? 'scan-card__status scan-card__status--live' : 'scan-card__status'}>
-                        {scan.curated ? 'Curated evidence' : endpointStatus === 'online' ? 'Ready to analyze' : 'CT available'}
-                      </span>
-                    </span>
-                    <span className="scan-card__visual" aria-hidden="true">
-                      <ScanLine size={27} />
-                      <span><i /><i /><i /><i /></span>
-                    </span>
-                    <span className="scan-card__copy">
-                      <strong>{scan.label}</strong>
-                      <code>{scan.caseId}</code>
-                    </span>
-                    <span className="scan-card__meta">
-                      <span>{scan.cachedCase?.spacing_mm?.[0]?.toFixed(1) || '1.5'} mm voxels</span>
-                      <span>{scan.curated ? 'CT + scientific evidence' : 'CT only until analyzed'}</span>
-                    </span>
-                    <span className="scan-card__action">
-                      {scan.curated
-                        ? <Microscope size={15} aria-hidden="true" />
-                        : <ScanLine size={15} aria-hidden="true" />}
-                      {scan.curated ? 'Open curated review' : 'Load clean scan'}
-                      <ChevronRight size={15} aria-hidden="true" />
-                    </span>
-                  </button>
-                )
-              })}
+            <div className="scan-gallery scan-gallery--curated" aria-label="Curated evidence studies">
+              {curatedLibraryCases.map((scan) => (
+                <ScanCard
+                  key={scan.caseId}
+                  scan={scan}
+                  endpointStatus={endpointStatus}
+                  busy={inferenceState.status === 'loading'}
+                  onLoad={loadLibraryScan}
+                  featured
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="library-section library-section--ready">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">Prospective workflow</span>
+                <h2>Ready to analyze</h2>
+                <p>Begin with an unmarked CT, run the model, then reveal the reference only when you are ready to compare.</p>
+              </div>
+              <span className="library-count"><LayoutGrid size={14} aria-hidden="true" /> {readyLibraryCases.length} scans</span>
+            </div>
+
+            <div className="scan-gallery" aria-label="Ready-to-analyze scan library">
+              {readyLibraryCases.map((scan) => (
+                <ScanCard
+                  key={scan.caseId}
+                  scan={scan}
+                  endpointStatus={endpointStatus}
+                  busy={inferenceState.status === 'loading'}
+                  onLoad={loadLibraryScan}
+                />
+              ))}
             </div>
           </section>
         </main>
@@ -714,18 +788,23 @@ export default function App() {
           <section className="evidence-strip">
             <div>
               <span>Validation outcome</span>
-              <strong>{currentCase.gt_has_lesion ? 'True positive' : 'False positive'}</strong>
+              <strong>{validationOutcome(currentCase)}</strong>
             </div>
             <div>
-              <span>Pancreas Dice</span>
+              <span title="Dice coefficient">Pancreas outline agreement</span>
               <strong>{currentCase.dice_pancreas.toFixed(3)}</strong>
             </div>
             <div>
-              <span>Lesion Dice</span>
-              <strong>{currentCase.dice_lesion.toFixed(3)}</strong>
+              <span title="Dice coefficient">Lesion outline agreement</span>
+              <strong>
+                {!currentCase.gt_has_lesion && !currentCase.pred_has_lesion
+                  ? 'No lesion'
+                  : currentCase.dice_lesion.toFixed(3)}
+              </strong>
+              {!currentCase.gt_has_lesion && !currentCase.pred_has_lesion && <small>Absent in both masks</small>}
             </div>
             <div>
-              <span>Predicted lesion</span>
+              <span>Predicted lesion volume</span>
               <strong>{(currentCase.lesion_volume_mm3 / 1000).toFixed(2)} cm³</strong>
             </div>
           </section>
@@ -746,7 +825,7 @@ export default function App() {
                   sources={['pred']}
                   mode={comparisonMode}
                   overlayOpacity={0.72}
-                  ctOpacity={0.1}
+                  ctOpacity={comparisonMode === '3d' ? 0 : 0.1}
                   compact
                   label={`${formatCaseId(caseId)} model prediction`}
                 />
@@ -772,7 +851,7 @@ export default function App() {
                   sources={['gt']}
                   mode={comparisonMode}
                   overlayOpacity={0.72}
-                  ctOpacity={0.1}
+                  ctOpacity={comparisonMode === '3d' ? 0 : 0.1}
                   compact
                   label={`${formatCaseId(caseId)} source-of-truth segmentation`}
                 />
@@ -798,7 +877,7 @@ export default function App() {
                   sources={['gt', 'pred']}
                   mode={comparisonMode}
                   overlayOpacity={0.6}
-                  ctOpacity={0.08}
+                  ctOpacity={comparisonMode === '3d' ? 0 : 0.08}
                   compact
                   label={`${formatCaseId(caseId)} prediction and source-of-truth overlay`}
                 />
@@ -849,7 +928,7 @@ export default function App() {
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowAbout(false)}>
           <section className="about-modal" role="dialog" aria-modal="true" aria-labelledby="about-title" onMouseDown={(event) => event.stopPropagation()}>
             <button className="modal-close" onClick={() => setShowAbout(false)} aria-label="Close about panel"><X size={18} /></button>
-            <span className="brand-mark brand-mark--large"><ScanLine size={24} aria-hidden="true" /></span>
+            <BrandMark large />
             <span className="eyebrow">About this interface</span>
             <h2 id="about-title">A transparent segmentation demonstration.</h2>
             <p>

@@ -16,23 +16,23 @@ export const REVIEW_COLORS = {
 
 export const EVIDENCE_META = {
   ct: {
-    label: 'CT only',
-    shortLabel: 'CT',
+    label: 'Original CT',
+    shortLabel: 'Original CT',
     description: 'Unannotated imaging context',
   },
   prediction: {
-    label: 'Prediction',
-    shortLabel: 'Prediction',
+    label: 'Model prediction',
+    shortLabel: 'Model prediction',
     description: 'Model-proposed contours',
   },
   truth: {
     label: 'Source of truth',
-    shortLabel: 'Truth',
+    shortLabel: 'Source of truth',
     description: 'Independent JHU reference contours',
   },
   overlap: {
-    label: 'Overlap',
-    shortLabel: 'Overlap',
+    label: 'Compare overlap',
+    shortLabel: 'Compare overlap',
     description: 'Prediction and reference together',
   },
 }

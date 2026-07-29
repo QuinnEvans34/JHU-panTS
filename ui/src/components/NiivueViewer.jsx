@@ -48,8 +48,7 @@ function clamp255(value) {
 function effectiveCtOpacity(ctOpacity, clip) {
   if (!clip?.enabled) return ctOpacity
   const progress = Math.max(0, Math.min(100, Number(clip?.progress) || 0))
-  if (progress >= 100) return 0
-  return ctOpacity * (1 - progress / 100)
+  return progress >= 99.5 ? 0 : ctOpacity
 }
 
 function anatomyAlpha(anatomy, {
@@ -439,6 +438,10 @@ export default function NiivueViewer({
   const latestCrosshairRef = useRef(new Map())
   const handledResetTokenRef = useRef(resetToken)
   const previousClipEnabledRef = useRef(Boolean(clip?.enabled))
+  const clipFrameRef = useRef(null)
+  const navigationFrameRef = useRef(null)
+  const pendingNavigationRef = useRef(null)
+  const lastNavigationSignatureRef = useRef('')
   const interactiveRef = useRef({
     mode,
     onSelectObject,
@@ -459,15 +462,46 @@ export default function NiivueViewer({
     enableDifferenceAssets ? 'difference-ready' : 'standard',
   ].join('::')
 
-  function publishNavigation(nv) {
+  function publishNavigation(nv, { immediate = false } = {}) {
     const maskVolume = registryRef.current.volumes.get('pred')
       || registryRef.current.volumes.get('gt')
       || registryRef.current.volumes.values().next().value
     const snapshot = navigationSnapshot(nv, maskVolume)
     if (!snapshot) return
-    const currentCase = currentSceneRef.current?.caseId
-    if (currentCase) latestCrosshairRef.current.set(currentCase, Array.from(nv.scene.crosshairPos))
-    interactiveRef.current.onNavigationChange?.(snapshot)
+    const signature = [
+      snapshot.indices.sagittal,
+      snapshot.indices.coronal,
+      snapshot.indices.axial,
+      snapshot.totals.sagittal,
+      snapshot.totals.coronal,
+      snapshot.totals.axial,
+    ].join(':')
+    if (signature === lastNavigationSignatureRef.current) return
+
+    const commit = () => {
+      navigationFrameRef.current = null
+      const pending = pendingNavigationRef.current
+      pendingNavigationRef.current = null
+      if (!pending || pending.signature === lastNavigationSignatureRef.current) return
+      lastNavigationSignatureRef.current = pending.signature
+      const currentCase = currentSceneRef.current?.caseId
+      if (currentCase) {
+        latestCrosshairRef.current.set(currentCase, Array.from(nv.scene.crosshairPos))
+      }
+      interactiveRef.current.onNavigationChange?.(pending.snapshot)
+    }
+
+    pendingNavigationRef.current = { signature, snapshot }
+    if (immediate) {
+      if (navigationFrameRef.current !== null) {
+        window.cancelAnimationFrame(navigationFrameRef.current)
+      }
+      commit()
+      return
+    }
+    if (navigationFrameRef.current === null) {
+      navigationFrameRef.current = window.requestAnimationFrame(commit)
+    }
   }
 
   useEffect(() => {
@@ -492,13 +526,14 @@ export default function NiivueViewer({
       clipPlaneColor: [0, 0, 0, 0],
       isClipPlanesCutaway: true,
       isClipAllVolumes: false,
+      meshXRay: 0.22,
     })
 
     nv.attachToCanvas(canvas)
     nv.overlayOutlineWidth = 1.15
     nv.onLocationChange = (location) => {
       locationRef.current = location
-      publishNavigation(nv)
+      if (interactiveRef.current.mode === '2d') publishNavigation(nv)
     }
     nvRef.current = nv
 
@@ -555,6 +590,15 @@ export default function NiivueViewer({
     canvas.addEventListener('pointerup', handlePointerUp)
 
     return () => {
+      if (clipFrameRef.current !== null) {
+        window.cancelAnimationFrame(clipFrameRef.current)
+        clipFrameRef.current = null
+      }
+      if (navigationFrameRef.current !== null) {
+        window.cancelAnimationFrame(navigationFrameRef.current)
+        navigationFrameRef.current = null
+      }
+      pendingNavigationRef.current = null
       canvas.removeEventListener('pointerdown', handlePointerDown)
       canvas.removeEventListener('pointerup', handlePointerUp)
       nvRef.current = null
@@ -580,6 +624,8 @@ export default function NiivueViewer({
         }
 
         loadedSceneKeyRef.current = ''
+        lastNavigationSignatureRef.current = ''
+        pendingNavigationRef.current = null
         setState({ status: 'loading', message: 'Loading prepared scan' })
         lastFocusedObjectRef.current = ''
         registryRef.current = {
@@ -747,13 +793,14 @@ export default function NiivueViewer({
             ? labelCentroidMM(primaryVolume, 1)
             : volumeCenterMM(nv.volumes[0])
           focusOnWorldPoint(nv, target, mode)
+          if (mode === '3d' && compact) nv.setScale(1.55)
         }
 
         nv.updateGLVolume()
         nv.drawScene()
         currentSceneRef.current = { caseId: currentCaseId, mode }
         loadedSceneKeyRef.current = sceneKey
-        publishNavigation(nv)
+        publishNavigation(nv, { immediate: true })
         setSceneVersion((version) => version + 1)
         if (!cancelled) setState({ status: 'ready', message: 'Prepared result loaded' })
       } catch (error) {
@@ -899,7 +946,7 @@ export default function NiivueViewer({
     renderedSources.join('|'),
     differenceMode,
     clip?.enabled,
-    clip?.progress,
+    Number(clip?.progress || 0) >= 99.5,
     sceneKey,
   ])
 
@@ -988,6 +1035,12 @@ export default function NiivueViewer({
         || registryRef.current.volumes.get('gt')
       const labelValue = command.anatomy === 'lesion' ? 2 : 1
       focusOnWorldPoint(nv, labelCentroidMM(volume, labelValue), mode)
+      if (mode === '3d') {
+        if (Number.isFinite(command.azimuth) && Number.isFinite(command.elevation)) {
+          nv.setRenderAzimuthElevation(command.azimuth, command.elevation)
+        }
+        if (Number.isFinite(command.scale)) nv.setScale(command.scale)
+      }
     } else if (command.type === 'camera') {
       nv.setRenderAzimuthElevation(command.azimuth, command.elevation)
     } else if (command.type === 'rotate') {
@@ -1050,13 +1103,18 @@ export default function NiivueViewer({
     ) return
     const justActivated = Boolean(clip?.enabled) && !previousClipEnabledRef.current
     previousClipEnabledRef.current = Boolean(clip?.enabled)
-    nv.setClipPlane(clip?.enabled
-      ? [clip.depth, 0, 0]
-      : [2, 0, 0])
-    if (justActivated) {
-      nv.setRenderAzimuthElevation(0, 0)
+    if (clipFrameRef.current !== null) {
+      window.cancelAnimationFrame(clipFrameRef.current)
     }
-    nv.drawScene()
+    clipFrameRef.current = window.requestAnimationFrame(() => {
+      clipFrameRef.current = null
+      nv.setClipPlane(clip?.enabled
+        ? [clip.depth, 0, 0]
+        : [2, 0, 0])
+      if (justActivated) {
+        nv.setRenderAzimuthElevation(0, 0)
+      }
+    })
   }, [clip?.enabled, clip?.depth, mode, sceneKey])
 
   useEffect(() => {

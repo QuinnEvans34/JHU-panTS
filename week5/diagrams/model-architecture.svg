@@ -121,10 +121,11 @@
   <text class="box" x="66" y="432">Transfer learning — the decisive choice</text>
   <text class="note" x="66" y="456">The encoder starts from <tspan fill="#BFD0D6">SuPreM</tspan> weights, pretrained on</text>
   <text class="note" x="66" y="474">AbdomenAtlas by the same Johns Hopkins lab.</text>
-  <text class="note" x="66" y="498">Measured against an identical from-scratch run:</text>
-  <text class="mono" x="66" y="522" fill="#7C919D">from scratch   lesion Dice 0.120</text>
-  <text class="mono" x="66" y="540" fill="#26C5A6">SuPreM transfer  lesion Dice 0.257</text>
-  <text class="note" x="66" y="564" fill="#F4BC55">+0.13 — the pretraining is what makes it work.</text>
+  <text class="note" x="66" y="498">Measured against a matched from-scratch run:</text>
+  <text class="mono" x="66" y="520" fill="#7C919D">from scratch   lesion Dice 0.120</text>
+  <text class="mono" x="66" y="538" fill="#26C5A6">SuPreM transfer  lesion Dice 0.257</text>
+  <text class="note" x="66" y="558" fill="#F4BC55">+0.13 — the pretraining is what makes it work.</text>
+  <text class="note" x="66" y="574" font-size="10">Caveat: the arms also differ in learning rate and freeze schedule.</text>
 
   <rect class="panel" x="446" y="404" width="386" height="176"/>
   <text class="box" x="472" y="432">Configuration</text>

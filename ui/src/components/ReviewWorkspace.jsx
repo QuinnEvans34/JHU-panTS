@@ -44,8 +44,8 @@ const DISPLAY_PRESETS = {
   anatomy: {
     label: 'CT detail',
     description: 'Makes the CT anatomy easiest to read',
-    overlayOpacity: 0.4,
-    ctOpacity: 0.28,
+    overlayOpacity: 0.62,
+    ctOpacity: 0.44,
   },
   balanced: {
     label: 'Balanced',
@@ -286,6 +286,10 @@ export default function ReviewWorkspace({
   })
   const [navigationCommand, setNavigationCommand] = useState(null)
   const navigationCommandId = useRef(0)
+  const sliceFrameRef = useRef(null)
+  const pendingSliceRef = useRef(null)
+  const clipFrameRef = useRef(null)
+  const pendingClipProgressRef = useRef(null)
 
   const navigatorPlane = state.activePlane === 'multiplanar'
     ? 'axial'
@@ -298,15 +302,40 @@ export default function ReviewWorkspace({
     setNavigationCommand({ ...command, id: navigationCommandId.current })
   }
 
-  function setSlice(index) {
-    issueViewerCommand({
+  function setSlice(index, { live = false } = {}) {
+    const command = {
       type: 'slice',
       plane: navigatorPlane,
       index: Math.max(0, Math.min(navigatorTotal - 1, index)),
-    })
+    }
+    if (!live) {
+      if (sliceFrameRef.current !== null) {
+        window.cancelAnimationFrame(sliceFrameRef.current)
+        sliceFrameRef.current = null
+      }
+      pendingSliceRef.current = null
+      issueViewerCommand(command)
+      return
+    }
+
+    pendingSliceRef.current = command
+    if (sliceFrameRef.current === null) {
+      sliceFrameRef.current = window.requestAnimationFrame(() => {
+        sliceFrameRef.current = null
+        const pending = pendingSliceRef.current
+        pendingSliceRef.current = null
+        if (pending) issueViewerCommand(pending)
+      })
+    }
   }
 
   useEffect(() => {
+    if (sliceFrameRef.current !== null) window.cancelAnimationFrame(sliceFrameRef.current)
+    if (clipFrameRef.current !== null) window.cancelAnimationFrame(clipFrameRef.current)
+    sliceFrameRef.current = null
+    clipFrameRef.current = null
+    pendingSliceRef.current = null
+    pendingClipProgressRef.current = null
     dispatch({ type: 'CASE_CHANGED', hasPrediction: isCurated })
     setNavigation({
       indices: { axial: 0, coronal: 0, sagittal: 0 },
@@ -314,6 +343,11 @@ export default function ReviewWorkspace({
       ranges: { pancreas: null, lesion: null },
     })
   }, [caseId, isCurated])
+
+  useEffect(() => () => {
+    if (sliceFrameRef.current !== null) window.cancelAnimationFrame(sliceFrameRef.current)
+    if (clipFrameRef.current !== null) window.cancelAnimationFrame(clipFrameRef.current)
+  }, [])
 
   // The reset above runs on case change, when an unmarked scan has no prediction yet.
   // When the live result lands, `hasPrediction` flips true but that effect does not
@@ -420,6 +454,9 @@ export default function ReviewWorkspace({
   const pancreasMarker = markerStyle('pancreas')
   const lesionMarker = markerStyle('lesion')
   const planeName = navigatorPlane[0].toUpperCase() + navigatorPlane.slice(1)
+  const sliceProgress = navigatorTotal > 1
+    ? (navigatorIndex / (navigatorTotal - 1)) * 100
+    : 0
   const coronalPancreasRange = navigation.ranges.pancreas?.coronal
   const coronalTotal = navigation.totals.coronal || 1
   const pancreasRevealProgress = coronalPancreasRange && coronalTotal > 1
@@ -448,14 +485,30 @@ export default function ReviewWorkspace({
           ? 'Pancreas revealed'
           : `${Math.round(state.clipProgress)}% removed`
 
-  function setClipProgress(value, { snapFront = false } = {}) {
-    dispatch({
+  function setClipProgress(value, { snapFront = false, live = false } = {}) {
+    const nextProgress = Math.max(0, Math.min(100, Number(value)))
+    const commit = (progress) => dispatch({
       type: 'PATCH_SETTINGS',
-      value: {
-        clipEnabled: true,
-        clipProgress: Math.max(0, Math.min(100, Number(value))),
-      },
+      value: { clipEnabled: true, clipProgress: progress },
     })
+    if (!live) {
+      if (clipFrameRef.current !== null) {
+        window.cancelAnimationFrame(clipFrameRef.current)
+        clipFrameRef.current = null
+      }
+      pendingClipProgressRef.current = null
+      commit(nextProgress)
+    } else {
+      pendingClipProgressRef.current = nextProgress
+      if (clipFrameRef.current === null) {
+        clipFrameRef.current = window.requestAnimationFrame(() => {
+          clipFrameRef.current = null
+          const pending = pendingClipProgressRef.current
+          pendingClipProgressRef.current = null
+          if (pending !== null) commit(pending)
+        })
+      }
+    }
     if (snapFront) {
       issueViewerCommand({ type: 'camera', azimuth: 0, elevation: 0 })
     }
@@ -469,6 +522,10 @@ export default function ReviewWorkspace({
     if (enabled) {
       issueViewerCommand({ type: 'camera', azimuth: 0, elevation: 0 })
     }
+  }
+
+  function setViewMode(viewMode) {
+    dispatch({ type: 'SET_VIEW_MODE', value: viewMode })
   }
 
   return (
@@ -534,7 +591,7 @@ export default function ReviewWorkspace({
               <button
                 type="button"
                 className={state.viewMode === '2d' ? 'active' : ''}
-                onClick={() => dispatch({ type: 'SET_VIEW_MODE', value: '2d' })}
+                onClick={() => setViewMode('2d')}
                 aria-pressed={state.viewMode === '2d'}
               >
                 <Crosshair size={14} aria-hidden="true" /> 2D
@@ -542,7 +599,7 @@ export default function ReviewWorkspace({
               <button
                 type="button"
                 className={state.viewMode === '3d' ? 'active' : ''}
-                onClick={() => dispatch({ type: 'SET_VIEW_MODE', value: '3d' })}
+                onClick={() => setViewMode('3d')}
                 aria-pressed={state.viewMode === '3d'}
               >
                 <Box size={14} aria-hidden="true" /> 3D
@@ -589,7 +646,7 @@ export default function ReviewWorkspace({
           <span className="evidence-toolbar__divider" aria-hidden="true" />
 
           <div className="anatomy-focus-control" aria-label="Anatomy focus">
-            <span>Focus</span>
+            <span>Highlight</span>
             {['all', 'pancreas', 'lesion'].map((focus) => (
               <button
                 type="button"
@@ -626,25 +683,6 @@ export default function ReviewWorkspace({
               ))}
             </div>
           )}
-
-          <span className="evidence-toolbar__divider" aria-hidden="true" />
-
-          <div className="display-clarity-control" aria-label="Image clarity">
-            <span>Image clarity</span>
-            {Object.entries(DISPLAY_PRESETS).map(([value, preset]) => (
-              <button
-                type="button"
-                key={value}
-                className={state.displayPreset === value ? 'active' : ''}
-                onClick={() => setDisplayPreset(value)}
-                aria-pressed={state.displayPreset === value}
-                title={preset.description}
-              >
-                {preset.label}
-              </button>
-            ))}
-            {state.displayPreset === 'custom' && <em>Custom</em>}
-          </div>
         </div>
 
         <div className="review-viewer-shell">
@@ -775,7 +813,10 @@ export default function ReviewWorkspace({
                 >
                   <ChevronLeft size={13} aria-hidden="true" />
                 </button>
-                <div className="slice-navigator__track">
+                <div
+                  className="slice-navigator__track"
+                  style={{ '--slice-progress': `${sliceProgress}%` }}
+                >
                   {pancreasMarker && (
                     <i
                       className="slice-range slice-range--pancreas"
@@ -796,7 +837,7 @@ export default function ReviewWorkspace({
                     max={Math.max(0, navigatorTotal - 1)}
                     step="1"
                     value={Math.min(navigatorIndex, navigatorTotal - 1)}
-                    onChange={(event) => setSlice(Number(event.target.value))}
+                    onChange={(event) => setSlice(Number(event.target.value), { live: true })}
                     aria-label={`${planeName} slice`}
                   />
                 </div>
@@ -902,7 +943,7 @@ export default function ReviewWorkspace({
 
                 <div className="front-cut-control">
                   <div className="front-cut-control__identity">
-                    <span>CT removal</span>
+                    <span>CT cutaway</span>
                     <strong>Front <i>→</i> Back</strong>
                   </div>
                   <div className="front-cut-control__presets" aria-label="Front-to-back CT removal presets">
@@ -911,7 +952,7 @@ export default function ReviewWorkspace({
                       className={state.clipEnabled && state.clipProgress === 0 ? 'active' : ''}
                       onClick={() => setClipProgress(0, { snapFront: true })}
                     >
-                      Full CT
+                      Full scan
                     </button>
                     <button
                       type="button"
@@ -925,17 +966,20 @@ export default function ReviewWorkspace({
                       onClick={() => setClipProgress(pancreasRevealProgress, { snapFront: true })}
                       disabled={pancreasRevealProgress === null}
                     >
-                      Reveal pancreas
+                      Pancreas
                     </button>
                     <button
                       type="button"
                       className={state.clipEnabled && state.clipProgress === 100 ? 'active' : ''}
                       onClick={() => setClipProgress(100, { snapFront: true })}
                     >
-                      Mask only
+                      Masks only
                     </button>
                   </div>
-                  <div className="front-cut-control__track">
+                  <div
+                    className="front-cut-control__track"
+                    style={{ '--cut-progress': `${state.clipProgress}%` }}
+                  >
                     {pancreasRevealProgress !== null && (
                       <i
                         className="front-cut-control__pancreas-marker"
@@ -949,7 +993,7 @@ export default function ReviewWorkspace({
                       max="100"
                       step="1"
                       value={state.clipProgress}
-                      onChange={(event) => setClipProgress(Number(event.target.value))}
+                      onChange={(event) => setClipProgress(Number(event.target.value), { live: true })}
                       aria-label="Front-to-back CT removal"
                     />
                   </div>
@@ -1102,10 +1146,33 @@ export default function ReviewWorkspace({
           </div>
 
           {state.settingsOpen && (
-            <aside className="review-settings-popover" aria-label="View settings">
+            <aside className="review-settings-popover" aria-label="View settings" tabIndex={0}>
               <div className="review-settings-popover__header">
                 <div><Settings2 size={15} /><strong>View settings</strong></div>
                 <button type="button" onClick={() => dispatch({ type: 'TOGGLE_SETTINGS' })} aria-label="Close view settings"><X size={14} /></button>
+              </div>
+
+              <div className="review-settings-group">
+                <span>Display emphasis</span>
+                <div className="display-preset-control" aria-label="Display emphasis">
+                  {Object.entries(DISPLAY_PRESETS).map(([value, preset]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      className={state.displayPreset === value ? 'active' : ''}
+                      onClick={() => setDisplayPreset(value)}
+                      aria-pressed={state.displayPreset === value}
+                      title={preset.description}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+                <small className="ct-window-help">
+                  {state.displayPreset === 'custom'
+                    ? 'Custom visibility settings are active.'
+                    : DISPLAY_PRESETS[state.displayPreset]?.description}
+                </small>
               </div>
 
               <div className="review-settings-group">
@@ -1236,7 +1303,7 @@ export default function ReviewWorkspace({
                           max="100"
                           step="1"
                           value={state.clipProgress}
-                          onChange={(event) => setClipProgress(Number(event.target.value))}
+                          onChange={(event) => setClipProgress(Number(event.target.value), { live: true })}
                         />
                       </label>
                       <p className="review-settings-hint">
@@ -1309,7 +1376,12 @@ export default function ReviewWorkspace({
             </div>
             <div className="overlap-payoff__metric">
               <span><i style={{ background: REVIEW_COLORS.gt.lesion }} />Lesion Dice</span>
-              <strong>{Number.isFinite(overlap.lesion) ? overlap.lesion.toFixed(3) : '—'}</strong>
+              <strong>
+                {!caseData.gt_has_lesion && !finding.lesionFlagged
+                  ? 'No lesion'
+                  : Number.isFinite(overlap.lesion) ? overlap.lesion.toFixed(3) : '—'}
+              </strong>
+              {!caseData.gt_has_lesion && !finding.lesionFlagged && <small>Absent in both masks</small>}
             </div>
             <p>Toggle Model, Truth, Both, or Difference to inspect agreement, over-segmentation, and missed reference regions.</p>
           </section>
