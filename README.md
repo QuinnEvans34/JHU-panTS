@@ -40,6 +40,60 @@ Full analysis in the [Week 4 report](deliverables/week4/tuning-orchestration-rep
 
 ---
 
+## The interface
+
+**PanTS Review** — a React + NiiVue clinical review workspace. A scan loads unmarked, the deployed
+model scores it live, and the expert reference is revealed only when the reviewer asks for it.
+
+**1 · Load an unmarked scan.** Exactly what a radiologist sees — no prediction, no reference.
+
+![Unmarked scan](deliverables/week5/ui-screenshots/04-stage1-unmarked-clean-ct.png)
+
+**2 · The model scores it live.** A real call to the FastAPI endpoint. The badge shows *when* it was
+scored and how long inference took — `Live · 18:01 · 0.6s`. Model contours are teal (pancreas) and
+red (lesion), with the CADe flag, volume, diameter, and confidence in the panel below.
+
+![Live prediction](deliverables/week5/ui-screenshots/05-stage2-live-prediction.png)
+
+**3 · Reveal the source of truth and score it.** Prediction and expert reference together, with the
+measured agreement — pancreas Dice 0.826, lesion Dice 0.907 on this study.
+
+![Compare with source of truth](deliverables/week5/ui-screenshots/07-compare-overlap-dice.png)
+
+**And the honest one.** `PanTS_00009220` is a **tumor-free** scan. The model flags 51.68 cm³ at 94%
+confidence. It is in the demo on purpose — it is the clearest single picture of the project's known
+weakness, and the reason every output is framed as a prompt for review rather than a finding.
+
+![Large false positive](deliverables/week5/ui-screenshots/10-failure-large-false-positive.png)
+
+<details>
+<summary><b>More of the interface</b> — scan library, difference view, 3D surfaces</summary>
+
+**Scan library** — populated by a live `GET /cases` call against the running endpoint.
+
+![Scan library](deliverables/week5/ui-screenshots/02-scan-library-live-endpoint.png)
+
+**Difference view** — agreement, over-segmentation, and missed regions as separate colours.
+
+![Difference view](deliverables/week5/ui-screenshots/08-difference-view.png)
+
+**3D surfaces** — marching-cubes meshes of the pancreas with the lesion inside, rotatable.
+
+![3D surfaces](deliverables/week5/ui-screenshots/09-3d-surfaces.png)
+
+</details>
+
+### 📖 Read more about the interface
+
+| Document | What's in it |
+|---|---|
+| **[UI Walkthrough →](deliverables/week5/ui-walkthrough.md)** | Every input, output, and control · how the UI connects to the deployed endpoint · how data freshness is surfaced · the design decisions made for a non-technical user |
+| **[How to Use It →](deliverables/week5/how-to-use.md)** | A plain-language user guide — step by step, what each output means, and the limitations to know about |
+| **[All 10 screenshots →](deliverables/week5/ui-screenshots/)** | The complete captioned set, screen by screen |
+| **[Interface architecture →](deliverables/week5/diagrams/ui-architecture.svg)** | Component tree, state, and the two data sources |
+
+---
+
 ## 📌 Week 5 deliverables — grader map
 
 | Assignment / rubric criterion | Deliverable | Location |
@@ -254,6 +308,13 @@ external drive, referenced by config.
 ---
 
 ## Documentation
+
+**The product** — start here to understand what was built and how it's used
+- [`deliverables/week5/ui-walkthrough.md`](deliverables/week5/ui-walkthrough.md) — the interface in full: inputs, outputs, endpoint connection, data freshness, and design decisions, with screenshots
+- [`deliverables/week5/how-to-use.md`](deliverables/week5/how-to-use.md) — plain-language user guide for a non-technical reader
+- [`deliverables/week5/retrospective.md`](deliverables/week5/retrospective.md) — project retrospective
+- [`deliverables/week5/diagrams/`](deliverables/week5/diagrams/) — system, inference-flow, model, and interface architecture diagrams
+- [`deliverables/week4/tuning-orchestration-report.md`](deliverables/week4/tuning-orchestration-report.md) — tuning, held-out evaluation, orchestration, and deployment
 
 **Project management & AI use**
 - [`docs/implementation-plan.md`](docs/implementation-plan.md) — the five-week plan and its honest final MVP assessment

@@ -2,7 +2,60 @@
 
 **PanTS Review** — a clinical review workspace for pancreas and pancreatic-lesion segmentation.
 Built with **React + NiiVue** (a WebGL medical-imaging viewer), styled with a purpose-built dark
-medical theme. Screenshots in [`ui-screenshots/`](ui-screenshots/).
+medical theme. All screenshots below were captured from the running system: the front-end on
+`localhost:5173` calling the live FastAPI endpoint on `localhost:8000`, serving the registered model
+`pancreas-lesion-segmenter v1`. Every scan shown is from the **official held-out test set**.
+Full captioned set: [`ui-screenshots/`](ui-screenshots/).
+
+---
+
+## The three-stage review flow
+
+The core of the interface. A scan arrives unannotated, the model proposes, the reviewer verifies.
+
+### Stage 1 — an unmarked scan
+
+![Stage 1 — unmarked clean CT](ui-screenshots/04-stage1-unmarked-clean-ct.png)
+
+Tri-planar axial, coronal, and sagittal views with a synchronized crosshair. No prediction and no
+reference is visible — *"Inspect first. Then let the model draw."*
+
+### Stage 2 — the model scores it live
+
+![Stage 2 — live prediction](ui-screenshots/05-stage2-live-prediction.png)
+
+Pressing **Analyze** calls `POST /predict` on the deployed endpoint. The result returns in about
+half a second and the badge records exactly when it happened: `Live · 18:01 · 0.6s`. Model contours
+appear in teal (pancreas) and red (lesion), with the CADe flag, predicted volume, approximate
+diameter, and confidence in the panel beneath.
+
+### Stage 3 — reveal the source of truth
+
+![Stage 3 — source of truth](ui-screenshots/06-stage3-source-of-truth.png)
+
+The expert reference, deliberately concealed until the reviewer asks for it. Reference colours (blue
+pancreas, amber lesion) are distinct from the model's everywhere in the app.
+
+### The scorecard
+
+![Compare overlap](ui-screenshots/07-compare-overlap-dice.png)
+
+Prediction and reference together with the measured agreement — **pancreas Dice 0.826, lesion Dice
+0.907** on this study. These match the offline evaluation exactly, because the same registered model
+produced both.
+
+![Difference view](ui-screenshots/08-difference-view.png)
+
+The difference view separates agreement, prediction-only (over-segmentation), and reference-only
+(missed) regions, so the failure mode is inspectable rather than merely described.
+
+### 3D surfaces
+
+![3D surfaces](ui-screenshots/09-3d-surfaces.png)
+
+Marching-cubes surface meshes of the pancreas with the lesion inside it, rotatable, with an
+adjustable CT cutaway. A 3D array means nothing to a reviewer; a rotatable organ communicates
+location instantly.
 
 ---
 
@@ -99,6 +152,12 @@ should make over-trusting the model difficult.
 right, a small tumor it under-covers, healthy scans it correctly ignores, and one healthy scan it
 over-calls. Showing the false positive is the fastest way for a reviewer to calibrate how much to
 trust a flag.
+
+![Large false positive](ui-screenshots/10-failure-large-false-positive.png)
+
+`PanTS_00009220` is a **tumor-free** scan. The model flags **51.68 cm³** of lesion at **94%
+confidence**. This is the clearest single illustration of the project's known weakness — 17%
+specificity on healthy scans — and it is why the interface never presents a flag as a finding.
 
 **Radiology-native interaction.** Triplanar views with a synchronized crosshair, scroll-through slices,
 and a dark theme are what imaging professionals already use. The 3D surface view exists because a
