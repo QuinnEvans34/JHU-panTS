@@ -1,6 +1,6 @@
 # M4A1: Tuning, Orchestration & Deployment Report
 
-**Due:** Sunday 11:59pm (available until Jul 31 11:59pm) · **Points:** 30 · **Submit:** website URL or file upload (GitHub: branch → merge to main, inside a `week4/` documentation folder)
+**Due:** Sunday 11:59pm (available until Jul 31 11:59pm) · **Points:** 30 · **Submit:** website URL or file upload (GitHub: branch → merge to main, inside a `deliverables/week4/` documentation folder)
 
 ## Overview
 This week the project transitions from experimentation to production. Tune the selected model, automate the full pipeline, and deploy a working model endpoint. By end of week the system should ingest real-time data, retrain or score on a schedule, and serve predictions via an API — ready for a front-end to consume in Week 5.
@@ -43,7 +43,7 @@ This week the project transitions from experimentation to production. Tune the s
 - **CO2** — Architect and automate a resilient data and training pipeline.
 - **CO3** — Apply experiment tracking, hyperparameter tuning, and evaluation in model development.
 
-## Deliverables (GitHub, inside `week4/`)
+## Deliverables (GitHub, inside `deliverables/week4/`)
 - `tuning-orchestration-report.md` — full report covering sections 1–5.
 - Pipeline diagram / flowchart as an image file in the folder.
 - MLflow screenshots of tuning runs + registered model (in the report or as image files).

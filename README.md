@@ -1,167 +1,98 @@
-# JHU-PanTS — 3D Pancreas-Aware Pancreatic Lesion Segmentation
+# PanTS Review — 3D Pancreatic Lesion Segmentation
 
-A 3D deep-learning pipeline that takes an abdominal CT scan, segments the **pancreas** and any **pancreatic lesion**, and flags *"there could be a tumor here."* Built on the Johns Hopkins **PanTS** dataset with MONAI/PyTorch, running on Apple Silicon (MPS).
+A 3D deep-learning system that takes an abdominal CT scan, segments the **pancreas** and any
+**pancreatic lesion**, and flags *"there could be a tumor here"* for a radiologist to review.
+Built on the Johns Hopkins **PanTS** dataset with MONAI/PyTorch, served through a FastAPI endpoint,
+and reviewed in a React + NiiVue clinical workspace.
 
-> **This is an image-segmentation / annotation-assist tool, not a diagnostic system.** A human radiologist reviews and edits every output; no clinical determination is made or claimed.
+> **Research use only.** This is a segmentation and annotation-assist tool, **not a diagnostic
+> system**. A human reviews and edits every output; no clinical determination is made or claimed.
+
+<p align="center">
+  <img src="deliverables/week5/pants-review-title-page.png" alt="PanTS Review" width="820">
+</p>
 
 ---
 
-## 📌 Graded deliverables — where to find everything
+## Results
 
-*(This table is the grader's map. Most recent week first.)*
+Scored **once** on the official held-out test set — 901 CT volumes (151 tumor-positive, 750
+tumor-free) that were never touched during development.
 
-### Week 5 (current) — M5P1: Final Demo & Defense · M5A1: Final Deliverable Package · M5A2: Daily Check-Ins
+| Metric | Result | What it means |
+|---|---|---|
+| **Detection sensitivity** | **96%** (145/151) | Catch rate — of the tumors present, almost all are surfaced for review |
+| **Lesion Dice** | **0.474** · 95% CI [0.42–0.52] | Outline quality on tumor-positive scans — the editing burden left for a human |
+| **Pancreas Dice** | **0.827** | Organ segmentation, close to expert quality |
+| **Specificity** | **17%** (128/750) | False-alarm rate on healthy scans — **the known weakness** |
+
+Published PanTS benchmark for reference: **~0.53** lesion Dice (MedFormer 0.529, R-Super 0.534 —
+the latter uses additional external report supervision).
+
+**Honest scope.** These are **provided-ROI** numbers: the model is given the pancreas region and
+asked to find any tumor inside it, which is the annotation-assist workflow it is built for. A fully
+autonomous localize-then-segment cascade is implemented and runs, but its accuracy has not been
+re-validated since the validation-leakage fix, so it is not reported here.
+
+**Known failure mode.** The model detects small tumors (<1 cm³) but over-draws them by 25–50×,
+which both caps their Dice (0.067) and drives the low specificity. One behaviour, two symptoms.
+Full analysis in the [Week 4 report](deliverables/week4/tuning-orchestration-report.md).
+
+---
+
+## 📌 Week 5 deliverables — grader map
 
 | Assignment / rubric criterion | Deliverable | Location |
 |-----------|-------------|----------|
-| **M5A1 — Business-Facing UI** | UI walkthrough: inputs/outputs, endpoint connection, data freshness, design decisions | [`week5/ui-walkthrough.md`](week5/ui-walkthrough.md) |
-| M5A1 — *UI screenshots* | Full user experience, screen by screen | [`week5/ui-screenshots/`](week5/ui-screenshots/) |
-| **M5A1 — User Guide** | Non-technical, step-by-step guide + how to interpret outputs + limitations | [`week5/how-to-use.md`](week5/how-to-use.md) |
-| **M5A1 — Project Retrospective** | What I'm proud of, biggest challenge, what I'd do with 5 more weeks, Week 1 Takeaway callback | [`week5/retrospective.md`](week5/retrospective.md) |
+| **M5A1 — Business-Facing UI** | UI walkthrough: inputs/outputs, endpoint connection, data freshness, design decisions | [`deliverables/week5/ui-walkthrough.md`](deliverables/week5/ui-walkthrough.md) |
+| M5A1 — *UI screenshots* | Full user experience, screen by screen | [`deliverables/week5/ui-screenshots/`](deliverables/week5/ui-screenshots/) |
+| **M5A1 — User Guide** | Non-technical, step-by-step guide + how to interpret outputs + limitations | [`deliverables/week5/how-to-use.md`](deliverables/week5/how-to-use.md) |
+| **M5A1 — Project Retrospective** | Proudest work, biggest challenge, what I'd do with 5 more weeks, Week 1 Takeaway callback | [`deliverables/week5/retrospective.md`](deliverables/week5/retrospective.md) |
 | **M5A1 — README** | This file — architecture, tech stack + versions, setup, how to run everything | [`README.md`](README.md) |
 | **M5A1 — AI docs (final)** | Week 5 entry + final AI retrospective · final MVP status · finalized context file | [`docs/ai-usage-log.md`](docs/ai-usage-log.md) · [`docs/implementation-plan.md`](docs/implementation-plan.md) · [`CLAUDE.md`](CLAUDE.md) |
-| **M5P1 — Final Demo & Defense** | Live demo of the running system (see *Run the demo* below) | [`ui/`](ui/) + [`scripts/serve.py`](scripts/serve.py) |
+| **M5P1 — Final Demo & Defense** | Live demo of the running system (see [Run the demo](#run-the-demo)) · slide deck | [`ui/`](ui/) · [`scripts/serve.py`](scripts/serve.py) · [`deliverables/week5/final-presentation.pptx`](deliverables/week5/final-presentation.pptx) |
 | M5P1 — *audience deliverable* | Audience notes on peers' final presentations | [`docs/audience-notes-week5.md`](docs/audience-notes-week5.md) |
-| **M5A2 — Daily Check-Ins** | Daily standup log (all 5 weeks + the Week 5 1-on-1 retrospective) | [`docs/standup-log.md`](docs/standup-log.md) |
+| **M5A2 — Daily Check-Ins** | Daily standup log (all five weeks, incl. the Week 5 retrospective) | [`docs/standup-log.md`](docs/standup-log.md) |
 
-**Final headline result (held-out official test set, 901 cases, scored once):** lesion Dice **0.474** [95% CI 0.42–0.52], pancreas Dice **0.827**, detection sensitivity **96%**, specificity **17%** — against a published PanTS reference of ~0.53 lesion Dice. Full context and honest limitations in [`week4/tuning-orchestration-report.md`](week4/tuning-orchestration-report.md).
-
-### Week 4 — M4A1: Tuning, Orchestration & Deployment · M4A2: Daily Check-Ins
-
-| Assignment / rubric criterion | Deliverable | Location |
-|-----------|-------------|----------|
-| **M4A1 — full report (§1–5)** | Tuning, orchestration & deployment report | [`week4/tuning-orchestration-report.md`](week4/tuning-orchestration-report.md) |
-| §1 Hyperparameter Tuning | Optuna (Bayesian TPE) study + single-variable ablation; all runs in MLflow; final model registered | report §1 · [`scripts/tune_optuna.py`](scripts/tune_optuna.py) · [`docs/experiments.md`](docs/experiments.md) |
-| §1 — *MLflow tuning runs (image)* | `pants-level45-optuna` 15-trial run list | [`week4/img/mlflow-tuning-runs.png`](week4/img/mlflow-tuning-runs.png) |
-| §1 — *registered model (image)* | `pancreas-lesion-segmenter` v1 + provenance | [`week4/img/mlflow-registered-model.png`](week4/img/mlflow-registered-model.png) |
-| §2 Final Model Evaluation | Held-out TEST metrics (lesion Dice 0.474, pancreas 0.827, detection 96%, specificity 17%) + honest failure modes | report §2 · [`scripts/evaluate.py`](scripts/evaluate.py) · [`scripts/analyze_cases.py`](scripts/analyze_cases.py) |
-| §2 — *test visualization (image)* | Lesion Dice by tumor size & contrast phase | [`week4/img/test-by-size-phase.svg`](week4/img/test-by-size-phase.svg) |
-| §2 — *sample predictions, CV track (images)* | Clean catch + honest small-tumor miss, with CADe confidence | [`week4/img/sample-good-case.png`](week4/img/sample-good-case.png) · [`sample-small-miss.png`](week4/img/sample-small-miss.png) |
-| §3 Pipeline Orchestration | End-to-end pipeline + trigger / data-versioning / model-logging / error-handling | report §3 |
-| §3 — *pipeline diagram (image)* | Ingestion → training → eval → serving flowchart | [`week4/img/pipeline-diagram.svg`](week4/img/pipeline-diagram.svg) |
-| §4 Model Deployment | FastAPI endpoint + MLflow registry + live smoke test | report §4 · [`scripts/serve.py`](scripts/serve.py) · [`scripts/register_model.py`](scripts/register_model.py) |
-| §4 — *live endpoint (image)* | `/health` healthy-response page | [`week4/img/endpoint-health.png`](week4/img/endpoint-health.png) |
-| §5 Decisions & reflection | Architectural trade-offs / what I'd do with more time | report §5 |
-| §6 AI docs | AI context + Week 4 usage log + plan update | [`CLAUDE.md`](CLAUDE.md) · [`docs/ai-usage-log.md`](docs/ai-usage-log.md) · [`docs/implementation-plan.md`](docs/implementation-plan.md) |
-| **M4A2 — Daily Check-Ins** | Daily standup log (Mon–Fri, incl. the Week 4 technical-interview retrospective entry) | [`docs/standup-log.md`](docs/standup-log.md) |
-
-**Supporting Week 4 work:** experiment log with the headline model (EXP-24), the rejected anatomy-aware experiment (EXP-26), and the pre-registered specificity experiment (EXP-25 — cleared spec 17%→46% but rejected on the ≥90% detection floor) in [`docs/experiments.md`](docs/experiments.md) · deployment regression tests in [`tests/`](tests/) · full-points checklist in [`week4/M4A1-checklist.md`](week4/M4A1-checklist.md).
-
-### Week 3 — M3P1: Experiment Review & Model Selection · M3A2: Daily Check-Ins
-
-| Assignment | Deliverable | Location |
-|-----------|-------------|----------|
-| **M3P1 — Presenter** | ML experimentation report (features, experiment comparison, model selection, plan status) | [`week3/ml-experimentation-report.md`](week3/ml-experimentation-report.md) |
-| M3P1 — *presentation* | Slide deck (10-min talk) | [`week3/experiment-review-slides.pptx`](week3/experiment-review-slides.pptx) · [PDF](week3/experiment-review-slides.pdf) |
-| **M3P1 — Audience** | Audience notes on peers' presentations | [`docs/audience-notes-week3.md`](docs/audience-notes-week3.md) |
-| **M3A2 — Daily Check-Ins** | Daily standup log (Mon–Fri + the Week 3 1-on-1 retrospective) | [`docs/standup-log.md`](docs/standup-log.md) |
-| M3P1 — *experiment log* | Every run as a formal experiment (hypothesis → decision), EXP-01 → EXP-22 | [`docs/experiments.md`](docs/experiments.md) |
-| M3P1 — *revised plan (Section 5)* | Where the project stands vs the 5-week plan | [`docs/implementation-plan.md`](docs/implementation-plan.md) |
-| M3P1 — *AI docs (Section 6)* | AI context file + weekly usage log | [`CLAUDE.md`](CLAUDE.md) · [`docs/ai-usage-log.md`](docs/ai-usage-log.md) |
-| M3P1 — *metrics audit* | Self + independent-AI audit of the scoring (no leakage; ROI-leak finding) | [`docs/codex-metrics-audit.md`](docs/codex-metrics-audit.md) |
-| **M3A1 — MLflow screenshots** | Run-comparison + clean-candidate run (metrics / curves / params) + eval terminal | [`week3/mlflow-run-comparison.png`](week3/mlflow-run-comparison.png) · [`mlflow-clean-run-curves.png`](week3/mlflow-clean-run-curves.png) · [`mlflow-clean-run-metrics.png`](week3/mlflow-clean-run-metrics.png) · `eval-clean-run-terminal.png` |
-
-**Supporting Week 3 work:** [`week3/diagrams/`](week3/diagrams/) (presentation diagrams: whole-box vs patches, the input array, metrics). Post-presentation, acting on the Week 3 check-in feedback, the pipeline is being made fully autonomous and leak-free (localize the pancreas from the full CT, then segment) — tracked in [`docs/experiments.md`](docs/experiments.md) (EXP-20/22) and the Saturday standup entry.
-
-### Week 2
-
-| Assignment | Deliverable | Location |
-|-----------|-------------|----------|
-| **M2A1 — Data Understanding Report** | Full report, sections 1–5 | [`week2/data-understanding-report.md`](week2/data-understanding-report.md) |
-| M2A1 | EDA notebook (all visualizations, real data) | [`week2/eda-notebook.ipynb`](week2/eda-notebook.ipynb) |
-| M2A1 — *revised plan* | Finalized Core Requirements + 5-week plan | [`docs/implementation-plan.md`](docs/implementation-plan.md) · [`docs/schedule.md`](docs/schedule.md) |
-| M2A1 — *AI docs* | AI context file + weekly usage log | [`docs/Claude.md`](docs/Claude.md) · [`docs/ai-usage-log.md`](docs/ai-usage-log.md) |
-| **M2P2 — Presentation** | Presenter: report + notebook (above) | [`week2/`](week2/) |
-| M2P2 — *audience deliverable* | Audience notes on peers' presentations | [`docs/audience-notes-week2.md`](docs/audience-notes-week2.md) |
-| **M2A2 — Daily Check-Ins** | Daily standup log (Mon–Fri) | [`docs/standup-log.md`](docs/standup-log.md) |
-
-**Supporting Week 2 work:** [`docs/experiments.md`](docs/experiments.md) (formal experiment log, EXP-01 → EXP-13) · [`week2/diagrams/`](week2/diagrams/) (presentation diagrams) · [`week2/presentation-runsheet.md`](week2/presentation-runsheet.md).
-
-### Week 1
-
-| Assignment | Deliverable | Location |
-|-----------|-------------|----------|
-| **M1A1 — Project Proposal** | Proposal (7 sections) · schedule · AI plan | [`docs/proposal.md`](docs/proposal.md) · [`docs/schedule.md`](docs/schedule.md) · [`docs/Claude.md`](docs/Claude.md) |
-| M1A1 — *agent plan* | Agent operating guide + AI-vs-manual split | [`docs/agent-plan.md`](docs/agent-plan.md) |
-| **M1A2 — Daily Check-Ins** | Standup log (incl. Week 1 retrospective) | [`docs/standup-log.md`](docs/standup-log.md) |
-| **M1P1 — Pitch & Defense** | Pitch + Q&A · audience notes | [`docs/pitch.md`](docs/pitch.md) · [`docs/audience-notes-week1.md`](docs/audience-notes-week1.md) |
-
-**Supporting context:** [`CLAUDE.md`](CLAUDE.md) (project state an AI agent reads) · full technical design in `docs/` (see below).
+*Weeks 1–4 grader maps are archived in [`docs/deliverables-index.md`](docs/deliverables-index.md).*
 
 ---
 
-## What the project is
+## System architecture
 
-**Problem & user.** Radiologists and imaging annotators must hand-trace the pancreas and any tumor on 3D CT — slow, tedious work on a hard-to-see organ. The user is a **radiologist / imaging annotator** who, for each scan, **accepts, edits, or rejects** an automatically proposed outline instead of drawing it from scratch.
+![System architecture](deliverables/week5/diagrams/system-architecture.svg)
 
-**Dataset.** [PanTS](https://github.com/MrGiovanni/PanTS) (Johns Hopkins, NeurIPS 2025) — open-source, a static benchmark. The Mini release used here is 9,000 training + 901 test CT volumes with voxel-wise masks for the pancreas, its subregions, the lesion, and ~28 surrounding structures. Real tumor prevalence: **10.4%**.
+Four stages, plus a human at the end:
 
-**ML approach.** Supervised **3D semantic segmentation** (background / pancreas / lesion) with a **SegResNet** (MONAI), fine-tuned from **SuPreM** pretrained weights and compared against a from-scratch baseline. Extreme class imbalance (lesion ≈ 0.04% of a volume) is handled with a Dice-based loss + tumor-positive patch sampling. Evaluation is full-volume sliding-window inference; **pancreas and lesion Dice are reported separately**, plus patient-wise sensitivity/specificity (the CADe "possible tumor" story).
+1. **Data** — `build_manifest.py` indexes 9,901 CT volumes and their masks into `manifest.csv`;
+   `create_splits.py` carves patient-level, tumor-stratified train/val/test folds; an audit step
+   excludes the ~1-in-8 scans with empty or misaligned masks.
+2. **Training** — whole-box preprocessing crops to the pancreas region in native space, resamples to
+   1.5 mm, and fits it into a single 128³ cube. A 3D SegResNet fine-tuned from **SuPreM** predicts
+   three classes (background / pancreas / lesion). Every run logs to MLflow and writes an immutable
+   checkpoint archive.
+3. **Evaluation & registry** — full-volume sliding-window scoring on the untouched test set, failure
+   analysis by tumor size and contrast phase, then registration to the MLflow Model Registry.
+4. **Serving & interface** — a FastAPI endpoint loads the registered checkpoint once and answers
+   `POST /predict` in ~0.6 s; the React + NiiVue workspace calls it live and renders the result.
 
-**Business-facing layer.** A planned **React + NiiVue** web app: tri-planar CT with pancreas/lesion overlays, a rotatable 3D view, a "possible tumor" summary (location, volume, confidence), and mask export for editing in a real tool.
+Detailed diagrams: [inference flow](deliverables/week5/diagrams/inference-flow.svg) ·
+[model architecture](deliverables/week5/diagrams/model-architecture.svg) ·
+[interface architecture](deliverables/week5/diagrams/ui-architecture.svg)
+
+**Reproducibility is the design goal.** The dataset is static, so there is no scheduler — instead
+every result is reproducible on demand via a config-driven pipeline, a fixed seed, committed split
+files, MLflow plus an MLflow-independent checkpoint ledger, a startup guard that aborts if a
+training split ever touches validation, and atomic identity-verified resumable training.
 
 ---
-
-## Current status (Week 4 — complete)
-
-- ✅ **Data understood** — EDA built from the real 9,901-case manifest: 10.4% tumor prevalence, lesion volume spanning five orders of magnitude, extreme geometry heterogeneity (8 to 1,000+ slices).
-- ✅ **Pipeline validated** — Stage 0 overfit gate passed; the ingestion → resample → patch → model path is proven end to end.
-- ✅ **Over-prediction diagnosed and fixed** — first eval was pancreas Dice 0.72 / lesion 0.17 with only 8% specificity. A **whole-box ROI** change (feed the entire pancreas box as one cube) lifted specificity to 55% and became the winning recipe.
-- ✅ **Data is the lever (Week 3 headline)** — four recipe knobs (sampling, loss, field of view, resolution) were all nulls on tumor accuracy on the disjoint dev subset; scaling the tumor data was the only thing that moved it.
-- ✅ **Validation leakage found, fixed, and re-measured (the honest headline)** — an end-of-week adversarial code audit caught a bug in my data-scaling split builder that leaked validation cases into training, inflating an earlier 0.528 result. I fixed the root cause (splits now sampled from the carved train fold + a startup guard that aborts on any train/val overlap), retrained on a clean disjoint split, and the real held-out numbers are **lesion Dice 0.415, pancreas Dice 0.817, detection sensitivity 95%, specificity 15%** (val n=40). It did not collapse, so the data-scaling result was genuine — just smaller than the leaked figure. The candidate model for Week 4 tuning is this clean whole-box SegResNet. Full write-up in [`week3/ml-experimentation-report.md`](week3/ml-experimentation-report.md); audit in [`docs/codex-audit-week4.md`](docs/codex-audit-week4.md).
-- ✅ **Final held-out TEST evaluation (Week 4 headline)** — the registered whole-box SegResNet+SuPreM model, scored **once** on the untouched official 901-case test set: **lesion Dice 0.474 [95% CI 0.42–0.52], pancreas Dice 0.827, detection sensitivity 96%, specificity 17%** — right against the ~0.53 published reference, on a split I did not choose. Full write-up in [`week4/tuning-orchestration-report.md`](week4/tuning-orchestration-report.md).
-- ✅ **Tuned, registered, deployed** — an Optuna (Bayesian TPE) search confirmed the hand-tuned learning rate was already near-optimal; the final model is registered in MLflow as `pancreas-lesion-segmenter` v1; and a FastAPI `/predict` endpoint serves it (live smoke-tested, ~1 s/case).
-- ✅ **Two pre-registered experiments, honestly rejected** — anatomy-aware auxiliary supervision (EXP-26) looked like a win at an intermediate checkpoint but was a null at convergence; the more-healthy-data specificity run (EXP-25) cleared specificity 17%→46% but missed the pre-set ≥90% detection floor (88%). Both rejected against bars set in advance, so the plain whole-box model stays the headline. The over-segmentation of small tumors remains the known weakness and the Week-5 / capstone lever (a milder healthy ratio + the autonomous localize→segment cascade).
-
-*Every run is logged as a formal experiment (hypothesis → decision) in [`docs/experiments.md`](docs/experiments.md).*
-
----
-
-## Repository structure
-
-```
-JHU-PanTS/
-├── README.md              ← you are here (grader map)
-├── CLAUDE.md              project state/decisions for AI agents
-├── configs/               level45.yaml (the locked recipe as config)
-├── week5/                 M5A1 deliverables: UI walkthrough, how-to-use guide, retrospective, ui-screenshots/
-├── week4/                 M4A1 deliverables: tuning/orchestration/deployment report + img/ (diagram, MLflow, eval, samples, endpoint)
-├── week3/                 M3P1 deliverables: experiment report, slide deck, diagrams
-├── week2/                 M2A1/M2P2 deliverables: report, EDA notebook, diagrams, run sheet
-├── docs/                  graded docs (standup, audience notes, plan, schedule, ai-usage)
-│   │                      + full design docs + experiments.md + metrics audit
-│   ├── assignments/       the assignment briefs each week's work is graded against
-│   └── process/           working artifacts kept for provenance (AI handoffs, research notes)
-├── ui/                    React + NiiVue static demo viewer (Week 5 build)
-├── src/
-│   ├── utils/             config, seed, paths
-│   ├── data/             transforms (label compose, patch/whole-box), dataset
-│   ├── models/           SegResNet + SuPreM transfer loader
-│   ├── training/         losses, metrics, trainer helpers
-│   └── inference/        sliding-window prediction, validation, post-processing
-├── scripts/              build_manifest, create_splits, sanity_check_case, train,
-│                         evaluate, audit_masks, make_clarity_splits, log_run_to_mlflow
-└── outputs/              (git-ignored) manifest, splits, checkpoints, mlflow, figures
-```
-
-*(Raw data, model weights, and outputs are git-ignored and never committed — the dataset lives on an external drive.)*
-
-## Design documentation (the full plan)
-
-- [`docs/system-overview.md`](docs/system-overview.md) — the whole system on one page
-- [`docs/architecture.md`](docs/architecture.md) — master design doc + scope ladder
-- [`docs/data-pipeline.md`](docs/data-pipeline.md) — on-disk layout, manifest, splits
-- [`docs/training.md`](docs/training.md) — the locked training recipe (model, loss, optimizer, stages)
-- [`docs/experiments.md`](docs/experiments.md) — formal experiment log with hypotheses and decisions
-- [`docs/experiment-tracking.md`](docs/experiment-tracking.md) — MLflow plan
-- [`docs/ui.md`](docs/ui.md) — React + NiiVue front-end plan
 
 ## Tech stack
 
 | Layer | Technology | Version |
 |---|---|---|
-| Language | Python | 3.12 (3.14 breaks MLflow — use 3.12) |
-| Deep learning | PyTorch (**MPS** backend, Apple Silicon — not CUDA) | 2.12.1 |
+| Language | Python | **3.12** (see note in Setup) |
+| Deep learning | PyTorch — **MPS** backend, Apple Silicon (not CUDA) | 2.12.1 |
 | Medical imaging / models | MONAI (SegResNet, transforms, sliding-window) | 1.6.0 |
 | Pretrained weights | SuPreM `supervised_suprem_segresnet_2100.pth` (AbdomenAtlas) | — |
 | Medical image I/O | nibabel · SimpleITK | 5.4.2 · ≥2.3 |
@@ -169,8 +100,10 @@ JHU-PanTS/
 | Experiment tracking | MLflow (tracking + model registry) | 3.14.0 |
 | Hyperparameter search | Optuna (TPE + median pruner) | 4.9.0 |
 | Serving | FastAPI + Uvicorn | 0.139.0 · 0.49.0 |
-| Front-end | React · Vite · NiiVue (WebGL NIfTI viewer) · lucide-react | 18.3.1 · 5.4.8 · 0.69.0 · 0.468.0 |
-| Hardware used | MacBook Pro M5 Pro, 20-core GPU, 64 GB unified memory | — |
+| Front-end | React · Vite · NiiVue · lucide-react | 18.3.1 · 5.4.8 · 0.69.0 · 0.468.0 |
+| Hardware used | MacBook Pro M5 Pro — 20-core GPU, 64 GB unified memory | — |
+
+---
 
 ## Setup
 
@@ -182,23 +115,18 @@ python3.12 -m venv .venv312 && source .venv312/bin/activate
 pip install -r requirements.txt
 ```
 
-> Use **Python 3.12**. Python 3.14 cannot install MLflow, which the pipeline depends on.
+> **Use Python 3.12.** MLflow cannot be installed on Python 3.14, and the pipeline depends on it for
+> experiment tracking and the model registry. The virtual environment is named `.venv312` throughout
+> this project's documentation and commands.
 
 ### 2. Get the data (not included in this repo)
 
-The CT volumes are **not committed** — they are ~380 GB of licensed medical imaging from Johns Hopkins,
-and this project's guardrails forbid committing raw patient data. Download it yourself from the
-official source:
+The CT volumes are **not committed** — they are ~380 GB of licensed medical imaging, and this
+project's guardrails forbid committing raw patient data. Download it from the official source:
 
-**Dataset:** [PanTS — Johns Hopkins (MrGiovanni/PanTS)](https://github.com/MrGiovanni/PanTS)
+**Dataset:** [PanTS — Johns Hopkins (MrGiovanni/PanTS)](https://github.com/MrGiovanni/PanTS) · NeurIPS 2025
 
-```bash
-# Follow the download instructions in the PanTS repository README.
-# The Mini release used here = 9,000 train + 901 test CT volumes with
-# pancreas / subregion / lesion masks, plus metadata.xlsx.
-```
-
-Expected on-disk layout once downloaded (see [`docs/data-pipeline.md`](docs/data-pipeline.md) for the full spec):
+Expected layout once downloaded (full spec in [`docs/data-pipeline.md`](docs/data-pipeline.md)):
 
 ```
 <PANTS_ROOT>/PanTS/data/
@@ -208,30 +136,32 @@ Expected on-disk layout once downloaded (see [`docs/data-pipeline.md`](docs/data
 └── metadata.xlsx
 ```
 
-Point the pipeline at it — **never hardcoded**, always via config or env var:
+Point the pipeline at it — never hardcoded, always via config or env var:
 
 ```bash
-export PANTS_ROOT=/Volumes/YourDrive/PanTS      # or set paths.pants_root in configs/level45.yaml
+export PANTS_ROOT=/Volumes/YourDrive/PanTS     # or set paths.pants_root in configs/level45.yaml
 ```
 
-> macOS note: extract the shards with plain `tar -xzf` (BSD `tar` rejects the `--checkpoint` flag used
-> in some scripts), and keep the drive mounted with the lid open during long operations.
+> macOS note: extract the shards with plain `tar -xzf` (BSD `tar` rejects the `--checkpoint` flag),
+> and keep the drive mounted with the lid open during long operations.
 
 ### 3. Pretrained weights
 
 Download the SuPreM SegResNet checkpoint (`supervised_suprem_segresnet_2100.pth`) from the
-[SuPreM repository](https://github.com/MrGiovanni/SuPreM) into `pretrained_weights/`. Training
-from scratch works without it (`--scratch`), but transfer learning is what makes the model work at
-this data scale (+0.13 lesion Dice — see EXP-09).
+[SuPreM repository](https://github.com/MrGiovanni/SuPreM) into `pretrained_weights/`. Training from
+scratch works (`--scratch`), but transfer learning is what makes the model work at this data scale
+(+0.13 lesion Dice — see EXP-09).
+
+---
 
 ## Running it
 
 ### The data pipeline
 
 ```bash
-python scripts/build_manifest.py     # index the dataset  → outputs/manifest.csv (one row per case)
-python scripts/create_splits.py      # patient-level, tumor-stratified train/val/test → outputs/splits/
-python scripts/sanity_check_case.py  # verify a real case end to end (3-view overlays)
+python scripts/build_manifest.py     # index the dataset  → outputs/manifest.csv
+python scripts/create_splits.py      # patient-level, tumor-stratified splits → outputs/splits/
+python scripts/sanity_check_case.py  # verify one real case end to end (3-view overlays)
 ```
 
 ### Train
@@ -243,7 +173,7 @@ PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py \
   --max-iters 24000 --val-positive --val-limit 20 --cache disk
 ```
 
-### Evaluate (full-volume sliding window on the held-out test set)
+### Evaluate (full-volume sliding window, held-out test set)
 
 ```bash
 PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
@@ -252,16 +182,17 @@ PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/evaluate.py \
   --whole-box --crop-native 16 --roi 128 --spacing 1.5 --sweep --full-benchmark
 ```
 
-### Serve the model (inference API)
+### Serve the model
 
 ```bash
 MODEL_CKPT=outputs/checkpoints/pants-level45/runs/<run>/best.pt \
   PYTORCH_ENABLE_MPS_FALLBACK=1 \
   uvicorn scripts.serve:app --port 8000 --workers 1
 ```
+
 `GET /health` · `GET /cases` · `POST /predict {"case_id": "..."}` → CADe summary JSON (~0.6 s/scan).
 
-### Run the demo UI
+### Run the demo
 
 ```bash
 # 1. export prepared demo cases (needs the dataset + a checkpoint)
@@ -270,24 +201,89 @@ PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/export_case.py \
   --whole-box --crop-native 16 --roi 128 --spacing 1.5 --full-ct \
   --case PanTS_00009005 --case PanTS_00009687 --case PanTS_00009016
 
-# 2. start the inference API (above), then:
+# 2. start the API (above), then:
 cd ui && npm install && npm run dev      # → http://localhost:5173
 ```
 
-The UI works with **no backend running** (it falls back to cached results), but the live
-*Analyze scan* flow requires the API on port 8000.
+The interface works with **no backend running** — it falls back to cached results and says so — but
+the live *Analyze* flow needs the API on port 8000.
 
 ### Experiment tracking
 
 ```bash
 mlflow ui --backend-store-uri "sqlite:///$(pwd)/outputs/mlflow.db"   # → http://127.0.0.1:5000
 ```
-Run it from the repo root in `.venv312` — the DB schema is tied to that MLflow version.
+
+Run from the repo root inside `.venv312`; the database schema is tied to that MLflow version.
+
+---
+
+## Repository structure
+
+```
+.
+├── README.md              project overview + current grader map
+├── CLAUDE.md              project state/decisions for AI agents
+├── requirements.txt
+├── configs/               level45.yaml — the locked recipe as config
+├── deliverables/          per-week graded deliverables (weeks 2–5)
+│   ├── week2/             data-understanding report, EDA notebook, diagrams
+│   ├── week3/             experiment report, slide deck, diagrams
+│   ├── week4/             tuning/orchestration/deployment report + img/
+│   └── week5/             UI walkthrough, user guide, retrospective, diagrams, deck
+├── docs/                  living docs — standup log, experiments, plan, AI usage,
+│   │                      design docs, audience notes, metrics audits
+│   ├── assignments/       the assignment briefs each week is graded against
+│   └── process/           working artifacts kept for provenance (AI handoffs, research)
+├── src/
+│   ├── utils/             config, seed, paths
+│   ├── data/              transforms (label compose, whole-box), dataset
+│   ├── models/            SegResNet + SuPreM transfer loader
+│   ├── training/          losses, metrics, trainer
+│   └── inference/         sliding-window prediction, post-processing, cascade
+├── scripts/               pipeline entrypoints — manifest, splits, train, evaluate,
+│                          tune_optuna, register_model, serve, export_case
+├── tests/                 regression tests for the deployment layer
+├── ui/                    React + NiiVue clinical review workspace
+└── outputs/               (git-ignored) manifest, splits, checkpoints, MLflow, figures
+```
+
+Raw data, model weights, and outputs are git-ignored and never committed — the dataset lives on an
+external drive, referenced by config.
+
+---
+
+## Documentation
+
+**Project management & AI use**
+- [`docs/implementation-plan.md`](docs/implementation-plan.md) — the five-week plan and its honest final MVP assessment
+- [`docs/ai-usage-log.md`](docs/ai-usage-log.md) — weekly record of AI usage + a final retrospective
+- [`CLAUDE.md`](CLAUDE.md) — project state and decisions, written for an AI agent picking this up
+- [`docs/standup-log.md`](docs/standup-log.md) — daily check-ins across all five weeks
+
+**Technical design**
+- [`docs/system-overview.md`](docs/system-overview.md) — the whole system on one page
+- [`docs/architecture.md`](docs/architecture.md) — master design doc + scope ladder
+- [`docs/data-pipeline.md`](docs/data-pipeline.md) — on-disk layout, manifest, splits
+- [`docs/training.md`](docs/training.md) — the locked training recipe
+- [`docs/experiments.md`](docs/experiments.md) — all 26 experiments, each with a hypothesis and an accept/reject decision
+- [`docs/ui.md`](docs/ui.md) — front-end design
+
+---
 
 ## Scope & roadmap
 
-**Course (5 weeks):** Level 4.5 segmentation + CADe "possible tumor" flag + the scratch-vs-transfer comparison + the React/NiiVue UI. **Capstone (10 weeks):** an ROI localize→segment cascade, full-scale training on all 9,000 cases, Level 5 multi-structure, and submitting the model to JHU for external validation.
+**Delivered (5 weeks):** three-class segmentation (background / pancreas / lesion), a CADe
+"possible tumor" flag, a measured transfer-vs-scratch comparison, Optuna hyperparameter search, a
+registered model, a serving endpoint, and the React + NiiVue review interface.
+
+**Next (capstone):** validate the autonomous localize-then-segment cascade so no pancreas region has
+to be provided; add a tumor-presence gate to raise specificity (patient-level AUC is 0.804, so the
+signal exists and the threshold is the problem); and scale training to all 9,000 cases, since data
+scale was the only lever that consistently moved accuracy.
 
 ## Guardrails
 
-Never commit raw data · split by patient not slice · full-volume sliding-window evaluation · report pancreas & lesion Dice separately · tumor-positive sampling · no clinical/diagnostic claims · config-driven pipeline.
+Never commit raw data · split by patient, not by slice · full-volume sliding-window evaluation ·
+report pancreas and lesion Dice separately · tumor-positive sampling · no clinical or diagnostic
+claims · config-driven pipeline with the dataset path never hardcoded.

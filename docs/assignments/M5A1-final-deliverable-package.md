@@ -1,6 +1,6 @@
 # M5A1: Final Deliverable Package
 
-**Due:** Thursday 11:59pm (available until Jul 30 11:59pm) · **Points:** 40 · **Submit:** GitHub (branch → merge to main), inside a `week5/` documentation folder
+**Due:** Thursday 11:59pm (available until Jul 30 11:59pm) · **Points:** 40 · **Submit:** GitHub (branch → merge to main), inside a `deliverables/week5/` documentation folder
 
 ## Overview
 The culmination of five weeks. The final deliverable is a **complete, professional-quality project package** that a business stakeholder could evaluate, a developer could pick up and run, and you could confidently show in a job interview. Every component should be connected, documented, and presentable.
@@ -43,7 +43,7 @@ The culmination of five weeks. The final deliverable is a **complete, profession
 - Communicate and defend technical work to a non-technical audience.
 - Manage an independent project from proposal to delivery.
 
-## Deliverables (GitHub, inside `week5/`)
+## Deliverables (GitHub, inside `deliverables/week5/`)
 - `ui-screenshots/` — folder of UI screenshots.
 - `how-to-use.md` — non-technical user guide.
 - `retrospective.md` — project retrospective (section 5).

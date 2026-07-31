@@ -30,7 +30,7 @@ This is **not one assignment**. It is a solo, five-week independent ML project f
 - `M2P2-data-understanding-and-revised-plan.md` — Week 2, **presentation** + revised plan (30 pts).
 - `M2A2-daily-check-ins.md` — Week 2, daily standups (10 pts).
 
-**Critical shared-file scope point (a fresh session got this wrong):** `week2/data-understanding-report.md` and `week2/eda-notebook.ipynb` are submitted for **both** M2A1 and M2P2, and the two are graded by **different rubrics**. M2A1 grades the report as a professional, **technical** data-understanding document — depth (voxels, Hounsfield units, Dice, SegResNet) is expected and rewarded. M2P2 grades the **live presentation** for a non-technical audience, plus the audience notes. Do **not** simplify the technical report to satisfy M2P2's non-technical criterion; that criterion is earned in the live delivery and the diagrams, and dumbing down the report costs M2A1 points. Optimize the report for M2A1's rubric and let the live talk carry the non-technical axis.
+**Critical shared-file scope point (a fresh session got this wrong):** `deliverables/week2/data-understanding-report.md` and `deliverables/week2/eda-notebook.ipynb` are submitted for **both** M2A1 and M2P2, and the two are graded by **different rubrics**. M2A1 grades the report as a professional, **technical** data-understanding document — depth (voxels, Hounsfield units, Dice, SegResNet) is expected and rewarded. M2P2 grades the **live presentation** for a non-technical audience, plus the audience notes. Do **not** simplify the technical report to satisfy M2P2's non-technical criterion; that criterion is earned in the live delivery and the diagrams, and dumbing down the report costs M2A1 points. Optimize the report for M2A1's rubric and let the live talk carry the non-technical axis.
 
 **Living documents shared across all weeks** (update in place, never rewrite history): `CLAUDE.md`, `docs/Claude.md`, `docs/ai-usage-log.md`, `docs/implementation-plan.md`, `docs/schedule.md`, `docs/standup-log.md`, `docs/experiments.md`.
 
@@ -42,7 +42,7 @@ This is **not one assignment**. It is a solo, five-week independent ML project f
 
 Confirm the **Week 2 deliverables are final and ready to submit** (this repeats a readiness audit; verify rather than assume). The three graded assignments and their files:
 
-- **M2A1 (Data Understanding Report)** and **M2P2 (Presentation)** share two files: `week2/data-understanding-report.md` and `week2/eda-notebook.ipynb`. Plus the living context files `docs/Claude.md`, `docs/ai-usage-log.md`, `docs/implementation-plan.md`, `docs/schedule.md`.
+- **M2A1 (Data Understanding Report)** and **M2P2 (Presentation)** share two files: `deliverables/week2/data-understanding-report.md` and `deliverables/week2/eda-notebook.ipynb`. Plus the living context files `docs/Claude.md`, `docs/ai-usage-log.md`, `docs/implementation-plan.md`, `docs/schedule.md`.
 - **M2P2 audience** piece: `docs/audience-notes-week2.md`.
 - **M2A2 (Daily Check-Ins)**: `docs/standup-log.md`.
 
@@ -79,7 +79,7 @@ Standardization (unchanged all project): reorient to RAS, resample to 1.5mm isot
 - `docs/experiments.md` — the science: every run as a formal experiment with hypothesis + decision.
 - `docs/architecture.md` — master design doc and scope ladder.
 - `docs/implementation-plan.md` — living plan and decision record; `docs/schedule.md` — 5-week schedule.
-- `week2/data-understanding-report.md` — the M2A1/M2P2 report (data profile, pipeline, features, requirements).
+- `deliverables/week2/data-understanding-report.md` — the M2A1/M2P2 report (data profile, pipeline, features, requirements).
 - Code: `configs/level45.yaml` (the recipe as config), `src/data/transforms.py` (preprocessing + whole-box), `scripts/train.py` and `scripts/evaluate.py` (train/eval with CLI overrides), `src/models/segresnet.py` (model + SuPreM loader), `src/training/` (losses, metrics, trainer), `src/inference/` (sliding window, post-processing).
 - Experiment tooling: `scripts/make_clarity_splits.py`, `scripts/make_contrast_splits.py`, `scripts/log_run_to_mlflow.py`, `scripts/audit_masks.py`.
 

@@ -33,7 +33,7 @@ Move from proposal assumptions to validated reality. By the end of the week the 
 
 ## Deliverables
 
-Submit via GitHub (branch → merge to main, inside a `week2/` documentation folder):
+Submit via GitHub (branch → merge to main, inside a `deliverables/week2/` documentation folder):
 
 - `data-understanding-report.md` — full report covering sections 1–5.
 - `eda-notebook.ipynb` — EDA notebook with all visualizations and analysis.

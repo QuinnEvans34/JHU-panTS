@@ -29,7 +29,7 @@ This week moves from data to models. The goal is not to find the perfect model �
 
 ## Deliverables
 
-Submit via GitHub (branch → merge to main, inside a `week3/` documentation folder):
+Submit via GitHub (branch → merge to main, inside a `deliverables/week3/` documentation folder):
 
 - `ml-experimentation-report.md` — full report covering sections 1–4 above.
 - MLflow experiment screenshots or an exported run comparison, included in the report or as image files in the folder.
