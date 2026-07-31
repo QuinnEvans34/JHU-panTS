@@ -96,17 +96,38 @@ weakness, and the reason every output is framed as a prompt for review rather th
 
 ## 📌 Week 5 deliverables — grader map
 
-| Assignment / rubric criterion | Deliverable | Location |
-|-----------|-------------|----------|
-| **M5A1 — Business-Facing UI** | UI walkthrough: inputs/outputs, endpoint connection, data freshness, design decisions | [`deliverables/week5/ui-walkthrough.md`](deliverables/week5/ui-walkthrough.md) |
-| M5A1 — *UI screenshots* | Full user experience, screen by screen | [`deliverables/week5/ui-screenshots/`](deliverables/week5/ui-screenshots/) |
-| **M5A1 — User Guide** | Non-technical, step-by-step guide + how to interpret outputs + limitations | [`deliverables/week5/how-to-use.md`](deliverables/week5/how-to-use.md) |
-| **M5A1 — Project Retrospective** | Proudest work, biggest challenge, what I'd do with 5 more weeks, Week 1 Takeaway callback | [`deliverables/week5/retrospective.md`](deliverables/week5/retrospective.md) |
-| **M5A1 — README** | This file — architecture, tech stack + versions, setup, how to run everything | [`README.md`](README.md) |
-| **M5A1 — AI docs (final)** | Week 5 entry + final AI retrospective · final MVP status · finalized context file | [`docs/ai-usage-log.md`](docs/ai-usage-log.md) · [`docs/implementation-plan.md`](docs/implementation-plan.md) · [`CLAUDE.md`](CLAUDE.md) |
-| **M5P1 — Final Demo & Defense** | Live demo of the running system (see [Run the demo](#run-the-demo)) · slide deck | [`ui/`](ui/) · [`scripts/serve.py`](scripts/serve.py) · [`deliverables/week5/final-presentation.pptx`](deliverables/week5/final-presentation.pptx) |
-| M5P1 — *audience deliverable* | Audience notes on peers' final presentations | [`docs/audience-notes-week5.md`](docs/audience-notes-week5.md) |
-| **M5A2 — Daily Check-Ins** | Daily standup log (all five weeks, incl. the Week 5 retrospective) | [`docs/standup-log.md`](docs/standup-log.md) |
+### M5A1 — Final Deliverable Package (40 pts)
+
+| Rubric criterion | Deliverable | Location |
+|---|---|---|
+| **Business-Facing UI** | UI walkthrough — inputs/outputs, how it connects to the deployed endpoint, how data freshness is surfaced, design decisions for a non-technical user | [`deliverables/week5/ui-walkthrough.md`](deliverables/week5/ui-walkthrough.md) |
+| Business-Facing UI — *screenshots* | 10 captioned screenshots of the full user experience, captured from the running system | [`deliverables/week5/ui-screenshots/`](deliverables/week5/ui-screenshots/) |
+| **User Guide** | Non-technical, step-by-step guide — what outputs mean and known limitations | [`deliverables/week5/how-to-use.md`](deliverables/week5/how-to-use.md) |
+| **README** | This file — overview, business problem, architecture, tech stack + versions, setup, how to run everything | [`README.md`](README.md) |
+| README — *system architecture* | System, inference-flow, model, and interface architecture diagrams | [`deliverables/week5/diagrams/`](deliverables/week5/diagrams/) |
+| **AI Documentation** — usage log | Week 5 entry **+ the final retrospective** on how AI usage evolved and its impact | [`docs/ai-usage-log.md`](docs/ai-usage-log.md) |
+| AI Documentation — plan | Final Week 5 status + honest MVP assessment (what was completed, what was descoped, why) | [`docs/implementation-plan.md`](docs/implementation-plan.md) |
+| AI Documentation — context file | Finalized; reflects how AI was *actually* used, not just how it was planned | [`CLAUDE.md`](CLAUDE.md) |
+| **Project Retrospective** | Proudest work, biggest challenge, what I'd do with five more weeks, Week 1 Takeaway callback | [`deliverables/week5/retrospective.md`](deliverables/week5/retrospective.md) |
+| **Repository Quality** | Clean root, `deliverables/` structure matching this README, no debug files, raw data git-ignored | [Repository structure](#repository-structure) |
+
+### M5P1 — Final Demo & Defense (40 pts)
+
+| Rubric criterion | Deliverable | Location |
+|---|---|---|
+| **Live demo & system integration** | The running system — React + NiiVue front-end calling the live FastAPI endpoint (see [Run the demo](#run-the-demo)) | [`ui/`](ui/) · [`scripts/serve.py`](scripts/serve.py) |
+| **Presentation** | Final 30-minute demo & defense slide deck | [`deliverables/week5/final-presentation.pptx`](deliverables/week5/final-presentation.pptx) |
+| Presentation — *model performance & limitations* | Held-out test metrics, business interpretation, and honest failure modes | [`deliverables/week4/tuning-orchestration-report.md`](deliverables/week4/tuning-orchestration-report.md) |
+| **Audience deliverable** | Notes on all three peer presentations — summary, questions asked, system-integration and business-value assessment, hiring-manager question | [`docs/audience-notes-week5.md`](docs/audience-notes-week5.md) |
+
+### M5A2 — Daily Check-Ins (10 pts)
+
+| Rubric criterion | Deliverable | Location |
+|---|---|---|
+| **Consistency & honesty** | Daily standup log — 28 entries across all five weeks | [`docs/standup-log.md`](docs/standup-log.md) |
+| **1-on-1 Retrospectives** (Weeks 1, 3, 5) | Week 5 retrospective is the *Final Interview* entry, 2026-07-28 | [`docs/standup-log.md`](docs/standup-log.md) |
+
+**Supporting evidence:** [`docs/experiments.md`](docs/experiments.md) — all 26 experiments with pre-registered accept/reject bars, including the honestly-rejected ones · [`docs/deliverables-index.md`](docs/deliverables-index.md) — Weeks 1–4 grader maps · [`docs/assignments/`](docs/assignments/) — the assignment briefs each week was graded against · [`tests/`](tests/) — regression tests for the deployment layer
 
 *Weeks 1–4 grader maps are archived in [`docs/deliverables-index.md`](docs/deliverables-index.md).*
 
