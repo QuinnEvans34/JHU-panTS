@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/cohort/1.0.0",
+  "title": "PROWL protected cohort control record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "cohort_id",
+    "derivation_sha256",
+    "cohort_family_id",
+    "purpose",
+    "protected_role",
+    "parent_cohort_ids",
+    "ancestor_cohort_ids",
+    "manifest_ids",
+    "definition",
+    "members",
+    "profile",
+    "study_count",
+    "subject_count",
+    "state",
+    "frozen_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "cohort_id": { "$ref": "#/$defs/cohortId" },
+    "derivation_sha256": { "$ref": "#/$defs/sha256" },
+    "cohort_family_id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,79}$" },
+    "purpose": { "enum": ["source_pool", "training", "validation", "testing", "development", "smoke", "analysis"] },
+    "protected_role": { "enum": ["train", "validation", "test", "none"] },
+    "parent_cohort_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cohortId" }
+    },
+    "ancestor_cohort_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cohortId" }
+    },
+    "manifest_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/manifestId" }
+    },
+    "definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selection_method",
+        "group_by",
+        "study_policy",
+        "filters",
+        "stratify_fields",
+        "seed",
+        "requested_study_count",
+        "requested_subject_count",
+        "shortage_policy",
+        "config_sha256",
+        "migration_input_sha256"
+      ],
+      "properties": {
+        "selection_method": { "enum": ["all_eligible", "fixed_membership", "seeded_group_stratified"] },
+        "group_by": { "const": "subject_id" },
+        "study_policy": { "enum": ["all_studies", "one_study_per_subject"] },
+        "filters": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+        "stratify_fields": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 120 } },
+        "seed": { "type": ["integer", "null"] },
+        "requested_study_count": { "type": ["integer", "null"], "minimum": 1 },
+        "requested_subject_count": { "type": ["integer", "null"], "minimum": 1 },
+        "shortage_policy": { "const": "fail" },
+        "config_sha256": { "$ref": "#/$defs/sha256" },
+        "migration_input_sha256": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "members": {
+      "oneOf": [
+        { "$ref": "#/$defs/resourceReference" },
+        { "type": "null" }
+      ]
+    },
+    "profile": {
+      "oneOf": [
+        { "$ref": "#/$defs/resourceReference" },
+        { "type": "null" }
+      ]
+    },
+    "study_count": { "type": "integer", "minimum": 0 },
+    "subject_count": { "type": "integer", "minimum": 0 },
+    "state": { "enum": ["draft", "validated", "frozen", "superseded"] },
+    "frozen_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "purpose": { "const": "source_pool" } }, "required": ["purpose"] },
+      "then": { "properties": { "parent_cohort_ids": { "maxItems": 0 } } },
+      "else": { "properties": { "parent_cohort_ids": { "minItems": 1 } } }
+    },
+    {
+      "if": { "properties": { "purpose": { "enum": ["training", "development", "smoke"] } }, "required": ["purpose"] },
+      "then": { "properties": { "protected_role": { "const": "train" } } }
+    },
+    {
+      "if": { "properties": { "purpose": { "const": "validation" } }, "required": ["purpose"] },
+      "then": { "properties": { "protected_role": { "const": "validation" } } }
+    },
+    {
+      "if": { "properties": { "purpose": { "const": "testing" } }, "required": ["purpose"] },
+      "then": { "properties": { "protected_role": { "const": "test" } } }
+    },
+    {
+      "if": { "properties": { "state": { "const": "frozen" } }, "required": ["state"] },
+      "then": {
+        "properties": {
+          "members": { "$ref": "#/$defs/resourceReference" },
+          "profile": { "$ref": "#/$defs/resourceReference" },
+          "frozen_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "relativeUri": { "type": "string", "pattern": "^(?!/)(?![A-Za-z]:)(?!file:)(?!\\.\\.(?:/|$))(?!.*\\/\\.\\.(?:\\/|$)).+" },
+    "cohortId": { "type": "string", "pattern": "^cohort:[a-z][a-z0-9_-]{1,63}:v[1-9][0-9]*$" },
+    "manifestId": { "type": "string", "pattern": "^manifest:[a-z][a-z0-9_-]{1,63}:[0-9a-f]{12,64}$" },
+    "resourceReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri", "content_sha256", "bytes", "count"],
+      "properties": {
+        "uri": { "$ref": "#/$defs/relativeUri" },
+        "content_sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

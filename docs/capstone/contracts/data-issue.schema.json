@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/data-issue/1.0.0",
+  "title": "PROWL append-only data issue record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "issue_id",
+    "rule_code",
+    "entity_type",
+    "entity_id",
+    "severity",
+    "disposition",
+    "message",
+    "evidence",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "issue_id": { "$ref": "#/$defs/issueId" },
+    "rule_code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$" },
+    "entity_type": { "enum": ["source_snapshot", "subject", "study", "annotation", "manifest", "cohort"] },
+    "entity_id": { "type": "string", "minLength": 3, "maxLength": 240 },
+    "severity": { "enum": ["information", "warning", "blocking"] },
+    "disposition": { "enum": ["retain", "exclude", "quarantine", "resolved_by_new_artifact"] },
+    "message": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "reference"],
+        "properties": {
+          "kind": { "enum": ["source_field", "file_hash", "cohort_membership", "manual_review", "validator_output"] },
+          "reference": { "type": "string", "minLength": 1, "maxLength": 1000 }
+        }
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "supersedes_issue_id": {
+      "oneOf": [
+        { "$ref": "#/$defs/issueId" },
+        { "type": "null" }
+      ]
+    },
+    "resolution_artifact_id": { "type": ["string", "null"], "maxLength": 240 }
+  },
+  "$defs": {
+    "issueId": { "type": "string", "pattern": "^issue:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" }
+  }
+}

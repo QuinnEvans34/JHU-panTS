@@ -1,5 +1,16 @@
 # PanTS CADe — 3D Viewer (React + NiiVue)
 
+## Capstone test foundation
+
+Use Node 24.21.0 (`nvm use` in this directory), then `npm ci` and `npm run test:run`.
+For the synthetic Chromium smoke test, run `npx --no-install playwright install chromium` then
+`npm run test:e2e`. `npm run build` builds locally; it does not publish a site.
+The browser fixture stubs NiiVue, blocks case/network access except its local server and a stubbed
+font stylesheet, and contains no patient data. It proves control behavior, not CT rendering.
+See [the baseline evidence and outstanding security/accessibility work](../docs/capstone/testing/UI-FOUNDATION-2026-09-20.md).
+
+## Historical demo instructions
+
 Static-first viewer for the pancreas / lesion segmentation demo (design in `docs/ui.md`).
 The 3D hero: the CT volume rendered in 3D with the pancreas (green) and lesion (red)
 surface meshes overlaid, rotatable, with a cut plane to move through all three axes.

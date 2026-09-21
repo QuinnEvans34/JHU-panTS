@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "acquisition_inventory_not_verified_source",
+  "observed_date": "2026-09-19",
+  "pants": {
+    "github_revision": "243bef3075d2ab556eae374846e3ddfbc9f4c309",
+    "huggingface_revision": "3b1cd61108116b58ea5c1ddb3512c1847d965f96",
+    "files": [
+      {
+        "name": "metadata.xlsx",
+        "bytes": 1334813,
+        "sha256": "4bcbf14a31b1ca9441af051a104702e7a832391f47d3af5f493048ec813283e3",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/metadata.xlsx",
+        "kind": "metadata"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00000001_00001000.tar.gz",
+        "bytes": 34190903436,
+        "sha256": "c6a1e4e67617940a3e86da4362fc8c753d7bbc2e592181e347060dc3689af078",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00000001_00001000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00001001_00002000.tar.gz",
+        "bytes": 35596328294,
+        "sha256": "2bfecfb93a73d4814826727d22ba587c902dfd08f282d2e7559063bd12746c3f",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00001001_00002000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00002001_00003000.tar.gz",
+        "bytes": 35984898422,
+        "sha256": "ac8b0f8aafab554ee9aeb4133835b7f8e1a85902899afda8cab47be0cc64d640",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00002001_00003000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00003001_00004000.tar.gz",
+        "bytes": 35096498961,
+        "sha256": "5099f3b4435492d01b876d4027f8b7b937fef57c2b52a7daf6dc581233716de4",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00003001_00004000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00004001_00005000.tar.gz",
+        "bytes": 36652762963,
+        "sha256": "406f864d59393000e38f1225d48f2b0dcae980e1138f02f6ed4a4b554f030328",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00004001_00005000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00005001_00006000.tar.gz",
+        "bytes": 34946274132,
+        "sha256": "1ea4d4ee015257367d57dae1fdfab111581cff7062e76cb59735e89d332b4aa3",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00005001_00006000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00006001_00007000.tar.gz",
+        "bytes": 34799850880,
+        "sha256": "75c83106a511795cd29151a718cc1cd6ee4ca940f015e5273653ea6e2b4462be",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00006001_00007000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00007001_00008000.tar.gz",
+        "bytes": 34771850148,
+        "sha256": "8bc56bb40ab0ddbd34b20a40b368e418be8fa7fc0283b20c0f593056bf853045",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00007001_00008000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTr_00008001_00009000.tar.gz",
+        "bytes": 35668462502,
+        "sha256": "c450c191c3469727c5e2b02179b1b66392dcd67791d6b3c93bb7cc23effcfb5b",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTr_00008001_00009000.tar.gz",
+        "kind": "training_archive"
+      },
+      {
+        "name": "PanTSMini_ImageTe_00009001_00009901.tar.gz",
+        "bytes": 27994666473,
+        "sha256": "a7930a2ed1d5638f334ac6614a30b1474832c7dbf24d228a19c5ecba7fe9d7aa",
+        "url": "https://huggingface.co/datasets/BodyMaps/PanTSMini/resolve/3b1cd61108116b58ea5c1ddb3512c1847d965f96/PanTSMini_ImageTe_00009001_00009901.tar.gz",
+        "kind": "publisher_test_archive"
+      }
+    ],
+    "total_hf_bytes": 345703831024,
+    "labels": {
+      "url": "https://www.cs.jhu.edu/~zongwei/dataset/PanTSMini_Label.tar.gz",
+      "bytes": 15561944549,
+      "etag": "\"39f906de5-6469033c15f5e\"",
+      "last_modified": "Mon, 22 Dec 2025 20:23:37 GMT",
+      "publisher_sha256": null,
+      "pin_status": "mutable_url_with_entity_validators; local_sha256_required"
+    },
+    "license_evidence": {
+      "github": "https://github.com/MrGiovanni/PanTS/blob/243bef3075d2ab556eae374846e3ddfbc9f4c309/LICENSE",
+      "github_label": "CC-BY-NC-ND-4.0",
+      "hf": "https://huggingface.co/datasets/BodyMaps/PanTSMini/blob/3b1cd61108116b58ea5c1ddb3512c1847d965f96/README.md",
+      "hf_label": "CC-BY-NC-SA-4.0",
+      "disposition": "Keep both; local noncommercial research acquisition only. Redistribution/derived release requires reconciliation."
+    }
+  },
+  "panorama": {
+    "official_batch_page": "https://panorama.grand-challenge.org/datasets-imaging-labels/",
+    "labels_revision": "bf1d6ba3230f6b093e7ea959a4bf5e2eba2e3665",
+    "ct_archives": [
+      {
+        "record_id": 13715870,
+        "name": "batch_1.zip",
+        "bytes": 49338585294,
+        "publisher_md5": "b3b3669a82696b954b449c27a9d85074",
+        "url": "https://zenodo.org/api/records/13715870/files/batch_1.zip/content"
+      },
+      {
+        "record_id": 13742336,
+        "name": "batch_2.zip",
+        "bytes": 49284974263,
+        "publisher_md5": "9668a43c24d5eb3473fbaa979b1dbaf8",
+        "url": "https://zenodo.org/api/records/13742336/files/batch_2.zip/content"
+      },
+      {
+        "record_id": 11034011,
+        "name": "batch_3.zip",
+        "bytes": 49287047956,
+        "publisher_md5": "9d852d09d750fd2e2a2e32a371d3bdd8",
+        "url": "https://zenodo.org/api/records/11034011/files/batch_3.zip/content"
+      },
+      {
+        "record_id": 10999754,
+        "name": "batch_4.zip",
+        "bytes": 46271075077,
+        "publisher_md5": "f2820a214aa24fa90daeedbaf99d0609",
+        "url": "https://zenodo.org/api/records/10999754/files/batch_4.zip/content"
+      }
+    ],
+    "license_label": "CC-BY-NC-4.0",
+    "local_sha256_required": true,
+    "downloads_started": false,
+    "labels_tree": {
+      "truncated": false,
+      "blob_count": 2242,
+      "total_blob_bytes": 1252888391,
+      "archive_url": "https://github.com/DIAGNijmegen/panorama_labels/archive/bf1d6ba3230f6b093e7ea959a4bf5e2eba2e3665.zip",
+      "publisher_archive_sha256": null
+    },
+    "total_ct_archive_bytes": 194181682590
+  },
+  "capacity": {
+    "stage": "archive_acquisition_only_no_extraction",
+    "known_image_and_pants_label_archive_bytes": 555447458163,
+    "external_free_floor_bytes": 549755813888,
+    "extraction_plan": "Measure archive members and expanded bytes, validate safe paths/links, and re-budget before extraction; current command acquires PanTS only."
+  }
+}

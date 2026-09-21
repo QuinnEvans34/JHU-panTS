@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "study_id": "pants:study:PanTS_00009005",
+  "subject_id": "pants:subject:PanTS_00009005",
+  "source_snapshot_id": "snapshot:pants:123456789abc",
+  "source": "pants",
+  "source_study_id": "PanTS_00009005",
+  "source_partition": "publisher_train",
+  "modality": "CT",
+  "image": {
+    "root_alias": "pants_raw",
+    "uri": "ImageTr/PanTS_00009005/ct.nii.gz",
+    "media_type": "application/gzip",
+    "bytes": 1048576,
+    "content_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "geometry": {
+    "shape_xyz": [512, 512, 240],
+    "spacing_mm_xyz": [0.8, 0.8, 1.5],
+    "affine_ras": [0.8, 0, 0, 0, 0, 0.8, 0, 0, 0, 0, 1.5, 0, 0, 0, 0, 1]
+  },
+  "acquisition": {
+    "study_date": null,
+    "study_year": 2018,
+    "contrast_phase": "portal venous",
+    "scanner": null,
+    "manufacturer": "SIEMENS",
+    "site": null
+  },
+  "target_statuses": [
+    {
+      "target": "pancreatic_lesion",
+      "status": "positive",
+      "method": "annotation_voxel_presence",
+      "reference_id": "pants:annotation:PanTS_00009005-lesion-v1"
+    }
+  ],
+  "annotation_ids": [
+    "pants:annotation:PanTS_00009005-pancreas-v1",
+    "pants:annotation:PanTS_00009005-lesion-v1"
+  ],
+  "status": "eligible",
+  "issue_ids": []
+}

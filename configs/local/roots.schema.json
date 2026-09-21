@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PROWL setup-only local root registry (not a runtime resolver)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "approval", "scientific_runs_enabled", "verification", "evidence_path", "failure_domains", "roots"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "approval": {"type": "string", "minLength": 1},
+    "scientific_runs_enabled": {"const": false},
+    "verification": {"enum": ["not_verified", "scoped_filesystem_and_synthetic_restore_passed"]},
+    "evidence_path": {"type": ["string", "null"]},
+    "failure_domains": {
+      "type": "object", "additionalProperties": false,
+      "required": ["external_primary", "internal_backup"],
+      "properties": {"external_primary": {"$ref": "#/$defs/domain"}, "internal_backup": {"$ref": "#/$defs/domain"}}
+    },
+    "roots": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pants_source", "panorama_source", "prowl_artifacts", "prowl_scratch", "prowl_backup"],
+      "properties": {
+        "pants_source": {"$ref": "#/$defs/pendingSource"},
+        "panorama_source": {"$ref": "#/$defs/pendingSource"},
+        "prowl_artifacts": {"$ref": "#/$defs/writer"},
+        "prowl_scratch": {"$ref": "#/$defs/writer"},
+        "prowl_backup": {"$ref": "#/$defs/backup"}
+      }
+    }
+  },
+  "$defs": {
+    "domain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "mount_path", "volume_uuid", "filesystem"],
+      "properties": {
+        "kind": {"const": "physical_device"}, "mount_path": {"type": "string", "pattern": "^/"},
+        "volume_uuid": {"type": "string", "minLength": 1}, "filesystem": {"const": "apfs"}
+      }
+    },
+    "pendingSource": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "acquisition_parent", "role", "access", "source_snapshot_id", "failure_domain"],
+      "properties": {
+        "path": {"type": "null"}, "acquisition_parent": {"type": "string", "pattern": "^/"},
+        "role": {"const": "source"}, "access": {"const": "unavailable_until_snapshot_verified"},
+        "source_snapshot_id": {"type": "null"}, "failure_domain": {"const": "external_primary"}
+      }
+    },
+    "writer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "role", "access", "failure_domain"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"}, "role": {"enum": ["artifact", "scratch"]},
+        "access": {"enum": ["setup_only", "acquisition_and_scoped_setup"]}, "failure_domain": {"const": "external_primary"}
+      }
+    },
+    "backup": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "role", "access", "failure_domain", "cap_bytes", "minimum_free_bytes", "automatic_deletion"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"}, "role": {"const": "backup"},
+        "access": {"const": "selected_controls_and_keepers"}, "failure_domain": {"const": "internal_backup"},
+        "cap_bytes": {"const": 21474836480}, "minimum_free_bytes": {"const": 107374182400},
+        "automatic_deletion": {"const": false}
+      }
+    }
+  }
+}

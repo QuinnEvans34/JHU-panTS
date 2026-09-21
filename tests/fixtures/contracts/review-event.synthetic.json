@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "review_event_id": "review:00000000-0000-4000-8000-000000000001",
+  "recorded_at": "2026-09-19T12:00:00Z",
+  "case_package_id": "case-package:aaaaaaaaaaaa",
+  "prediction_id": "prediction:bbbbbbbbbbbb",
+  "reviewer": {"reviewer_id": "synthetic-reviewer", "role": "research_operator"},
+  "action": "edit_required",
+  "revision": 1,
+  "supersedes_review_event_id": null,
+  "reason_codes": ["boundary_correction"],
+  "note": null,
+  "corrected_mask": null,
+  "client": {"application": "PROWL", "application_version": "fixture-v1", "transport": "static_export"}
+}

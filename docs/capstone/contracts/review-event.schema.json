@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/review-event/1.0.0",
+  "title": "PROWL append-only review event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "review_event_id",
+    "recorded_at",
+    "case_package_id",
+    "prediction_id",
+    "reviewer",
+    "action",
+    "revision",
+    "reason_codes",
+    "client"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "review_event_id": {
+      "type": "string",
+      "pattern": "^review:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "recorded_at": { "type": "string", "format": "date-time" },
+    "case_package_id": {
+      "type": "string",
+      "pattern": "^case-package:[0-9a-f]{12,64}$"
+    },
+    "prediction_id": {
+      "type": "string",
+      "pattern": "^prediction:[0-9a-f]{12,64}$"
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_id", "role"],
+      "properties": {
+        "reviewer_id": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "role": {
+          "enum": ["radiologist", "radiology_clinician", "imaging_annotator", "diagnostic_care_coordinator", "research_operator", "other"]
+        }
+      }
+    },
+    "action": {
+      "enum": ["accept", "edit_required", "reject"]
+    },
+    "revision": { "type": "integer", "minimum": 1 },
+    "supersedes_review_event_id": {
+      "type": ["string", "null"],
+      "pattern": "^review:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "reason_codes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "contour_acceptable",
+          "boundary_correction",
+          "missed_lesion",
+          "false_positive_lesion",
+          "pancreas_localization_error",
+          "pancreas_contour_error",
+          "measurement_error",
+          "insufficient_image_quality",
+          "other"
+        ]
+      }
+    },
+    "note": { "type": ["string", "null"], "maxLength": 2000 },
+    "corrected_mask": {
+      "oneOf": [
+        { "$ref": "#/$defs/fileReference" },
+        { "type": "null" }
+      ]
+    },
+    "client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["application", "application_version", "transport"],
+      "properties": {
+        "application": { "const": "PROWL" },
+        "application_version": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "transport": { "enum": ["static_export", "fastapi"] },
+        "session_id": { "type": ["string", "null"], "maxLength": 160 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "revision": { "minimum": 2 } },
+        "required": ["revision"]
+      },
+      "then": {
+        "required": ["supersedes_review_event_id"],
+        "properties": {
+          "supersedes_review_event_id": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativeUri": {
+      "type": "string",
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!file:)(?!\\.\\.(?:/|$))(?!.*\\/\\.\\.(?:\\/|$)).+"
+    },
+    "fileReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri", "media_type", "content_sha256", "bytes"],
+      "properties": {
+        "uri": { "$ref": "#/$defs/relativeUri" },
+        "media_type": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "content_sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

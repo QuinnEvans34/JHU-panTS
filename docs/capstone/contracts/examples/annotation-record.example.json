@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "annotation_id": "pants:annotation:PanTS_00009005-lesion-v1",
+  "study_id": "pants:study:PanTS_00009005",
+  "source_snapshot_id": "snapshot:pants:123456789abc",
+  "source": "pants",
+  "structure": "lesion",
+  "source_structure": "pancreatic_lesion",
+  "file": {
+    "root_alias": "pants_raw",
+    "uri": "LabelAll/PanTS_00009005/segmentations/pancreatic_lesion.nii.gz",
+    "media_type": "application/gzip",
+    "bytes": 32768,
+    "content_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "annotation_version": "pants-public-labels-v1",
+  "method": "human_validated",
+  "validation_status": "source_asserted",
+  "allowed_uses": ["training_target", "evaluation_reference", "display_reference"],
+  "label_encoding": {
+    "source_values": [1],
+    "canonical_value": 2,
+    "mapping_version": "pants-level45-v1"
+  },
+  "status": "eligible",
+  "issue_ids": []
+}

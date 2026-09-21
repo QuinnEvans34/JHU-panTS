@@ -1,3 +1,119 @@
+# PROWL living experiment notebook
+
+**Active use confirmed by Quinton:** 2026-09-18
+
+**Purpose:** Plan every experiment before execution, retain every outcome, and use evidence to choose
+the next experiment throughout development. This is the continuing notebook, not a retired archive.
+
+## Current capstone authority and historical boundary
+
+The [capstone hub](capstone/README.md), approved proposal/appendix, and
+[experiment protocol](capstone/evaluation/EXPERIMENT-PROTOCOL.md) govern new work. The earlier log
+below is preserved unchanged, including future ideas, original claims, amendments, and withdrawn
+results. Its old commands, priorities, models, thresholds, and headings marked `CAPSTONE` or
+`PRE-REGISTERED` are not automatically current execution plans.
+
+In particular, old ideas that repeatedly evaluate or tune on the official test cohort must be
+redesigned around permitted development data. Publisher-test data remains held out until selection
+is frozen. Historical oracle results, contaminated comparisons, and prior trained checkpoints cannot
+be promoted into capstone evidence or initialization. Lessons and hypotheses can carry forward;
+previous project models cannot.
+
+This notebook is the human-readable plan and interpretation layer. Immutable experiment/run,
+configuration, checkpoint, and evaluation artifacts remain the execution evidence under Plan 06.
+Link them by ID/hash rather than copying changing scores into competing logs. GitHub/Notion summaries
+link back here and to those artifacts; they do not replace either record.
+
+## Required working loop
+
+1. **Before execution:** create an entry here with the question, prior evidence, comparison or
+   functional gate, planned changes, fixed factors, data roles, success/failure rules, prerequisites,
+   and time/storage/cost ceiling. Use the full Plan 06 preregistration for substantive experiments;
+   smokes use its compact form. Do not launch an undocumented experiment.
+2. **At launch:** link the frozen design version and exact run/attempt IDs, code/environment/config,
+   registered cohort identities, command, and output location by artifact alias. Capture the design
+   before results; do not expose secrets, raw data, or private absolute paths here.
+3. **During work:** append dated health observations, deviations, interruptions, and retry/resume
+   identities. Do not revise the original hypothesis or decision bar after seeing results.
+4. **After every attempt:** record the terminal state, evidence links, outcome, caveats, and what was
+   learned. Include nulls, invalid runs, cancellations, and operational failures—not only successes.
+5. **Before the next experiment:** explain what evidence motivates it, what recipe/settings carry
+   forward, what changes, and why that is the next useful test. Link the parent experiment(s), not
+   just whichever checkpoint has the largest score. A promising exploratory result motivates a
+   controlled follow-up; it does not become a formal winner retroactively.
+
+An experiment is the question/design; a run or attempt is an execution of it. Record every rerun and
+resume under that design, and create a new design version/ID when the scientific question changes.
+Routine unit tests stay in test reports; experimental smokes, benchmarks, retrieval experiments, and
+model/evaluation experiments all receive notebook entries at a proportionate level of detail.
+
+## Active capstone queue
+
+Use `CAP-EXP-001`, `CAP-EXP-002`, and so on for new capstone entries; retain historical `EXP-*` IDs.
+Reserve an ID only when adding an actual planned experiment. No capstone experiment is newly queued
+or launched by this documentation update. Review the historical future ideas during the required
+post-planning strategy session, then register selected ideas with current gates and data roles.
+
+Each queued item links to an entry below and states its priority, status, dependencies, expected
+duration, and next decision. Queue presence never grants execution permission. Update after each
+attempt and review priorities at least weekly. Week 9 permits stabilization only; Week 10 cannot
+introduce result-changing experiments.
+
+## Capstone entry template
+
+Copy this template into the active entries section, without changing the historical record. The
+linked Plan 06 protocol supplies the full fields for controlled/confirmatory work.
+
+```markdown
+### CAP-EXP-NNN — question/title
+
+#### Plan — recorded before execution
+- Owner, date, design version, status, and run class:
+- Prior evidence / parent experiment IDs (or rationale for an initial baseline):
+- What we learned from those parents; what carries forward; what remains uncertain:
+- Question, hypothesis/null or binary functional gate:
+- Control/baseline and treatment; exact changed and fixed factors:
+- Registered data/cohort/reference roles and identities:
+- Code/environment/config/initialization identities and exact planned command:
+- Evaluation protocol, sample size, primary endpoint, guardrails, and decision rule:
+- Checkpoint selection, horizon, stopping rules, and uncertainty method as applicable:
+- Required code/tests, validity gates, resource budget, and interruption fallback:
+- Expected output artifacts, retention/backup class, confounds, and limitations:
+- Frozen preregistration reference/hash before compute (required by run class):
+
+#### Attempts — append one record per execution
+- Run/attempt ID, launch/finish times, resolved identities, and evidence references:
+- Health observations, deviations/amendments, retry/resume parent, and terminal reason:
+
+#### Result and next decision — append after execution
+- Evaluation evidence, metrics/counts/uncertainty, and guardrail outcomes:
+- Decision: accepted / rejected / inconclusive / invalid / operationally_failed / canceled:
+- Interpretation and limits; what changed in our understanding:
+- Selected artifact IDs or explicit no-promotion decision:
+- Next experiment/diagnostic or stop/defer decision, with rationale:
+```
+
+## Active capstone entries
+
+No new entries yet. Complete the remaining planning/strategy review and relevant run prerequisites
+before registering and starting the first capstone experiment.
+
+## Preserved earlier experiment record
+
+Everything below this boundary is the pre-September-18 record, including its future ideas. Preserve
+the original text; add new capstone work above and append dated cross-referenced corrections rather
+than rewriting earlier hypotheses or results.
+
+<!-- PROWL-HISTORICAL-EXPERIMENT-RECORD: original bytes begin on the next line -->
+> # ⛔ READ FIRST — `docs/SUBMISSION-READINESS.md`
+>
+> **BLOCKER 1: largest-connected-component post-processing is incompatible with tumour-wise
+> sensitivity, the metric Johns Hopkins ranks on.** It structurally caps us at one detected tumour
+> per patient. This is a design contradiction, not a tuning issue, and it is the **first code change
+> of the capstone** — before any training run.
+>
+> Five blockers total. Nothing is emailed to JHU until they are closed.
+
 # Experiments Log
 
 A running scientific record of every training run and change I have made, written so I can see what worked, what did not, and why. The rule I hold myself to: change one variable at a time, hold the rest constant, and decide the outcome against a bar I set before looking. A clean "this did not help" is a real result and is logged the same as a win.
@@ -1157,3 +1273,780 @@ Rules of thumb: always launch from `.venv312` (has MLflow); the archive/ledger l
 ## How to add the next entry
 
 Before a run: write the hypothesis, the single variable, what is held constant, and the accept/reject bar. After the run: paste the MLflow name, the training-time val, the full evaluation numbers, and the decision. Never edit a past result; add a new experiment if something changes.
+
+---
+
+## EXP-27: PANORAMA tumor injection — break the 706-tumor ceiling [CAPSTONE, PRE-REGISTERED 2026-08-02, NOT YET RUN]
+
+**Status: pre-registered before any PANORAMA data has been downloaded, looked at, or trained on.
+Nothing below may be edited after the first result is read.**
+
+### Motivation
+Data scale is the only lever that has ever moved lesion Dice (EXP-17: +0.05 from tripling tumor
+cases). Four recipe axes have been ruled out — sampling ratio (EXP-05), loss background (EXP-07),
+context/patch (EXP-08), resolution (EXP-16) — and anatomy supervision was rejected at convergence
+(EXP-26). But we are now **out of tumors**: `train.txt` contains **706** tumor-positive cases and
+`scaledmax_clean` already uses **all 706**. Scaling within PanTS adds only healthy scans, which is
+EXP-25, already run and **rejected on the detection floor**.
+
+PANORAMA's public training set supplies **578 tumor-positive scans that are verifiably not in PanTS**
+(2,238 total − 194 MSD − 80 NIH = 1,964 usable; 676 PDAC − 98 MSD-derived PDAC = 578). See the
+overlap protocol in `docs/capstone-planning.md`. That is an **82% increase** in tumor-positive
+training data and the only route to more tumors that exists.
+
+### Hypothesis
+**H1 (primary):** Adding 578 non-overlapping tumor-positive scans raises lesion Dice on the frozen
+PanTS official test cohort, because the model is tumor-data-limited rather than recipe-limited.
+
+**H2 (pre-registered expectation, NOT a success criterion):** Specificity will **fall**. PANORAMA is
+portal-venous only, and EXP-14 established that PV-trained models over-fire (raw spec 10% PV vs 90%
+non-contrast). We predict this *before* seeing the result so that observing it is a confirmation
+rather than a rationalization.
+
+### Change — single variable
+Training cohort only. Everything else identical to the **EXP-24 clean baseline**: SegResNet +
+SuPreM transfer, whole-box (crop-native 16 → 128³ @1.5 mm), DiceFocal `include_background: false`,
+`roi_source=union`, seed 42, 24k steps, same LR schedule.
+
+| | baseline (EXP-24, `scaledmax_clean`) | treatment (`panorama_mix`) |
+|---|---:|---:|
+| tumor-positive | 706 (PanTS) | **1,284** (706 PanTS + 578 PANORAMA) |
+| tumor-free | 706 (PanTS) | 1,284 (706 PanTS + 578 PANORAMA) |
+| total | 1,412 | 2,568 |
+
+Ratio held at **1:1** — the established convention (EXP-17, EXP-24) and justified by EXP-05, which
+proved sampling ratio is not a driver. Holding it constant keeps "more tumors" the single variable.
+
+### Evaluation — unchanged, and deliberately PanTS-only
+Scored on the **same frozen official PanTS cohorts** used for every headline number:
+`test_pos.txt` (151) and `test_neg.txt` (750). **No PANORAMA case appears in evaluation.** This asks
+the right question — *do foreign tumors improve performance on home turf?* — and keeps annotation
+shift out of the measurement.
+
+Report: lesion Dice (all positives) · pancreas Dice · detection sensitivity · specificity ·
+threshold sweep · **paired per-case comparison vs the EXP-24 baseline** with bootstrap 95% CI and
+win/loss/tie counts (the EXP-26 protocol — a mean difference without a CI is not a result).
+
+### ★ PRE-REGISTERED ACCEPT BAR
+**ACCEPT if BOTH hold at the 24k horizon:**
+1. **lesion Dice improves by ≥ +0.02** on `test_pos` (baseline **0.474**), **and the paired bootstrap
+   95% CI on the per-case difference excludes 0**;
+2. **detection sensitivity ≥ 96%** (baseline 145/151 — no regression permitted; EXP-25 died here).
+
+**Specificity is explicitly NOT part of the accept bar** (H2 predicts it falls), but a **floor of
+10%** applies: below that the model is unusable regardless of Dice, and the run is rejected.
+
+**REJECT** if lesion Dice moves < +0.02, or the CI includes 0, or detection drops below 96%, or
+specificity falls under 10%.
+
+**Report at the pre-registered 24k horizon only.** No intermediate reads — EXP-26's 12k "ACCEPT" was
+a false positive produced by exactly that mistake.
+
+### Confounds — acknowledged in advance, not discovered later
+"More tumors" arrives bundled with three other changes. This experiment **cannot** attribute a win to
+tumor count alone, and the writeup must say so:
+1. **PDAC only** — PanTS covers PDAC + IPMN + PNET; the added tumors are all PDAC.
+2. **Portal-venous only** — phase distribution shifts (the H2 mechanism).
+3. **AI-generated pancreas masks** (Alves et al.) on the PANORAMA cases — the whole-box crop would
+   use a **silver-standard** organ mask for those. Prefer the **482 expert-annotated** PDAC lesions;
+   if 482 suffices, use only those and drop the 194 AI-annotated (a cleaner, smaller treatment arm —
+   **decide before running, record the choice here**).
+
+Follow-up arm if H1 accepts (**EXP-27b**): re-run with PANORAMA cases matched to the PanTS phase
+distribution, to separate "more tumors" from "more portal-venous."
+
+### Prerequisites — code before compute
+- [ ] label remap `PANORAMA {1=PDAC, 4=parenchyma} → ours {2=lesion, 1=pancreas}`, **config-driven,
+      with a unit test** (reversing this silently poisons training)
+- [ ] exclusion list for the 274 MSD/NIH cases, **asserted at load time** — same guard pattern as the
+      leakage abort in `train.py`
+- [ ] **pin the `panorama_labels` commit hash** (live repo; unpinned = irreproducible) and record it
+      in this entry
+- [ ] storage plan (~200 GB raw, 4 Zenodo batches) — one batch (49 GB) is enough to smoke-test
+- [ ] **smoke test 50 iters** on a mixed cohort before the long run (EXP-11 was lost to a
+      train/eval mismatch that a smoke test would have caught)
+
+### Record before running
+- PANORAMA labels commit: `________`
+- Treatment arm used: `all 676 PDAC` / `482 expert-only` → `________`
+- Launch timestamp: `________`
+
+---
+
+## EXP-28: Literature-derived gate features vs. hand-picked [CAPSTONE, PRE-REGISTERED 2026-08-15, NOT YET RUN]
+
+**Pre-registered before the corpus is built and before any feature is implemented.**
+
+### Motivation
+The tumor-presence gate needs input features. The obvious approach is to hand-pick them from
+intuition and prior experiments (predicted lesion volume, connected-component count, contrast phase).
+A second source exists: 8,422 indexed papers on pancreatic CT. Reading them should suggest
+image-derivable properties an engineer would not think of unaided.
+
+The specific failure this targets: **diffusely enlarged but healthy pancreata get flagged as tumor.**
+Nothing in the current feature set distinguishes *"this whole organ is large"* from *"there is a
+discrete mass in this organ."*
+
+**This is not retrieval-augmented inference.** The LLM never runs at prediction time and never sees a
+patient scan. It reads literature and proposes candidate features; a human implements the computable
+ones; the gate is trained on numbers. **No circularity** — the corpus influences the model through
+engineering decisions, not through runtime text.
+
+### Hypothesis
+Features suggested by the pancreatic imaging literature improve the tumor-presence gate over a
+hand-picked feature set, measured as patient-level AUC on the frozen official test cohort.
+
+### Method
+1. Retrieve ~50 abstracts on distinguishing PDAC from chronic pancreatitis and normal variation.
+2. Prompt the local LLM: *"From these passages, list image-derivable properties of a pancreas CT
+   that distinguish pancreatic ductal adenocarcinoma from chronic pancreatitis and from normal
+   anatomical variation. For each, state what would need to be measured."*
+3. **Record the raw output verbatim in this entry before implementing anything.**
+4. Mark each suggestion computable / not computable from our segmentation output. Implement the
+   computable ones.
+5. Train the gate under three feature sets, everything else identical.
+
+| arm | features |
+|---|---|
+| **A — hand-picked** | predicted lesion volume, connected-component count, max probability, organ volume, contrast phase |
+| **B — literature-derived** | whatever step 4 yields, and only that |
+| **C — union** | A + B |
+
+### Evaluation
+Frozen official test cohorts (`test_pos.txt` 151 / `test_neg.txt` 750). Primary metric:
+**patient-level AUC** (baseline 0.804; volume alone 0.843). Secondary: specificity at fixed 96%
+detection. Paired bootstrap CI on per-case scores.
+
+### ★ PRE-REGISTERED ACCEPT BAR
+**ACCEPT B or C over A if patient-level AUC improves by ≥ 0.02 and the paired bootstrap 95% CI on the
+difference excludes 0.** If C wins but B alone does not, the honest conclusion is that literature
+features are *complementary*, not superior — report it that way.
+
+**REJECT** if neither B nor C clears the bar. A null result is still informative: it says
+domain-literature feature engineering does not beat an engineer who has stared at the failure cases.
+
+### Confounds and honesty notes
+- The LLM's suggestions depend on which abstracts are retrieved. **Fix the retrieval query and record
+  it**, or arm B is not reproducible.
+- Some suggestions will be un-computable (labs, patient history, prior imaging). Record what was
+  discarded and why — the discard list is itself a result.
+- Arm B may include features that overlap arm A. That is fine, but note it rather than claiming
+  novelty.
+- Success here is **not** evidence the assistant improves prediction at inference. It cannot, and the
+  writeup must say so.
+
+### Record before running
+- retrieval query: `________`
+- corpus snapshot date / commit: `________`
+- LLM model and version: `________`
+- raw LLM output: `________`
+- features implemented / discarded: `________`
+
+---
+
+## EXP-29: Organ-shaped anisotropic patch — spend the voxel budget on detail, not padding [CAPSTONE / BREAK, PRE-REGISTERED 2026-08-15, NOT YET RUN]
+
+**Pre-registered before any run. This is the THIRD resolution-adjacent experiment after two nulls;
+the prior probability of success is low and that is stated up front deliberately.**
+
+### Background — why this is being revisited at all
+Two previous attempts at finer resolution failed to move lesion accuracy:
+
+| exp | change | lesion Dice | verdict |
+|---|---|---|---|
+| EXP-10 | crop to pancreas + 1.0 mm isotropic | 0.234 vs 0.206 | +0.028, but **confounded** — the same run picked up the encoder-training fix |
+| EXP-16 | 160³ @ 1.2 mm, matched field of view | 0.248 vs 0.257 | **worse** — rejected |
+
+Meanwhile EXP-17 changed only the amount of data and moved lesion Dice 0.263 → 0.313. The standing
+conclusion is that **data is the lever and resolution is not.** This experiment does not dispute that.
+It tests a *different* claim: not "finer is better," but "the current input geometry wastes most of
+its voxels, and redistributing them is free."
+
+### Three measurements that motivate it (all taken 2026-08-15)
+
+**1. Isotropic resampling discards real detail and fabricates fake detail.** Across all 9,901 scans:
+
+| | p5 | p25 | median | p75 | p95 | max |
+|---|---:|---:|---:|---:|---:|---:|
+| in-plane spacing (mm) | 0.64 | 0.74 | **0.81** | 0.98 | 1.50 | 5.00 |
+| slice thickness (mm) | 0.78 | 0.80 | **1.25** | 2.50 | 5.00 | 10.00 |
+| anisotropy (z / in-plane) | 0.78 | 1.00 | 1.19 | 2.86 | 6.40 | 14.22 |
+
+Resampling everything to 1.5 mm isotropic therefore:
+- **discards acquired in-plane detail on 83.6% of scans** (in-plane finer than 1.5 mm)
+- **interpolates z on 31.1% of scans** (thickness coarser than 1.5 mm), manufacturing slices that
+  carry no information — 11.2% are coarser than 3 mm
+
+The dataset is **bimodal**, not uniformly anisotropic: most scans are near-isotropic thin-slice,
+about a third are thick-slice. Any single isotropic target is wrong for one regime.
+
+**2. The pancreas occupies ~11% of the input cube.** Measured on 113 randomly sampled pancreas masks
+in native millimetres:
+
+| axis | median | p90 | max |
+|---|---:|---:|---:|
+| x | 135.1 mm | 167.1 | 195.0 |
+| y | 73.1 mm | 89.0 | 136.5 |
+| z | 80.2 mm | 102.5 | 166.2 |
+
+Bounding-box volume against the current 192 mm cube: **11.2% at median, 21.5% at p90.** Roughly
+nine-tenths of every input tensor is not pancreas.
+
+**3. Clipping is NOT happening — hypothesis tested and rejected.** The concern that a 192 mm cube
+truncates larger organs was checked and is false: **0.9% of cases exceed 192 mm in x, 0% in y, 0% in
+z.** The current pipeline is not silently losing anatomy. Recorded here because it was a real
+suspicion and the measurement settled it.
+
+**4. Supporting evidence that the padding is waste, not context.** EXP-08 compared 128³ against 96³
+at matched field of view — i.e. *more* surrounding tissue — and was rejected: lesion 0.187 vs 0.206.
+More context made accuracy worse. If surrounding tissue were useful, that result should have gone the
+other way.
+
+### Hypothesis
+Holding the voxel budget approximately constant, an organ-shaped anisotropic patch at finer in-plane
+resolution improves lesion Dice over the isotropic cube, because the same compute is spent on
+acquired detail instead of on padding and interpolated slices.
+
+### Change — single variable (input geometry), everything else fixed
+
+| | A — current baseline | B — organ-shaped anisotropic |
+|---|---|---|
+| patch | 128 × 128 × 128 | **192 × 144 × 80** |
+| spacing | 1.5 × 1.5 × 1.5 mm | **1.0 × 1.0 × 2.0 mm** |
+| field of view | 192 × 192 × 192 mm | 192 × 144 × 160 mm |
+| voxels | 2,097,152 | 2,211,840 (**105%**) |
+| in-plane detail | coarsened on 83.6% of scans | preserved on most |
+| z interpolation | on 31.1% of scans | on far fewer |
+
+All three dimensions divide by 16, so the four-level encoder is unaffected and the SuPreM checkpoint
+still loads (patch geometry is transfer-safe; changing `init_filters` would not be).
+
+Everything else identical: SegResNet + SuPreM transfer, DiceFocal `include_background: false`,
+`roi_source=union`, same cohort, same seed 42, same step count, same LR schedule, fp32.
+
+### Evaluation
+Frozen official test cohorts (`test_pos.txt` 151 / `test_neg.txt` 750). Report lesion Dice, pancreas
+Dice, detection sensitivity, specificity, threshold sweep, and **per-case paired bootstrap CI**.
+
+**Additionally report containment** — the fraction of ground-truth pancreas and tumour voxels that
+survive the crop, measured *after* the final resize, not on the pre-resize box. This is the metric
+that tests the geometry claim independently of accuracy, and it is the measurement a previous audit
+flagged as optimistic and never corrected.
+
+### ★ PRE-REGISTERED ACCEPT BAR
+**ACCEPT if either:**
+1. **lesion Dice improves by ≥ 0.02** with the paired bootstrap 95% CI on the per-case difference
+   excluding 0; **or**
+2. **containment improves measurably with lesion Dice flat** (within ±0.01) — a pipeline that loses
+   less anatomy at equal accuracy is the better pipeline and should be adopted.
+
+**REJECT** otherwise. Report at the pre-registered step horizon only — no intermediate reads. EXP-26's
+12k "accept" was a false positive produced by exactly that mistake.
+
+### Confounds and honesty notes
+- **Three things change together**: patch shape, in-plane spacing, and z spacing. A win cannot be
+  attributed to any one of them. If B accepts, a follow-up isolating spacing from shape is required
+  before claiming which mattered.
+- **This is compute-neutral, not cheaper.** An earlier estimate claimed ~42% of current compute; that
+  was based on a wrong guess at organ dimensions (y and z assumed 50–80 mm; actual maxima are 136 and
+  166 mm). The corrected figure is 105%. Recorded so the error is not repeated.
+- **Cache invalidation**: the preprocessing config hash changes, so the warm cache must be rebuilt.
+  Confirm the cache tag includes spacing and patch shape before running, or a stale cache will
+  silently serve arm A's tensors to arm B.
+- **Smoke-test first** (50 iters). EXP-11 was lost to a train/eval geometry mismatch that a smoke test
+  would have caught, and this experiment changes geometry on both sides.
+- `--roi` must set sampling patch size *and* inference ROI together; that has been the same bug class
+  twice (EXP-11, EXP-08).
+
+### Why run it despite low expected value
+If it wins, every subsequent model gets a free upgrade and the fix is a config change. If it loses,
+the resolution question is closed with **three** independent nulls rather than two, which is a
+defensible thing to state at defence rather than an open question a reviewer can poke. Either way the
+containment number gets measured correctly for the first time.
+
+**Scheduled as break-time work, not inside the ten weeks.**
+
+### Record before running
+- cohort used: `________`
+- cache tag / config hash: `________`
+- containment measured (arm A): `________`  (arm B): `________`
+- launch timestamp: `________`
+
+---
+
+# ★ JHU PUBLISHED CHECKPOINTS — WHAT THEY ACTUALLY DID (investigated 2026-08-15)
+
+Read from the HuggingFace model cards for `AbdomenAtlas/MedFormerPanTS` and
+`AbdomenAtlas/R-SuperPanTSMerlin`. Recorded because it changes what is worth testing next.
+
+## The two checkpoints
+
+| | MedFormerPanTS | R-SuperPanTSMerlin |
+|---|---|---|
+| architecture | **MedFormer** (transformer) | **MedFormer** (same) |
+| training | masks only — the "segmentation baseline" | + **report supervision (R-Super)** |
+| data | PanTS public | 1.8K pancreatic lesion reports from **Merlin** (Stanford) + 0.9K PanTS masks |
+| license | **MIT** | not stated on the card |
+| benchmark | P-Sen 80.8 · T-Sen 75.2 · Spe 90.0 · AUC 0.924 · DSC 52.9 | P-Sen 80.1 · T-Sen 80.1 · Spe 93.2 · AUC 0.903 · DSC 53.4 |
+| code | `github.com/MrGiovanni/R-Super` | same |
+| paper | arXiv:2510.14803 (Oct 2025), MICCAI 2025 best-paper runner-up for R-Super | same |
+
+## ★ FINDING 1 — they output 26 classes; we output 3
+
+Both checkpoints predict **26 structures simultaneously**:
+
+```
+adrenal_gland_left, adrenal_gland_right, aorta, bladder, colon, common_bile_duct,
+duodenum, femur_left, femur_right, gall_bladder, kidney_left, kidney_right, liver,
+lung_left, lung_right, pancreas, pancreas_body, pancreas_head, pancreas_tail,
+pancreatic_lesion, postcava, prostate, spleen, stomach,
+superior_mesenteric_artery, veins
+```
+
+**This is the largest structural difference between our model and the leaderboard.**
+
+Critically, it is **not** what EXP-26 tested. EXP-26 added *pancreas subregions* (head/body/tail) and
+was rejected at convergence. These models add **surrounding organs** — duodenum, common bile duct,
+SMA, veins, postcava, stomach, spleen. Different hypothesis, untested by us.
+
+The PanTS paper separates the two effects explicitly: gains are *"directly attributable to the 16x
+larger-scale tumor annotations and **indirectly supported by the 24 additional surrounding anatomical
+structures**."*
+
+Mechanism is plausible in a way subregions were not: subregion labels describe the *inside* of the
+organ; surrounding organs describe where the organ **ends** — which is precisely where our model
+over-paints. The duodenum wraps the pancreatic head; the SMA and veins define the boundary a tumour
+invades.
+
+**We already have these labels.** PanTS ships 28 structures per case, on the drive, unused.
+
+## ★ FINDING 2 — they independently use our anatomical constraint
+
+From the inference documentation:
+
+> `--organ_mask_on_lesion` will use organ segmentations (**produced by the R-Super model itself, not
+> ground-truth**) to remove tumor predictions outside its organ.
+
+This is the `constrain_lesion_to_pancreas` post-processing we arrived at independently — the lever
+that moved specificity 8% → 42% and was reconfirmed on two models. They ship it as a flag on their
+SOTA checkpoint, and they use the **predicted** organ mask, which is the autonomous form we need
+anyway. **Cite this at defence:** our strongest post-processing lever matches what the dataset authors
+do on their own leaderboard model.
+
+## ★ FINDING 3 — R-Super's reports are EXTERNAL, confirming the NLP scope decision
+
+R-SuperPanTSMerlin is trained on reports from **Merlin (Stanford)**, not from PanTS. This confirms the
+2026-08-02 analysis: report supervision works because the text is an *independent* source of
+information. PanTS's own `structured report` field is template-generated from the masks and carries
+nothing new.
+
+**Merlin is publicly available** from Stanford AIMI, which means R-Super is reproducible in principle.
+Large scope addition — logged as a research direction, **not scheduled**.
+
+## Other differences worth noting
+- **MedFormer (transformer) vs our SegResNet (CNN).** Architecture is a confound in any comparison.
+- **`fold_0_latest.pth`** implies cross-validation folds; we train a single split.
+- Inference expects `BDMAP_XXXXXXX/ct.nii.gz` directory layout — a small adapter is needed to run it
+  on our data.
+
+## Standing decision, reaffirmed
+These checkpoints remain **reference-only**. Distilling MedFormerPanTS into our SegResNet would make
+our headline derivative of theirs, and the leaderboard claim depends on the model being ours. Using
+them as a **diagnostic** is fine and valuable — see EXP-31.
+
+---
+
+## EXP-30: Surrounding-organ auxiliary supervision [CAPSTONE, PRE-REGISTERED 2026-08-15, NOT YET RUN]
+
+### Motivation
+Our model over-segments tumours 3–13x and false-alarms on healthy scans. Both failures are about not
+knowing where the pancreas **ends**. EXP-26 tried to fix this from the inside (head/body/tail) and
+returned a null at the pre-registered horizon: lesion +0.023 with CI [−0.007, +0.057] including 0, and
+pancreas −0.014 with the CI excluding 0.
+
+The JHU leaderboard models take the opposite approach — 26 classes covering the organs *around* the
+pancreas — and the PanTS paper attributes indirect gains to exactly those 24 surrounding structures.
+That hypothesis is untested here and the labels are already on disk.
+
+### Hypothesis
+Auxiliary supervision on **surrounding organs** improves lesion Dice and/or specificity by teaching
+the model the pancreas boundary, where over-painting occurs.
+
+### Change — single variable
+Auxiliary loss weight `λ_organs` on a set of neighbouring structures. Control = 0.0, treatment = 0.3
+(matching the EXP-26 protocol so the two are directly comparable).
+
+Auxiliary classes, chosen for anatomical adjacency rather than completeness:
+**duodenum · common bile duct · superior mesenteric artery · veins · stomach · spleen**
+
+Everything else identical to the EXP-24 clean baseline: SegResNet + SuPreM transfer, whole-box
+(crop-native 16 → 128³ @1.5 mm), DiceFocal bg0, `roi_source=union`, seed 42, same cohort, same steps.
+Reuse the **AnatomyAwareLoss** and collapse-aware evaluation built for EXP-26 — that infrastructure
+already exists and was verified.
+
+### Evaluation
+Frozen official test cohorts (151 / 750). Primary: lesion Dice with paired bootstrap CI. Secondary:
+pancreas Dice, specificity, detection, and **over-segmentation ratio by tumour size** (predicted
+volume ÷ ground-truth volume), which is the mechanism this is supposed to fix.
+
+### ★ PRE-REGISTERED ACCEPT BAR
+**ACCEPT if lesion Dice improves by ≥ 0.02 with the paired bootstrap 95% CI excluding 0, AND pancreas
+Dice does not regress by more than 0.01** (the regression that partly sank EXP-26).
+
+A secondary win counts and must be reported as secondary, not headline: if lesion Dice is flat but the
+**over-segmentation ratio on small tumours drops materially**, that is mechanistic evidence worth
+keeping even under a formal reject.
+
+**Report at the pre-registered horizon only.** EXP-26's 12k "accept" was a false positive from reading
+an intermediate; the anatomy arm converges faster and looks better early.
+
+### Confounds
+- The six auxiliary classes were chosen by anatomy, not by search. A different set might do better;
+  this tests the hypothesis, not the optimum.
+- PanTS surrounding-organ masks have not been quality-audited the way the pancreas masks were. **Check
+  for empty and corrupt masks first** — the pancreas set had 0-voxel and 7 corrupt-huge cases.
+- Adding classes changes the output head, so SuPreM head re-initialisation applies as in EXP-26. Use
+  the same hashed shared-init file protocol.
+
+### Record before running
+- auxiliary classes actually used: `________`
+- empty/corrupt mask audit result: `________`
+- shared init hash: `________`
+
+---
+
+## EXP-31: Comparative error analysis against MedFormerPanTS [CAPSTONE / BREAK, DIAGNOSTIC — not a training experiment]
+
+### Purpose
+Not a hypothesis test. A **diagnostic** that answers a question no amount of self-analysis can: on the
+cases we fail, does the published SOTA model also fail?
+
+- **Failures overlap heavily** → the limit is the data, and no architecture change will help.
+- **Failures diverge** → the difference is architecture or multi-organ context, and EXP-30 becomes
+  higher-value.
+
+Either answer redirects effort. Cost is one inference pass and no training.
+
+### Method
+1. Download `AbdomenAtlas/MedFormerPanTS` (MIT licensed) and the R-Super inference code.
+2. Write an adapter from our layout to their expected `BDMAP_XXXXXXX/ct.nii.gz` structure — symlinks
+   are sufficient, per their documentation.
+3. Run on a targeted subset rather than everything: the **6 tumour cases we miss**, the **worst 20 we
+   over-segment**, and **30 healthy scans we false-alarm on**.
+4. Score their output with **our** evaluation harness so numbers are comparable.
+5. Build a per-case comparison table and eyeball the disagreements as overlays.
+
+### What to report
+Per-case: our Dice vs theirs, our predicted volume vs theirs vs ground truth, agreement on the
+patient-level call. Plus the summary — of our 6 missed tumours, how many does MedFormer find?
+
+### Honesty constraints
+- **This does not improve our model and must not be presented as if it did.** It is error analysis.
+- Their numbers here are **not** a benchmark comparison: different preprocessing, different
+  architecture, and a hand-picked adversarial subset. Do not quote a Dice from this as "MedFormer
+  scores X."
+- Distillation from this checkpoint stays **out of scope** — it would make our result derivative.
+
+### Record
+- checkpoint sha / download date: `________`
+- adapter script path: `________`
+- cases evaluated: `________`
+
+---
+
+# ★★ MEDFORMER-PanTS TRAINING CONFIG — read from the released checkpoint (2026-08-15)
+
+`MedFormerPanTS/pants_pancreas_release/config.txt` ships with the weights. This is the actual recipe
+behind the 52.9% DSC leaderboard entry. Recorded verbatim-derived; nothing inferred.
+
+## Their recipe vs ours
+
+| | **MedFormer-PanTS (52.9 DSC)** | **ours (0.474, provided-ROI)** |
+|---|---|---|
+| architecture | MedFormer — hybrid CNN + transformer | SegResNet (pure CNN) |
+| **pretraining** | **`pretrain: False`, `pretrained: None` — from scratch** | SuPreM transfer |
+| base channels | `base_chan: 32`, `chan_num [64,128,256,320,256,128,64,32]` | `init_filters: 16` |
+| conv / transformer mix | `conv_num [2,0,0,0,0,0,2,2]`, `trans_num [0,2,4,6,4,2,0,0]`, `num_heads [1,4,8,10,8,4,1,1]` | all convolutional |
+| norm | `in` (InstanceNorm) | GroupNorm (to match SuPreM) |
+| **patch size** | **`training_size: [128,128,128]`** | **128³ — identical** |
+| sliding window | `[128,128,128]` | same |
+| classes | `classes: 42` (label yaml lists 26) | 3 |
+| **optimizer** | AdamW, **`base_lr: 0.001`**, betas [0.9,0.999], **`weight_decay: 0.05`** | AdamW, LR 1e-4 transfer / 2e-4 scratch, **wd 1e-5** |
+| warmup | 5 epochs | 2 epochs → cosine |
+| **schedule length** | **100 epochs × 1000 iters = 100,000 steps** | 24,000 steps |
+| **EMA** | **`ema: True, ema_alpha: 0.99`** | **none** |
+| deep supervision | `aux_loss: True, aux_weight [0.5, 0.5]` | none (would break SuPreM load) |
+| loss | `ball_dice_last` (R-Super ball + dice) | DiceFocal, `include_background: false` |
+| class weighting | `class_weights: False`; `weight [0.5, 1, 1, …]` — background at 0.5 | bg excluded from loss |
+| **pos/neg balancing** | **`balance_pos_neg: False` — none** | 1:1, extensively tuned |
+| tumour cropping | `crop_on_tumor: True` | positive-biased sampling |
+| augmentation | `rotate [30,30,30]`, `gaussian_noise_std 0.02`, scale and translate **disabled** | — |
+| precision | `amp: False` (fp32) | fp32 |
+| batch | 2 per GPU, 4 global, 2 GPUs | 1 |
+| validation | `val_freq: 20000` | every 5 epochs |
+| cross-validation | `k_fold: 10`, `split_seed: 0` | single split |
+
+The training log (`fold_0.txt`, 16,370 lines) shows the released weights were **resumed from epoch 20**
+and run to 100 — so this checkpoint is a continuation, not a single clean run.
+
+## Five differences worth acting on
+
+**1. They trained from scratch.** No SuPreM, no Models Genesis, no CLIP pretraining. Our EXP-09 found
+transfer beats scratch decisively (+0.13 lesion) — but that was at **95 cases**. They have 9,000 and
+100k steps. Pretraining matters most when data is scarce; this does not contradict EXP-09, it bounds
+where its conclusion applies.
+
+**2. EMA of weights (`ema_alpha: 0.99`) — we do not do this.** Exponential moving average of
+parameters is a well-established, nearly free gain in segmentation. Roughly ten lines of code, no
+architecture change, no extra compute of consequence. **Cheapest untested idea on this list.**
+
+**3. Weight decay 0.05 against our 1e-5 — a 5,000x difference.** Ours is a conservative fine-tuning
+value; theirs is the standard modern AdamW setting.
+
+**4. Base LR 1e-3 against our 1e-4 — 10x.** With warmup and a 100k schedule.
+
+**5. No positive/negative balancing at all.** We spent EXP-05 and EXP-25 on sampling ratio. With 9,000
+cases they simply do not balance. Consistent with our own finding that ratio was not the driver.
+
+## ⚠ Caveat — do not cherry-pick from a coherent recipe
+High LR (1e-3) + high weight decay (0.05) + long schedule (100k) + EMA is **one recipe**, tuned
+together. Lifting the learning rate alone onto a 24k-step run with wd 1e-5 would likely diverge or
+overfit. If any of this is tested, test it as a **coherent block** or change one variable with the
+others held at our values and expect a null.
+
+## What this validates
+- **128³ patch size is identical to ours.** Independent confirmation of that choice.
+- Their `--organ_mask_on_lesion` flag is our anatomical constraint (already recorded above).
+
+## Open item
+`classes: 42` in the config against 26 entries in `labels_pants.yaml`. Unexplained — possibly
+sub-classes or padding in the head. Resolve before drawing any conclusion about output structure.
+
+---
+
+# ★★ CAPACITY QUESTION — CLOSED (2026-08-15). Do not reopen without new evidence.
+
+MedFormer-PanTS measured precisely from the checkpoint: **37,886,548 parameters (37.9 M)**, plus an
+identical `ema_model_state_dict` and 75.8 M of AdamW optimizer state. Trained to **epoch 100** — the
+full schedule. Ours is **4.7 M**, so theirs is **8.1x**.
+
+**Capacity is NOT our bottleneck, and we already proved it.**
+
+**Stage 0 is the proof.** We deliberately overfit a tiny subset and reached pancreas Dice 0 → 0.888
+and lesion 0 → ~0.7. A model that can memorise its training set has sufficient representational
+capacity. Underfitting presents as high *training* error; ours approaches zero. The binding constraint
+is generalisation, not width.
+
+Three supporting arguments:
+1. **Widening breaks SuPreM transfer.** `init_filters` is not checkpoint-compatible (recorded since
+   Week 1). EXP-09 measured transfer at **+0.13 lesion Dice** over scratch at our data scale. Widening
+   trades a measured gain for a speculative one.
+2. **Their 38 M spans 26 classes** — lungs, femurs, bladder, prostate. Per-class capacity is nowhere
+   near 8x ours.
+3. **38 M on 706 tumours would overfit hard.** They have ~10x the cases *and* 26-class supervision on
+   every one — call it ~30x the effective supervision signal. Their capacity is sized to their data.
+
+**Conditional reopen — one case only.** If EXP-27 succeeds and the tumour count roughly doubles
+(706 → 1,284), the scratch-versus-transfer trade may shift, and scratch training would allow free
+widening. Their config is the existence proof that at 9,000 cases, scratch + 38 M wins. Revisit **only**
+with that data increase in hand, and re-run EXP-09 first.
+
+---
+
+## ★ EXP-32: EMA of model weights [CAPSTONE, PRE-REGISTERED 2026-08-15, HIGH PRIORITY — MUST NOT BE DROPPED]
+
+### Motivation
+The JHU leaderboard model uses `ema: True, ema_alpha: 0.99` and ships a separate
+`ema_model_state_dict`. Their training log states plainly: **"Use EMA model for evaluation."** We have
+never used EMA and have never tested it.
+
+Exponential moving average of parameters is a long-established, near-free improvement in
+segmentation. It costs one extra copy of the weights in memory, a single lerp per step, and no extra
+gradient computation. It is the **cheapest untested idea in this entire log**.
+
+### Change — single variable
+Maintain `θ_ema ← α·θ_ema + (1−α)·θ` each optimiser step, α = 0.99. Evaluate with the EMA weights.
+Everything else identical to the current best baseline.
+
+Both checkpoints are saved so the raw and EMA weights can be scored separately from **one run** — the
+comparison is free.
+
+### Evaluation
+Frozen official cohorts (151 / 750). Score raw and EMA from the same run: lesion Dice, pancreas Dice,
+detection, specificity, paired bootstrap CI on per-case differences.
+
+### ★ PRE-REGISTERED ACCEPT BAR
+**ACCEPT if EMA weights beat raw weights on lesion Dice with the paired bootstrap 95% CI excluding 0,
+and detection does not regress below 96%.** Any positive effect is adopted permanently, since the cost
+is negligible.
+
+### Notes
+- α = 0.99 at 24k steps gives an effective averaging window of ~100 steps. If the schedule lengthens
+  (EXP-33), consider α = 0.999. **Record which α was used.**
+- Do not start EMA at step 0 from random weights — begin after warmup, or the average is polluted by
+  the initial transient.
+- EMA interacts with early stopping: best-checkpoint selection must be made on the **EMA** metric if
+  EMA is what gets deployed.
+
+---
+
+## ★ EXP-33: Schedule length — are we reporting under-trained models? [CAPSTONE, PRE-REGISTERED 2026-08-15, HIGHEST PRIORITY]
+
+### Motivation — this one may invalidate prior conclusions
+JHU trains **100 epochs × 1,000 iterations = 100,000 steps**. We train **24,000**.
+
+That 24k was chosen in Week 3 when a run took ~16 hours on MPS. It was a **throughput decision, not an
+empirical one**, and it has never been tested. We do not know whether our models are still improving
+when we stop them.
+
+**Why this outranks everything else:** if 24k is short of convergence, then every null result in this
+log is suspect. EXP-05, EXP-07, EXP-08, EXP-13, EXP-16, EXP-26 all compared two arms at 24k. Two arms
+that both stop before convergence can look identical **because neither finished**, not because the
+change did nothing. EXP-26 already demonstrated the adjacent failure — the anatomy arm converged
+faster and looked ahead at 12k, which is why the pre-registered horizon exists.
+
+### Hypothesis
+Lesion Dice continues to improve materially beyond 24,000 steps.
+
+### Change — single variable
+Schedule length. Train the current best configuration to **72,000 steps** (3x), with the LR schedule
+stretched to the new horizon rather than truncated. Checkpoint and fully evaluate at
+**24k / 36k / 48k / 60k / 72k**.
+
+This produces a **training curve on the frozen test cohort**, not a single number — that curve is the
+deliverable.
+
+### ★ PRE-REGISTERED ACCEPT BAR
+**ACCEPT longer training if lesion Dice at 72k exceeds 24k by ≥ 0.02 with the paired bootstrap 95% CI
+excluding 0.**
+
+**If accepted, the consequence is not optional:** the standard horizon changes, and the nulls listed
+above must be labelled **"tested at a horizon now known to be short"** in this log. That is a
+correction we commit to in advance.
+
+**If rejected** — the curve flattens by 24k — that is equally valuable: it confirms every prior
+comparison was made at convergence and closes the question permanently.
+
+### Cost
+Roughly 3x a normal run. On MPS that is prohibitive; this is a **cloud-GPU or Windows-CUDA job**, or a
+long unattended break run. Either way it must be uninterrupted — `--resume` is hardened but still not
+verified end to end.
+
+### Confounds
+- Longer training with weight decay at 1e-5 may overfit where JHU's 0.05 would not. If the curve rises
+  then falls, that is an **overfitting signature**, and the follow-up is weight decay, not more steps.
+- Run **with EMA enabled** if EXP-32 has already accepted, and record it — otherwise the two changes
+  are entangled.
+
+### Record before running
+- start checkpoint / cold start: `________`
+- LR schedule horizon: `________`
+- EMA enabled: `________`
+- evaluated at steps: `________`
+
+---
+
+## ★★★ EXP-34: Train/test generalisation gap — RUN THIS FIRST [PRE-REGISTERED 2026-08-15]
+
+**This is the first experiment to run once the capstone is approved. Everything about the capacity
+question, and the priority of EXP-32/33, depends on its answer.**
+
+### Why it comes first
+The capacity question was closed on 2026-08-15 using Stage 0 as evidence: the model overfit a tiny
+subset (pancreas 0 → 0.888, lesion 0 → ~0.7), therefore capacity is sufficient. **That reasoning is
+weaker than stated.** Stage 0 proves 4.7 M parameters can memorise *a handful* of cases. It does not
+prove 4.7 M can represent the true function across 706 diverse tumours. The capacity note is therefore
+**conditional, not settled**, and this experiment settles it.
+
+### Method
+Score the registered model on a random sample of the cases it **trained on** (n ≈ 100), using
+`evaluate.py` with the identical harness, thresholds, and post-processing used for the test set. No
+training, no new code — an evaluation pass over a different case list.
+
+### The decision table — written before the result
+
+| training Dice | test Dice | interpretation | consequence |
+|---|---|---|---|
+| ≈ 0.80 or above | 0.474 | **overfitting.** The model already fits what it is shown; the gap is generalisation | Capacity question CLOSED for real. More parameters would make it worse. Data (EXP-27) and EMA (EXP-32) are the levers. |
+| ≈ 0.55–0.70 | 0.474 | **partial fit** | Ambiguous. EXP-33 (schedule length) becomes the tiebreaker — an undertrained model looks like a small one. |
+| ≈ 0.50 or below | 0.474 | **underfitting.** The model cannot fit its own training data | Capacity question REOPENS. Scratch + wider + long schedule becomes a live option, not a conditional one. |
+
+### Also record
+- training Dice by tumour size band (small / medium / large). If small tumours score poorly **on
+  training data**, that is underfitting on the hardest class specifically, which is a different and
+  more actionable finding than a global gap.
+- training-set specificity. If the model false-alarms on healthy scans it has *seen*, the specificity
+  problem is not a generalisation failure at all.
+
+### Constraints
+- Use the **same** evaluation code path as the test harness. A bespoke script would reintroduce the
+  EXP-11 class of error.
+- Sample the training cases randomly and record the list. Cherry-picking easy cases inverts the result.
+- This is a **measurement, not a hypothesis test** — there is no accept/reject bar, only the decision
+  table above, which is binding.
+
+### Record
+- checkpoint evaluated: `________`
+- training cases sampled (list or seed): `________`
+- training Dice: `________`   test Dice reference: 0.474
+- by size band: `________`
+- training-set specificity: `________`
+- verdict per decision table: `________`
+
+---
+
+# ★★ SCOPE CHECK — ARE WE SOLVING THE PROBLEM JHU IS MEASURING? (2026-08-15)
+
+Researched against arXiv:2510.14803, the PanTS benchmark table, and the R-Super inference docs.
+
+## What they actually measure
+The published leaderboard reports **P-Sen · T-Sen · Spe · AUC · DSC**, and the 2025 paper's headline
+claims are **sensitivity and specificity**, not Dice: *"improved sensitivity by +13% and specificity
+by +8%, surpassing radiologists in detecting five of the seven tumor types."*
+
+**The bar being set is detection performance against human readers, not segmentation overlap.** Our
+project already treats detection as the headline, so the framing is aligned.
+
+## ✅ Our 3-class scope is sufficient for the pancreas benchmark
+Their models predict 26 structures, but every reported metric concerns `pancreatic_lesion`. The other
+25 classes are **means, not ends** — anatomical context that helps the tumour prediction (EXP-30) and
+supplies the organ mask for their `--organ_mask_on_lesion` constraint. We predict pancreas and lesion,
+so we can compute every metric on their table.
+
+## ⚠ THREE REAL SCOPE MISMATCHES
+
+### 1. Largest-connected-component post-processing breaks tumour-wise sensitivity
+Our pipeline keeps the **largest connected component**. Their T-Sen definition: *"a tumor is a true
+positive only if correctly localized. Patients with multiple tumors can contribute multiple true
+positives."*
+
+**A largest-CC filter structurally caps us at one tumour per patient.** On any multi-lesion case we
+cannot score above 1, regardless of what the model actually found. This is not a tuning issue — it is
+a design decision that is incompatible with the metric.
+
+**Action:** T-Sen must be computed *before* largest-CC, and largest-CC must become optional at
+inference. Add to the EXP-31 / submission-prep work.
+
+### 2. Specificity is the metric that will be tested hardest, and it is our weakest
+The OOD suite includes **RSNA Abdominal Trauma, 4,706 cases** — trauma patients, overwhelmingly
+without pancreatic cancer. At our current 17% specificity we would falsely flag roughly **3,900 of
+them**.
+
+**This reframes the gate from an improvement to a precondition.** Submitting at 17% specificity would
+produce a published number that is indefensible, on the largest of their four test sets.
+
+### 3. The field has moved to multi-tumour
+The 2025 paper covers seven tumour types and adds spleen, gallbladder, prostate, bladder, uterus, and
+oesophagus. We are pancreas-only. That is **fine** — the pancreas benchmark still exists and is what
+we are targeting — but it should be stated as a deliberate scope choice rather than left implicit.
+
+## ★ A reframe worth keeping: our masks are worth more than they sound
+From the abstract: *"When trained on 101,654 reports, AI models achieved performance comparable to
+those trained on 723 masks."*
+
+**101,654 reports ≈ 723 expert masks** — roughly 140 reports per mask. We hold **706 expert
+tumour masks**, and PANORAMA adds **382 more**. On their own exchange rate, our mask corpus is worth
+on the order of 100,000 clinical reports.
+
+Our data position is far stronger than "706 cases" makes it sound. What we lack is not annotation
+quality — it is quantity of *scans*, which is a different problem with different solutions.

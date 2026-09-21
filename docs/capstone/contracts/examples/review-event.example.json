@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "review_event_id": "review:600d1f27-1f45-4ed0-bc11-03c543cf6e56",
+  "recorded_at": "2026-09-08T16:15:00Z",
+  "case_package_id": "case-package:19a6d149e71f",
+  "prediction_id": "prediction:0e98c21d12ca",
+  "reviewer": {
+    "reviewer_id": "local-reviewer-01",
+    "role": "research_operator"
+  },
+  "action": "edit_required",
+  "revision": 1,
+  "supersedes_review_event_id": null,
+  "reason_codes": ["boundary_correction"],
+  "note": "The lesion is localized, but the proposed contour extends beyond the suspected boundary.",
+  "corrected_mask": null,
+  "client": {
+    "application": "PROWL",
+    "application_version": "0.1.0",
+    "transport": "fastapi",
+    "session_id": "local-session-20260908"
+  }
+}

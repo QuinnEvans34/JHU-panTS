@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/case-package/1.0.0",
+  "title": "PROWL transport-neutral case package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_package_id",
+    "derivation_sha256",
+    "created_at",
+    "study",
+    "prediction",
+    "measurements",
+    "structured_finding",
+    "warnings",
+    "lineage"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "case_package_id": {
+      "type": "string",
+      "pattern": "^case-package:[0-9a-f]{12,64}$"
+    },
+    "derivation_sha256": { "$ref": "#/$defs/sha256" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "study": { "$ref": "#/$defs/studyRecord" },
+    "prediction": { "$ref": "#/$defs/predictionRecord" },
+    "measurements": {
+      "oneOf": [
+        { "$ref": "#/$defs/measurementRecord" },
+        { "type": "null" }
+      ]
+    },
+    "structured_finding": {
+      "oneOf": [
+        { "$ref": "#/$defs/structuredFinding" },
+        { "type": "null" }
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/warningRecord" }
+    },
+    "reference": {
+      "oneOf": [
+        { "$ref": "#/$defs/referenceRecord" },
+        { "type": "null" }
+      ]
+    },
+    "evidence_response_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 3, "maxLength": 240 },
+      "default": []
+    },
+    "lineage": { "$ref": "#/$defs/lineageRecord" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativeUri": {
+      "type": "string",
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!file:)(?!\\.\\.(?:/|$))(?!.*\\/\\.\\.(?:\\/|$)).+"
+    },
+    "fileReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri", "media_type", "content_sha256", "bytes"],
+      "properties": {
+        "uri": { "$ref": "#/$defs/relativeUri" },
+        "media_type": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "content_sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "shape": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 3,
+          "maxItems": 4
+        },
+        "dtype": { "type": "string", "minLength": 1, "maxLength": 40 }
+      }
+    },
+    "studyRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["study_id", "subject_id", "source", "display_label", "ct"],
+      "properties": {
+        "study_id": { "type": "string", "minLength": 3, "maxLength": 240 },
+        "subject_id": { "type": "string", "minLength": 3, "maxLength": 240 },
+        "source": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{1,31}$"
+        },
+        "display_label": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "ct": { "$ref": "#/$defs/fileReference" },
+        "spacing_mm": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "number", "exclusiveMinimum": 0 }
+          ],
+          "items": false
+        }
+      }
+    },
+    "predictionFiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pancreas_mask", "lesion_mask"],
+      "properties": {
+        "pancreas_mask": { "$ref": "#/$defs/fileReference" },
+        "lesion_mask": { "$ref": "#/$defs/fileReference" },
+        "label_map": { "$ref": "#/$defs/fileReference" },
+        "pancreas_probability": { "$ref": "#/$defs/fileReference" },
+        "lesion_probability": { "$ref": "#/$defs/fileReference" },
+        "display_manifest": { "$ref": "#/$defs/fileReference" }
+      }
+    },
+    "predictionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prediction_id",
+        "prediction_mode",
+        "model_version_id",
+        "inference_config_sha256",
+        "derivation_sha256",
+        "created_at",
+        "status"
+      ],
+      "properties": {
+        "prediction_id": {
+          "type": "string",
+          "pattern": "^prediction:[0-9a-f]{12,64}$"
+        },
+        "prediction_mode": {
+          "enum": ["autonomous", "provided_region_reference"]
+        },
+        "model_version_id": { "type": "string", "minLength": 3, "maxLength": 240 },
+        "inference_config_sha256": { "$ref": "#/$defs/sha256" },
+        "derivation_sha256": { "$ref": "#/$defs/sha256" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "status": { "enum": ["completed", "completed_with_warnings", "failed"] },
+        "localization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status"],
+          "properties": {
+            "status": { "enum": ["localized", "low_confidence", "failed", "not_applicable"] },
+            "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "box_voxel_xyzxyz": {
+              "type": ["array", "null"],
+              "items": { "type": "integer", "minimum": 0 },
+              "minItems": 6,
+              "maxItems": 6
+            }
+          }
+        },
+        "files": { "$ref": "#/$defs/predictionFiles" },
+        "failure_code": { "type": ["string", "null"], "maxLength": 120 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": { "enum": ["completed", "completed_with_warnings"] }
+            },
+            "required": ["status"]
+          },
+          "then": { "required": ["files"] }
+        }
+      ]
+    },
+    "measurementRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lesion_present",
+        "lesion_count",
+        "lesion_volume_mm3",
+        "pancreas_volume_mm3",
+        "review_score",
+        "review_score_method"
+      ],
+      "properties": {
+        "lesion_present": { "type": "boolean" },
+        "lesion_count": { "type": "integer", "minimum": 0 },
+        "lesion_volume_mm3": { "type": "number", "minimum": 0 },
+        "pancreas_volume_mm3": { "type": "number", "minimum": 0 },
+        "maximum_lesion_diameter_mm": { "type": ["number", "null"], "minimum": 0 },
+        "review_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "review_score_method": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "component_measurements_uri": {
+          "oneOf": [
+            { "$ref": "#/$defs/relativeUri" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "structuredFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["anatomy", "suspected_lesion", "measurement_source"],
+      "properties": {
+        "anatomy": { "const": "pancreas" },
+        "suspected_lesion": { "type": "boolean" },
+        "location": { "type": ["string", "null"], "maxLength": 120 },
+        "maximum_diameter_mm": { "type": ["number", "null"], "minimum": 0 },
+        "contrast_phase": { "type": ["string", "null"], "maxLength": 120 },
+        "measurement_source": { "const": "model_prediction" }
+      }
+    },
+    "warningRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$" },
+        "severity": { "enum": ["information", "caution", "failure"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 1000 }
+      }
+    },
+    "referenceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "reveal_required"],
+      "properties": {
+        "available": { "type": "boolean" },
+        "reveal_required": { "type": "boolean" },
+        "annotation_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 3, "maxLength": 240 }
+        },
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pancreas_mask": { "$ref": "#/$defs/fileReference" },
+            "lesion_mask": { "$ref": "#/$defs/fileReference" },
+            "display_manifest": { "$ref": "#/$defs/fileReference" }
+          }
+        },
+        "evaluation_id": { "type": ["string", "null"], "maxLength": 240 }
+      }
+    },
+    "lineageRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_snapshot_id",
+        "manifest_id",
+        "model_run_id",
+        "model_content_sha256",
+        "code_commit"
+      ],
+      "properties": {
+        "source_snapshot_id": { "type": "string", "minLength": 3, "maxLength": 240 },
+        "manifest_id": { "type": "string", "minLength": 3, "maxLength": 240 },
+        "cohort_id": { "type": ["string", "null"], "maxLength": 240 },
+        "model_run_id": { "type": "string", "minLength": 3, "maxLength": 240 },
+        "model_content_sha256": { "$ref": "#/$defs/sha256" },
+        "code_commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "dirty_source_sha256": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

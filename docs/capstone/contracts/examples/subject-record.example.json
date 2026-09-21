@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "subject_id": "pants:subject:PanTS_00009005",
+  "source_snapshot_id": "snapshot:pants:123456789abc",
+  "source": "pants",
+  "source_subject_id": "PanTS_00009005",
+  "identity_method": "study_as_subject_fallback",
+  "identity_assurance": "unverified_unique",
+  "status": "reconciled",
+  "issue_ids": []
+}

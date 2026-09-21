@@ -1,0 +1,50 @@
+# Teaching example; not runnable configuration. Never commit the real roots.yaml.
+schema_version: 1.0.0
+approval: EXAMPLE_ONLY
+scientific_runs_enabled: false
+verification: not_verified
+evidence_path: null
+failure_domains:
+  external_primary:
+    kind: physical_device
+    mount_path: /example/external
+    volume_uuid: EXAMPLE_EXTERNAL_UUID
+    filesystem: apfs
+  internal_backup:
+    kind: physical_device
+    mount_path: /example/internal
+    volume_uuid: EXAMPLE_INTERNAL_UUID
+    filesystem: apfs
+roots:
+  pants_source:
+    path: null
+    acquisition_parent: /example/external/PROWL/sources/pants
+    role: source
+    access: unavailable_until_snapshot_verified
+    source_snapshot_id: null
+    failure_domain: external_primary
+  panorama_source:
+    path: null
+    acquisition_parent: /example/external/PROWL/sources/panorama
+    role: source
+    access: unavailable_until_snapshot_verified
+    source_snapshot_id: null
+    failure_domain: external_primary
+  prowl_artifacts:
+    path: /example/external/PROWL/artifacts
+    role: artifact
+    access: setup_only
+    failure_domain: external_primary
+  prowl_scratch:
+    path: /example/external/PROWL/scratch
+    role: scratch
+    access: acquisition_and_scoped_setup
+    failure_domain: external_primary
+  prowl_backup:
+    path: /example/internal/PROWL-Backups
+    role: backup
+    access: selected_controls_and_keepers
+    failure_domain: internal_backup
+    cap_bytes: 21474836480
+    minimum_free_bytes: 107374182400
+    automatic_deletion: false

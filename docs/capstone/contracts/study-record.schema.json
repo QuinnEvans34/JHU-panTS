@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/study-record/1.0.0",
+  "title": "PROWL imaging study record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "study_id",
+    "subject_id",
+    "source_snapshot_id",
+    "source",
+    "source_study_id",
+    "source_partition",
+    "modality",
+    "image",
+    "geometry",
+    "acquisition",
+    "target_statuses",
+    "annotation_ids",
+    "status",
+    "issue_ids"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "study_id": { "$ref": "#/$defs/studyId" },
+    "subject_id": { "$ref": "#/$defs/subjectId" },
+    "source_snapshot_id": { "$ref": "#/$defs/snapshotId" },
+    "source": { "$ref": "#/$defs/sourceKey" },
+    "source_study_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "source_partition": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+    "modality": { "const": "CT" },
+    "image": { "$ref": "#/$defs/fileReference" },
+    "geometry": {
+      "oneOf": [
+        { "$ref": "#/$defs/geometryRecord" },
+        { "type": "null" }
+      ]
+    },
+    "acquisition": { "$ref": "#/$defs/acquisitionRecord" },
+    "target_statuses": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/targetStatus" }
+    },
+    "annotation_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/annotationId" }
+    },
+    "status": { "enum": ["discovered", "reconciled", "eligible", "excluded", "quarantined"] },
+    "issue_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/issueId" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "enum": ["reconciled", "eligible"] } }, "required": ["status"] },
+      "then": { "properties": { "geometry": { "$ref": "#/$defs/geometryRecord" } } }
+    },
+    {
+      "if": { "properties": { "status": { "enum": ["excluded", "quarantined"] } }, "required": ["status"] },
+      "then": { "properties": { "issue_ids": { "minItems": 1 } } }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "sourceKey": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}$" },
+    "rootAlias": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+    "relativeUri": {
+      "type": "string",
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!file:)(?!\\.\\.(?:/|$))(?!.*\\/\\.\\.(?:\\/|$)).+"
+    },
+    "subjectId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:subject:[A-Za-z0-9._-]{1,160}$" },
+    "studyId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:study:[A-Za-z0-9._-]{1,160}$" },
+    "annotationId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:annotation:[A-Za-z0-9._-]{1,180}$" },
+    "snapshotId": { "type": "string", "pattern": "^snapshot:[a-z][a-z0-9_-]{1,31}:[0-9a-f]{12,64}$" },
+    "issueId": { "type": "string", "pattern": "^issue:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "fileReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root_alias", "uri", "media_type", "bytes", "content_sha256"],
+      "properties": {
+        "root_alias": { "$ref": "#/$defs/rootAlias" },
+        "uri": { "$ref": "#/$defs/relativeUri" },
+        "media_type": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "content_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "targetStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "status", "method", "reference_id"],
+      "properties": {
+        "target": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+        "status": { "enum": ["positive", "negative", "unknown"] },
+        "method": { "enum": ["annotation_voxel_presence", "source_metadata", "reference_standard", "explicit_mapping", "unavailable"] },
+        "reference_id": { "type": ["string", "null"], "maxLength": 240 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "unknown" } }, "required": ["status"] },
+          "then": { "properties": { "method": { "const": "unavailable" }, "reference_id": { "type": "null" } } },
+          "else": {
+            "properties": {
+              "method": { "enum": ["annotation_voxel_presence", "source_metadata", "reference_standard", "explicit_mapping"] },
+              "reference_id": { "type": "string", "minLength": 1, "maxLength": 240 }
+            }
+          }
+        }
+      ]
+    },
+    "geometryRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shape_xyz", "spacing_mm_xyz", "affine_ras"],
+      "properties": {
+        "shape_xyz": { "type": "array", "prefixItems": [{"type":"integer","minimum":1},{"type":"integer","minimum":1},{"type":"integer","minimum":1}], "items": false },
+        "spacing_mm_xyz": { "type": "array", "prefixItems": [{"type":"number","exclusiveMinimum":0},{"type":"number","exclusiveMinimum":0},{"type":"number","exclusiveMinimum":0}], "items": false },
+        "affine_ras": { "type": "array", "items": { "type": "number" }, "minItems": 16, "maxItems": 16 }
+      }
+    },
+    "acquisitionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["study_date", "study_year", "contrast_phase", "scanner", "manufacturer", "site"],
+      "properties": {
+        "study_date": { "type": ["string", "null"], "format": "date" },
+        "study_year": { "type": ["integer", "null"], "minimum": 1900, "maximum": 2200 },
+        "contrast_phase": { "type": ["string", "null"], "maxLength": 120 },
+        "scanner": { "type": ["string", "null"], "maxLength": 160 },
+        "manufacturer": { "type": ["string", "null"], "maxLength": 120 },
+        "site": { "type": ["string", "null"], "maxLength": 160 }
+      }
+    }
+  }
+}

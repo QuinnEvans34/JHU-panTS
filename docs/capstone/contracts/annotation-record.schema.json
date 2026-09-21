@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/annotation-record/1.0.0",
+  "title": "PROWL structure-level annotation record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "annotation_id",
+    "study_id",
+    "source_snapshot_id",
+    "source",
+    "structure",
+    "source_structure",
+    "file",
+    "annotation_version",
+    "method",
+    "validation_status",
+    "allowed_uses",
+    "label_encoding",
+    "status",
+    "issue_ids"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "annotation_id": { "$ref": "#/$defs/annotationId" },
+    "study_id": { "$ref": "#/$defs/studyId" },
+    "source_snapshot_id": { "$ref": "#/$defs/snapshotId" },
+    "source": { "$ref": "#/$defs/sourceKey" },
+    "structure": { "enum": ["pancreas", "lesion"] },
+    "source_structure": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "file": { "$ref": "#/$defs/fileReference" },
+    "annotation_version": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "method": { "enum": ["human_manual", "human_validated", "machine_generated", "derived", "unknown"] },
+    "validation_status": { "enum": ["source_asserted", "project_verified", "unverified", "rejected"] },
+    "allowed_uses": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["training_target", "crop_reference", "evaluation_reference", "display_reference"] }
+    },
+    "label_encoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_values", "canonical_value", "mapping_version"],
+      "properties": {
+        "source_values": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "integer", "minimum": 0 } },
+        "canonical_value": { "type": "integer", "minimum": 1 },
+        "mapping_version": { "type": "string", "minLength": 1, "maxLength": 120 }
+      }
+    },
+    "status": { "enum": ["eligible", "excluded", "quarantined"] },
+    "issue_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/issueId" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "eligible" } }, "required": ["status"] },
+      "then": { "properties": { "allowed_uses": { "minItems": 1 } } }
+    },
+    {
+      "if": { "properties": { "status": { "enum": ["excluded", "quarantined"] } }, "required": ["status"] },
+      "then": { "properties": { "issue_ids": { "minItems": 1 } } }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "sourceKey": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}$" },
+    "rootAlias": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+    "relativeUri": { "type": "string", "pattern": "^(?!/)(?![A-Za-z]:)(?!file:)(?!\\.\\.(?:/|$))(?!.*\\/\\.\\.(?:\\/|$)).+" },
+    "studyId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:study:[A-Za-z0-9._-]{1,160}$" },
+    "annotationId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:annotation:[A-Za-z0-9._-]{1,180}$" },
+    "snapshotId": { "type": "string", "pattern": "^snapshot:[a-z][a-z0-9_-]{1,31}:[0-9a-f]{12,64}$" },
+    "issueId": { "type": "string", "pattern": "^issue:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "fileReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root_alias", "uri", "media_type", "bytes", "content_sha256"],
+      "properties": {
+        "root_alias": { "$ref": "#/$defs/rootAlias" },
+        "uri": { "$ref": "#/$defs/relativeUri" },
+        "media_type": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "content_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

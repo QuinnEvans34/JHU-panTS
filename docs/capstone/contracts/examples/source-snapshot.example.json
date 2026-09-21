@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "source_snapshot_id": "snapshot:pants:123456789abc",
+  "source_key": "pants",
+  "source_version": {
+    "version_status": "partially_known",
+    "release": "PanTS Mini public training release",
+    "archive_version": null,
+    "commit": null
+  },
+  "retrieved_at": "2026-07-01T18:00:00Z",
+  "license": {
+    "name": "Publisher non-commercial terms",
+    "evidence_uri": "https://example.org/pants-license-record",
+    "restrictions": ["noncommercial", "source_terms_apply"],
+    "citation_required": true
+  },
+  "root_alias": "pants_raw",
+  "inventory": {
+    "uri": "sources/pants/snapshot-pants-123456789abc/file-inventory.jsonl",
+    "content_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "file_count": 19803,
+    "assurance": "metadata_only"
+  },
+  "status": "partial",
+  "derivation_sha256": "123456789abc123456789abc123456789abc123456789abc123456789abc1234",
+  "notes": "Synthetic shape example; source identity and hashes are placeholders."
+}

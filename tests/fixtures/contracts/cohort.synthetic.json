@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "cohort_id": "cohort:synthetic-training:v1",
+  "derivation_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "cohort_family_id": "synthetic-family",
+  "purpose": "training",
+  "protected_role": "train",
+  "parent_cohort_ids": ["cohort:synthetic-parent:v1"],
+  "ancestor_cohort_ids": ["cohort:synthetic-parent:v1"],
+  "manifest_ids": ["manifest:synthetic:bbbbbbbbbbbb"],
+  "definition": {
+    "selection_method": "fixed_membership",
+    "group_by": "subject_id",
+    "study_policy": "all_studies",
+    "filters": [],
+    "stratify_fields": [],
+    "seed": 42,
+    "requested_study_count": 2,
+    "requested_subject_count": 2,
+    "shortage_policy": "fail",
+    "config_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "migration_input_sha256": null
+  },
+  "members": {
+    "uri": "cohorts/synthetic/members.jsonl",
+    "content_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "bytes": 200,
+    "count": 2
+  },
+  "profile": {
+    "uri": "cohorts/synthetic/profile.json",
+    "content_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "bytes": 100,
+    "count": 1
+  },
+  "study_count": 2,
+  "subject_count": 2,
+  "state": "frozen",
+  "frozen_at": "2026-09-19T12:00:00Z"
+}

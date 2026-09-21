@@ -1,5 +1,32 @@
 # AGENTS.md — Agent Context
 
+> **Plan 04 update — 2026-09-20:** Quinton accepted the orchestration and Prefect/alternatives
+> walkthrough. Explanation is no longer pending; explicit coding authorization remains required.
+> Prefect-first four-hour evaluation with a repository-runner fallback is reaffirmed; tested
+> temporary local services are acceptable, not cloud or a required manually maintained server.
+> D-201 remains open until the spike. Older explanation-gate references below are historical.
+> Stakeholder preparation is deferred at Quinton's request until participant confirmation or his
+> request for help; radiologist contacted, reply pending. Do not expand the provisional agenda now.
+
+**Required workspace rules:** Read and follow
+[`docs/capstone/operations/WORKSPACE-SAFETY.md`](docs/capstone/operations/WORKSPACE-SAFETY.md)
+before writes. Missing project paths mean stop, not recreate; verify existing configuration before
+replacing it; preserve suspected duplicates until reviewed. This shared agreement applies to all
+PROWL agents and does not grant access to unrelated projects.
+
+> **Relocation safety (2026-09-20):** Before edits, confirm the intended checkout with `pwd`,
+> `git rev-parse --show-toplevel`, and `python3 scripts/diagnostics/check_workspace.py` from its
+> root. Keep unrelated projects in separate workspaces. Do not redirect old paths with symlinks.
+> Current capstone guidance lives in `docs/capstone/README.md`; older status and decisions below
+> are context, not authorization to override the current user request or approved component plan.
+> See `docs/capstone/operations/RELOCATION-2026-09-20.md` for environment and workspace details.
+
+> **Active phase: approved PROWL capstone; pre-course preparation. Official start: 2026-10-05.** Read
+> [`docs/capstone/README.md`](docs/capstone/README.md) before planning or implementation. The approved
+> proposal v3.8 and technical appendix v3.1 outrank older Markdown drafts. The detailed five-week
+> project history below remains useful evidence, but its model, database, NLP, schedule, and stretch
+> decisions are not automatically capstone commitments.
+
 Context file so any AI session picks up this project correctly. Keep updated as things change.
 
 ## Project
@@ -8,10 +35,108 @@ Context file so any AI session picks up this project correctly. Keep updated as 
 ## Owner / scope
 Solo project (Quinn). Course: 5-week independent ML project, proposal → delivery (instructor-approved). Business framing: radiologist / imaging-annotator annotation-assist (accept/edit/reject proposed contours). **Capstone:** a follow-on 10-week project will extend this same codebase (ROI cascade, full-scale training, Level 5) — design for that now.
 
+## Capstone architecture baseline (locked 2026-09-08)
+
+The active 10-week capstone is a **single-user research workstation**, not a multi-user clinical
+platform. It uses **file-first, versioned artifacts**; add a database only after a measured need is
+recorded. Static files and FastAPI must transport the same versioned **case-package** contract.
+Reviews are append-only **review events** tied to immutable prediction versions; `edit_required`
+means a correction is needed and does not promise browser voxel editing. See
+`docs/capstone/DECISIONS.md`, `docs/capstone/architecture/`, and `docs/capstone/contracts/`.
+
+**Current planning state:** Plans 01–03 are Ready. Plan 04's tool-independent design is approved, but
+it is not Ready for implementation: explain the function of Plan 04 to Quinton in plain language and
+receive his explicit authorization before writing any Plan 04 code or running the Prefect spike. Plan
+10 must also confirm the storage/environment boundaries; D-201 remains open until the bounded spike
+selects Prefect or the repository runner. Plan 05's design and P05-01 through P05-13 are approved;
+implementation remains gated on the Plan 06 handoff and Plan 10 boundaries. Training and
+experimentation are a continuous workstream once each run's safety dependencies pass, not work
+confined to Weeks 5–6; Week 9 remains stabilization-only and Week 10 remains delivery-only. Plan 06's
+evaluation and continuous-training design is approved; implementation remains gated on Plans 09 and
+10, and D-205/D-208 remain evidence-dependent. Plan 07's corpus, retrieval, evaluation, and
+grounded-response design is approved; D-202 stays open until the bounded local vector-tool spike.
+Plan 08's interface design is approved; it preserves the existing React/NiiVue workspace while
+replacing legacy `results.json` and browser-only review status with validated adapters and durable
+review events. Implementation remains gated on Plans 09/10 and D-208 or neutral ordering. Plan 09's
+testing and quality design is approved; full executable verification remains incomplete. On
+2026-09-19 the new `.venv-prowl` foundation installed with a hashed macOS-arm64/Python-3.12 lock:
+37 historical tests passed unchanged, then 30 new contract checks brought the suite to 67 passes.
+Seven storage-registry and thirteen acquisition-guard tests now bring it to 87 passes (two visible
+upstream deprecation warnings). Fourteen PANORAMA acquisition tests subsequently bring the total
+to 101 passes. See `docs/capstone/testing/FOUNDATION-2026-09-19.md`, the storage setup record, and
+`docs/capstone/operations/OVERNIGHT-ACQUISITION-2026-09-19.md`.
+No Node/UI test setup or CI workflow has been created; `.venv312` and production source are unchanged.
+Plan 10's P10-01 through P10-24 and staged-readiness design were approved on 2026-09-18. It remains
+`Approved design; gated`: scoped roots/capability checks and the initial synthetic backup/restore
+passed under D-258 on September 19; production preflight, verified source aliases, real-artifact
+restore, and complete environment evidence remain pending. Foundation setup, individual experiment
+readiness, and full pre-G8 reproduction are separate gates; early imaging does not require a finished
+retrieval/UI system. The Plan 04 explanation/authorization requirement is unchanged.
+`docs/experiments.md` is the continuing living notebook, not only an archive. Before every experiment,
+write its game plan; record every run/attempt and outcome, including failures/nulls; then explain the
+evidence, retained settings, and changed factors motivating the next experiment. New `CAP-EXP-NNN`
+entries link immutable Plan 06 records. Preserve historical text/future ideas, but replan selected
+ideas under current cohort/holdout/no-model-reuse rules before running them. See D-250 through D-252.
+On 2026-09-18 `PROWL-Data` was verified mounted as writable APFS on the 4 TB Western Digital device,
+with approximately 4 TB free; it remains unencrypted. Its bounded filesystem checks and local
+setup registry were completed on September 19; this does not implement the production writer/resolver.
+On 2026-09-19 Quinton confirmed `JHU-PanTS` is unusable for
+reads/writes. Treat it as unavailable, not a source/backup candidate; do not attempt recovery as part
+of this task. Fresh acquisition is prioritized alongside/after the clean test foundation (D-257);
+see `docs/capstone/operations/DATA-ACQUISITION-QUEUE.md`. The expected `PROWL-Data` mount path was
+absent in the first September 19 check; after Quinton reconnected it, a follow-up verified the same
+UUID, actual writable APFS mount, and about 4 TB free. Existing recovery image/map files (~1 GB) are
+preserved, not validated source/backup data. Quinton approved D-258: the new external `PROWL/`
+workspace and internal `PROWL-Backups/` (20 GiB cap, 100 GiB internal free-space floor) now exist.
+Small filesystem and independent synthetic restore checks passed; retained controls were copied and
+hash-verified on both devices. The standalone 12-file PanTS archive queue started at 21:39 MDT on
+September 19; metadata passed its publisher SHA-256 and large transfers are in progress at the
+recorded checkpoint. Check live on-drive receipts/process state rather than assuming completion.
+At Quinton's request, the PANORAMA overnight queue also started at 22:02 MDT. Its pinned label ZIP
+passed all 2,242 Git blob checks; four CT batches are sequentially queued/in progress, not complete.
+Both processes have temporary idle-sleep inhibition; no reboot auto-restart or monitoring automation
+is configured. Literature is not queued: exact search/cutoff, NCBI contact configuration, rights and
+acquisition tests remain. Do not guess an email or download/index unreviewed text. No CT extraction or
+source activation occurred; ignored `configs/local/roots.yaml` still disables scientific runs/source aliases.
+PanTS's GitHub/Hugging Face license discrepancy requires reconciliation before redistribution.
+Acquire and reconcile the full snapshot against retained metadata/cohort controls before real-data
+training. The suspect old drive cannot count as a backup. Local manifest and base split hashes were rechecked
+on 2026-09-18 and match the earlier audit. The planning directory and `src/data/` remain untracked in
+this checkout and need a reviewed Git checkpoint. Plan 11's lightweight living outreach/session/
+findings protocol was approved on 2026-09-18 (D-253). Quinton owns outreach, has an available expert
+whose role remains to be recorded, and is seeking a radiologist; no session is confirmed/completed.
+Confirm or activate the fallback by Week 5 and conduct the main review in Week 7. Scheduling does
+not block early development; actual feedback and bounded approved changes remain later deliverables.
+Plan 12's P12-01 through P12-12 were approved on 2026-09-18 (D-254). All twelve designs are approved.
+The focused prerequisite review and first implementation/experiment sequence are in
+`docs/capstone/IMPLEMENTATION-START.md`. G0-design permits bounded environment/fixture/test setup;
+full G0 additionally requires clean runnable verification, which is still pending. G2 gates
+PANORAMA/mixed-source work, not a PanTS-only baseline that satisfies its own G1/G3/run prerequisites.
+The September 18 historical-environment 13-test diagnostic was followed by the September 19 clean
+37-test baseline and 30 contract checks described above. These are not capstone model validation.
+No workflow code, capstone training, release, or submission has been produced. Archive downloading
+is a separately authorized operational step, not Plan 04 implementation or model experimentation.
+Next: reviewed Git checkpoint, supported Node/UI baseline and remaining core cross-record tests,
+with fresh acquisition and subsequent safe extraction/source reconciliation in parallel.
+The Plan 04 walkthrough/explicit coding authorization is still mandatory. Quinton explicitly chose
+to keep `PROWL-Data` unencrypted on 2026-09-18 (D-256); no encryption/reformat action or further
+encryption decision is needed. The scoped independent backup target/budget is resolved under D-258;
+routine backup automation and later keeper/release restore qualification remain work to implement.
+The official ten-week course starts October 5, confirmed by Quinton; September 7 was the planning
+baseline, not course Week 1. See `docs/capstone/IMPLEMENTATION-START.md` for the current handoff.
+Design approval alone does not authorize reformatting, deletion, paid compute, or remote upload.
+Plan 03 execution remains gated on mounting and pinning the PANORAMA CT and label snapshots. Do not use
+arbitrary `outputs/splits/*.txt` files for capstone work.
+Historical `scaled300.txt`, `scaled600.txt`, and `scaledmax.txt` contain accepted validation members
+and are nonconforming training inputs. Plan 02 requires registered, frozen cohort IDs with parent/role
+validation; see `docs/capstone/data/CURRENT-INVENTORY.md`.
+
 ## Hardware & environment (important)
 - **14" MacBook Pro, Apple M5 Pro** — 18-core CPU, **20-core GPU**, 16-core Neural Engine.
 - **64 GB unified memory** (shared CPU/GPU — no separate VRAM limit; generous for 3D patches).
-- **1 TB SSD** internal; dataset lives on an **external drive** (~340 GB), NOT on the laptop or in the repo.
+- **1 TB SSD** internal; the historical dataset belongs on the old external drive and the new 4 TB
+  drive is intended for capstone data/artifacts, not inside the repository. Current mount details are
+  recorded in `docs/capstone/operations/CURRENT-STORAGE-INVENTORY.md`.
 - **Apple Silicon → PyTorch MPS backend, NOT CUDA.** Implications for tomorrow:
   - Use `device = "mps"`; some MONAI/PyTorch ops fall back to CPU on MPS (set `PYTORCH_ENABLE_MPS_FALLBACK=1`).
   - Mixed precision (`autocast`) support on MPS is partial — validate before relying on it; may keep fp32.
@@ -42,7 +167,7 @@ Never commit raw data · split by patient not slice · full-volume sliding-windo
 
 **Data acquisition COMPLETE (2026-07-01):** full PanTS Mini on the external drive at `/Volumes/JHU-PanTS/PanTS/data/` — **9,000 train images** (`ImageTr/`), **901 test images** (`ImageTe/`), all ~9,901 label sets (`LabelAll/<id>/segmentations/` + `combined_labels.nii.gz`), `metadata.xlsx`. 382 GiB used, 83 GiB free. Layout + manifest design finalized in `docs/data-pipeline.md`. (Gotcha for next time: macOS BSD `tar` rejects the scripts' `--checkpoint` flag → extract with plain `tar -xzf`; keep drive connected + lid open during long ops.)
 
-**Pipeline code (2026-07-01):** `src/utils/` (config/seed/paths) + `scripts/build_manifest.py` + `scripts/create_splits.py` written, tested on synthetic, and RUN on real data. Real facts locked: **no patient id in metadata → each scan = its own case/patient** (case==patient RESOLVED); metadata join key = `PanTS ID`; **tumor prevalence 10.4%** (1,033/9,901); lesion volume 2–732,388 mm³ (median ~4,700); splits = **7,200 train / 1,800 val (both 9.8% tumor) / 901 official test (16.8%)** + dev subset 100 @ 50%. Manifest → `outputs/manifest.csv` (29 cols); splits → `outputs/splits/`.
+**Pipeline code (2026-07-01):** `src/utils/` (config/seed/paths) + `scripts/build_manifest.py` + `scripts/create_splits.py` written, tested on synthetic, and RUN on real data. Previous-project handling: **no patient id in metadata → each scan was used as its own case/patient grouping key**. For the capstone this remains usable but is recorded honestly as an unverified study-as-subject fallback, not proof of biological uniqueness. Metadata join key = `PanTS ID`; **tumor prevalence 10.4%** (1,033/9,901); lesion volume 2–732,388 mm³ (median ~4,700); splits = **7,200 train / 1,800 val (both 9.8% tumor) / 901 official test (16.8%)** + dev subset 100 @ 50%. Manifest → `outputs/manifest.csv` (29 cols); splits → `outputs/splits/`.
 
 **Data pipeline VALIDATED end-to-end (2026-07-01):** `src/data/transforms.py` + `dataset.py` written; `sanity_check_case.py` RAN on real case PanTS_00001070 and PASSED (**Week 1 milestone hit**) — resampled 190×134×131 @1.5mm, intensities [0,1], label {0=bg,1=panc,2=lesion} with lesion ~0.04% of volume, 96³ patches with 3/4 containing lesion (pos sampling works), overlays correct. Data pipeline (manifest→splits→transforms→patches) DONE.
 

@@ -1,15 +1,32 @@
 # ---- Raw data — NEVER commit (hard constraint; lives on the external drive) ----
-data/
+/data/
+/ui/public/cases/
 *.nii
 *.nii.gz
 *.tar.gz
 *.xlsx
+*.dcm
+*.dicom
+*.nrrd
+*.mha
+*.mhd
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.zip
+*.tar
+*.tgz
+*.7z
+*.part
+*.partial
 
 # ---- Pretrained weights & checkpoints (large) ----
 pretrained_weights/
 *.pth
 *.pt
 *.ckpt
+*.safetensors
 
 # ---- Outputs: predictions, figures, checkpoints, logs, peek images ----
 outputs/
@@ -49,7 +66,26 @@ week3/*.jpg
 
 # ---- Env & OS ----
 .env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite*-wal
+*.sqlite*-shm
 .DS_Store
+
+# ---- Local reference material ----
+# Bibliographies, checksums, and public links belong in references/. Large or
+# licensed source files may be kept locally here without entering version control.
+/references/local/
+
+# Machine-specific storage paths/volume IDs; example and schema stay reviewable.
+/configs/local/roots.yaml
 
 # ---- Vite build artifacts (auto-generated; preserved locally in ui/.vite-cache/) ----
 ui/.vite-cache/

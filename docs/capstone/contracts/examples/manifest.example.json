@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "manifest_id": "manifest:pants-v1:222222222222",
+  "derivation_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "created_at": "2026-09-08T18:30:00Z",
+  "source_snapshot_ids": ["snapshot:pants:123456789abc"],
+  "record_schema_versions": {
+    "subject": "1.0.0",
+    "study": "1.0.0",
+    "annotation": "1.0.0",
+    "issue": "1.0.0"
+  },
+  "records": {
+    "subjects": { "uri": "manifests/manifest-pants-v1-222222222222/subjects.jsonl", "content_sha256": "3333333333333333333333333333333333333333333333333333333333333333", "bytes": 990100, "count": 9901 },
+    "studies": { "uri": "manifests/manifest-pants-v1-222222222222/studies.jsonl", "content_sha256": "4444444444444444444444444444444444444444444444444444444444444444", "bytes": 1980200, "count": 9901 },
+    "annotations": { "uri": "manifests/manifest-pants-v1-222222222222/annotations.jsonl", "content_sha256": "5555555555555555555555555555555555555555555555555555555555555555", "bytes": 3960400, "count": 19802 },
+    "issues": { "uri": "manifests/manifest-pants-v1-222222222222/issues.jsonl", "content_sha256": "6666666666666666666666666666666666666666666666666666666666666666", "bytes": 0, "count": 0 }
+  },
+  "build": {
+    "run_id": "run:10d1c56e-9e36-4a1e-9ca4-c9a4f26b787e",
+    "component_version": "1.0.0",
+    "config_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+    "git_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "dirty": false,
+    "diff_sha256": null
+  },
+  "reconciliation": {
+    "discovered": 9901,
+    "reconciled": 9901,
+    "eligible": 9901,
+    "excluded": 0,
+    "quarantined": 0,
+    "blocking_issue_count": 0
+  },
+  "status": "complete"
+}

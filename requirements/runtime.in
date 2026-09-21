@@ -1,0 +1,14 @@
+# PROWL foundation: reviewed direct imports for the unchanged CPU test baseline.
+# Scientific pins match the preserved historical environment for comparison;
+# this is NOT yet the complete training/retrieval/serving environment.
+# Extend intentionally with component tests; do not install legacy requirements wholesale.
+torch==2.13.0
+monai==1.6.0
+numpy==2.5.1
+pandas==2.3.3
+scipy==1.18.0
+scikit-image==0.26.0
+nibabel==5.4.2
+PyYAML==6.0.3
+fastapi==0.141.1
+pydantic==2.13.4

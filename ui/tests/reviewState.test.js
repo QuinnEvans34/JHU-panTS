@@ -1,0 +1,58 @@
+import { describe, expect, it } from 'vitest'
+import { makeReviewState, reviewReducer } from '../src/lib/reviewState.js'
+import { objectLabel, sourcesForEvidence, visibleSourcesForEvidence } from '../src/lib/viewerLayers.js'
+
+describe('historical presentation reducer (not durable review persistence)', () => {
+  it('starts unmarked cases in 2D CT', () => {
+    expect(makeReviewState()).toMatchObject({ viewMode: '2d', evidenceMode: 'ct', selectedObject: null })
+    expect(makeReviewState({ hasPrediction: true }).evidenceMode).toBe('prediction')
+  })
+  it('case change clears the previous case display state', () => {
+    const old = { ...makeReviewState(), viewMode: '3d', selectedObject: { anatomy: 'lesion' }, overlayOpacity: 0.1 }
+    expect(reviewReducer(old, { type: 'CASE_CHANGED', hasPrediction: false })).toEqual(makeReviewState())
+  })
+  it('live prediction advances CT without wiping selected plane or opacity', () => {
+    const old = { ...makeReviewState(), activePlane: 'axial', overlayOpacity: 0.1 }
+    expect(reviewReducer(old, { type: 'PREDICTION_READY' })).toMatchObject({ evidenceMode: 'prediction', activePlane: 'axial', overlayOpacity: 0.1 })
+    expect(old.evidenceMode).toBe('ct')
+  })
+  it('live prediction does not override a chosen comparison mode', () => {
+    const old = { ...makeReviewState(), evidenceMode: 'overlap' }
+    expect(reviewReducer(old, { type: 'PREDICTION_READY' })).toBe(old)
+  })
+  it.each([['3d', 'rotate'], ['2d', 'navigate']])('mode %s uses %s interaction', (value, interactionMode) => {
+    expect(reviewReducer(makeReviewState(), { type: 'SET_VIEW_MODE', value })).toMatchObject({ viewMode: value, interactionMode, settingsOpen: false })
+  })
+  it('toggles a layer without mutating its input', () => {
+    const old = makeReviewState()
+    expect(reviewReducer(old, { type: 'TOGGLE_LAYER', layer: 'pred' }).layerVisibility.pred).toBe(false)
+    expect(old.layerVisibility.pred).toBe(true)
+  })
+  it('selection makes its anatomy and source visible', () => {
+    const old = { ...makeReviewState(), layerVisibility: { lesion: false, gt: false } }
+    expect(reviewReducer(old, { type: 'SELECT_OBJECT', value: { anatomy: 'lesion', source: 'gt' } })).toMatchObject({ anatomyFocus: 'lesion', sourceFocus: 'gt', layerVisibility: { lesion: true, gt: true } })
+  })
+  it('reset preserves evidence/view mode but resets focus and increments token', () => {
+    const old = { ...makeReviewState(), viewMode: '3d', evidenceMode: 'overlap', anatomyFocus: 'lesion', resetToken: 2 }
+    expect(reviewReducer(old, { type: 'RESET_VIEW' })).toMatchObject({ viewMode: '3d', evidenceMode: 'overlap', anatomyFocus: 'all', resetToken: 3, interactionMode: 'rotate' })
+  })
+  it('unknown actions leave state unchanged', () => {
+    const old = makeReviewState()
+    expect(reviewReducer(old, { type: 'UNKNOWN' })).toBe(old)
+  })
+})
+
+describe('source presentation helpers', () => {
+  it.each([['ct', []], ['prediction', ['pred']], ['truth', ['gt']], ['overlap', ['pred', 'gt']]])('%s exposes the expected source set', (mode, expected) => {
+    expect(sourcesForEvidence(mode)).toEqual(expected)
+  })
+  it('layer visibility and difference mode suppress ordinary sources', () => {
+    expect(visibleSourcesForEvidence('overlap', 'both', { pred: false, gt: true })).toEqual(['gt'])
+    expect(visibleSourcesForEvidence('overlap', 'difference', { pred: true, gt: true })).toEqual([])
+  })
+  it('labels prediction, reference, and difference distinctly', () => {
+    expect(objectLabel({ source: 'pred', anatomy: 'lesion' })).toBe('Prediction lesion')
+    expect(objectLabel({ source: 'gt', anatomy: 'lesion' })).toBe('Reference lesion')
+    expect(objectLabel({ source: 'difference', region: 'predOnly', anatomy: 'lesion' })).toBe('Prediction only · lesion')
+  })
+})

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/subject-record/1.0.0",
+  "title": "PROWL source-scoped subject record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "subject_id",
+    "source_snapshot_id",
+    "source",
+    "source_subject_id",
+    "identity_method",
+    "identity_assurance",
+    "status",
+    "issue_ids"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "subject_id": { "$ref": "#/$defs/subjectId" },
+    "source_snapshot_id": { "$ref": "#/$defs/snapshotId" },
+    "source": { "$ref": "#/$defs/sourceKey" },
+    "source_subject_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "identity_method": { "enum": ["source_subject_id", "study_as_subject_fallback"] },
+    "identity_assurance": { "enum": ["source_asserted", "direct_metadata", "unverified_unique"] },
+    "status": { "enum": ["reconciled", "excluded", "quarantined"] },
+    "issue_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/issueId" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "identity_method": { "const": "study_as_subject_fallback" } }, "required": ["identity_method"] },
+      "then": { "properties": { "identity_assurance": { "const": "unverified_unique" } } }
+    },
+    {
+      "if": { "properties": { "status": { "enum": ["excluded", "quarantined"] } }, "required": ["status"] },
+      "then": { "properties": { "issue_ids": { "minItems": 1 } } }
+    }
+  ],
+  "$defs": {
+    "sourceKey": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}$" },
+    "subjectId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:subject:[A-Za-z0-9._-]{1,160}$" },
+    "snapshotId": { "type": "string", "pattern": "^snapshot:[a-z][a-z0-9_-]{1,31}:[0-9a-f]{12,64}$" },
+    "issueId": { "type": "string", "pattern": "^issue:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "cohort_id": "cohort:capstone-pants-train:v1",
+  "study_id": "pants:study:PanTS_00009005",
+  "subject_id": "pants:subject:PanTS_00009005",
+  "source": "pants",
+  "protected_role": "train",
+  "protection_group_id": null,
+  "target": "pancreatic_lesion",
+  "target_status": "positive",
+  "annotation_ids": [
+    "pants:annotation:PanTS_00009005-pancreas-v1",
+    "pants:annotation:PanTS_00009005-lesion-v1"
+  ],
+  "inclusion_reason": "fixed_migration",
+  "source_order_key": "pants:study:PanTS_00009005"
+}

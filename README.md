@@ -1,5 +1,11 @@
 # PanTS Review — 3D Pancreatic Lesion Segmentation
 
+> **Capstone phase active (2026-09-07):** the completed five-week project documented below is the
+> technical foundation for **PROWL — Pancreatic Review and Outlining Workflow for Lesions**. The
+> approved capstone scope, governing plan, and implementation-document index are in
+> [`docs/capstone/README.md`](docs/capstone/README.md). The previous trained model is a reference
+> result only; the capstone will train and evaluate new models.
+
 A 3D deep-learning system that takes an abdominal CT scan, segments the **pancreas** and any
 **pancreatic lesion**, and flags *"there could be a tumor here"* for a radiologist to review.
 Built on the Johns Hopkins **PanTS** dataset with MONAI/PyTorch, served through a FastAPI endpoint,
@@ -180,12 +186,23 @@ training split ever touches validation, and atomic identity-verified resumable t
 
 ---
 
-## Setup
+## Current capstone setup
+
+Use [`requirements/README.md`](requirements/README.md) for the locked capstone foundation
+environment and [`docs/capstone/README.md`](docs/capstone/README.md) for current implementation
+plans. Before project commands, run `python3 scripts/diagnostics/check_workspace.py` from the
+intended repository root. This check is a location sanity check, not an access-control sandbox.
+See the [relocation record](docs/capstone/operations/RELOCATION-2026-09-20.md) after moving a checkout.
+
+## Historical five-week project setup
+
+The instructions below document the earlier project; do not install them over the capstone
+environment or treat the old drive paths as current source locations.
 
 ### 1. Clone and install
 
 ```bash
-git clone <this-repo> && cd Neuro-data
+git clone https://github.com/QuinnEvans34/JHU-panTS.git PROWL && cd PROWL
 python3.12 -m venv .venv312 && source .venv312/bin/activate
 pip install -r requirements.txt
 ```

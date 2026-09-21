@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "cohort_id": "cohort:capstone-pants-train:v1",
+  "derivation_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "cohort_family_id": "capstone-pants-v1",
+  "purpose": "training",
+  "protected_role": "train",
+  "parent_cohort_ids": ["cohort:pants-publisher-train:v1"],
+  "ancestor_cohort_ids": ["cohort:pants-publisher-train:v1"],
+  "manifest_ids": ["manifest:pants-v1:222222222222"],
+  "definition": {
+    "selection_method": "fixed_membership",
+    "group_by": "subject_id",
+    "study_policy": "all_studies",
+    "filters": ["status == eligible", "source_partition == publisher_train"],
+    "stratify_fields": ["target_status"],
+    "seed": 42,
+    "requested_study_count": 7200,
+    "requested_subject_count": 7200,
+    "shortage_policy": "fail",
+    "config_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+    "migration_input_sha256": "bfc827ac52346e4636ed3a58581d5f55a9f1e80983bbfd6228c928babd519fc8"
+  },
+  "members": {
+    "uri": "cohorts/cohort-capstone-pants-train-v1/members.jsonl",
+    "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "bytes": 1440000,
+    "count": 7200
+  },
+  "profile": {
+    "uri": "cohorts/cohort-capstone-pants-train-v1/profile.json",
+    "content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "bytes": 4096,
+    "count": 1
+  },
+  "study_count": 7200,
+  "subject_count": 7200,
+  "state": "frozen",
+  "frozen_at": "2026-09-08T19:00:00Z"
+}

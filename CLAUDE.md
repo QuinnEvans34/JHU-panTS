@@ -1,5 +1,43 @@
 # CLAUDE.md — Agent Context
 
+> **Plan 04 update — 2026-09-20:** Quinton accepted the orchestration and Prefect/alternatives
+> walkthrough. Explanation is no longer pending; explicit coding authorization remains required.
+> Prefect-first four-hour evaluation with a repository-runner fallback is reaffirmed; tested
+> temporary local services are acceptable, not cloud or a required manually maintained server.
+> D-201 remains open until the spike. Older explanation-gate references below are historical.
+> Stakeholder preparation is deferred at Quinton's request until participant confirmation or his
+> request for help; radiologist contacted, reply pending. Do not expand the provisional agenda now.
+
+**Required workspace rules:** Read and follow
+[`docs/capstone/operations/WORKSPACE-SAFETY.md`](docs/capstone/operations/WORKSPACE-SAFETY.md)
+before writes. Missing project paths mean stop, not recreate; verify existing configuration before
+replacing it; preserve suspected duplicates until reviewed. This shared agreement applies to all
+PROWL agents and does not grant access to unrelated projects.
+
+## Active project: PROWL capstone
+
+Start with [`docs/capstone/README.md`](docs/capstone/README.md), then the current
+implementation handoff and the component plan. That hub defines the approved source-of-truth
+hierarchy; the five-week project notes below are historical evidence, not current commitments.
+The official ten-week course starts October 5, 2026. Preserve all earlier proposal versions,
+experiment records, and user changes. Keep `docs/experiments.md` living: record the plan before
+each experiment and the outcome of every attempt afterward.
+
+Before edits or project commands, confirm the intended checkout with `pwd` and
+`git rev-parse --show-toplevel`, then run `python3 scripts/diagnostics/check_workspace.py`
+from that root. If these identify another project, stop and select the intended workspace.
+The current local checkout is `/Users/quintonevans/Desktop/Quinn/Desktop-Quinn/GitHub/PROWL`;
+this is a location record, not a path to hardcode into application code. Do not create an
+old-path symlink to conceal stale settings. Keep unrelated projects in separate workspaces.
+
+Use `.venv-prowl` and `requirements/README.md` for the capstone test foundation; `.venv312`
+is historical. Use the current storage registry for data, not the failed JHU-PanTS drive.
+Downloaded archives are not automatically validated training inputs. Readiness gates in
+the component plans still apply, including explaining Plan 04 to Quinton before its code.
+See `docs/capstone/operations/RELOCATION-2026-09-20.md` for this move's verification and limits.
+
+## Historical five-week project context (preserved)
+
 Context file so any AI session picks up this project correctly. Keep updated as things change.
 
 ## Project

@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "issue_id": "issue:3dd5df43-ff72-4a56-bda1-1d26a2b4b6bc",
+  "rule_code": "LEGACY_PARENT_VIOLATION",
+  "entity_type": "cohort",
+  "entity_id": "legacy-list:scaled300",
+  "severity": "blocking",
+  "disposition": "quarantine",
+  "message": "The historical training list contains studies assigned to the accepted validation role.",
+  "evidence": [
+    {
+      "kind": "cohort_membership",
+      "reference": "54 study IDs overlap outputs/splits/val.txt in the 2026-09-08 audit."
+    }
+  ],
+  "created_at": "2026-09-08T18:00:00Z",
+  "supersedes_issue_id": null,
+  "resolution_artifact_id": null
+}

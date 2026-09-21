@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/cohort-member/1.0.0",
+  "title": "PROWL cohort member record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "cohort_id",
+    "study_id",
+    "subject_id",
+    "source",
+    "protected_role",
+    "protection_group_id",
+    "target",
+    "target_status",
+    "annotation_ids",
+    "inclusion_reason",
+    "source_order_key"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "cohort_id": { "$ref": "#/$defs/cohortId" },
+    "study_id": { "$ref": "#/$defs/studyId" },
+    "subject_id": { "$ref": "#/$defs/subjectId" },
+    "source": { "$ref": "#/$defs/sourceKey" },
+    "protected_role": { "enum": ["train", "validation", "test", "none"] },
+    "protection_group_id": { "type": ["string", "null"], "maxLength": 240 },
+    "target": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+    "target_status": { "enum": ["positive", "negative", "unknown"] },
+    "annotation_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/annotationId" }
+    },
+    "inclusion_reason": { "enum": ["source_pool", "fixed_migration", "sampled_stratum", "related_study", "adjudicated"] },
+    "source_order_key": { "type": "string", "minLength": 1, "maxLength": 240 }
+  },
+  "$defs": {
+    "sourceKey": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}$" },
+    "cohortId": { "type": "string", "pattern": "^cohort:[a-z][a-z0-9_-]{1,63}:v[1-9][0-9]*$" },
+    "subjectId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:subject:[A-Za-z0-9._-]{1,160}$" },
+    "studyId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:study:[A-Za-z0-9._-]{1,160}$" },
+    "annotationId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,31}:annotation:[A-Za-z0-9._-]{1,180}$" }
+  }
+}

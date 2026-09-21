@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0.0",
+  "case_package_id": "case-package:19a6d149e71f",
+  "derivation_sha256": "19a6d149e71f19a6d149e71f19a6d149e71f19a6d149e71f19a6d149e71f19a6",
+  "created_at": "2026-09-08T16:00:00Z",
+  "study": {
+    "study_id": "pants:study:PanTS_00009005",
+    "subject_id": "pants:subject:PanTS_00009005",
+    "source": "pants",
+    "display_label": "Study 00009005",
+    "ct": {
+      "uri": "files/ct.nii.gz",
+      "media_type": "application/gzip",
+      "content_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "bytes": 1048576,
+      "shape": [512, 512, 240],
+      "dtype": "int16"
+    },
+    "spacing_mm": [0.8, 0.8, 1.5]
+  },
+  "prediction": {
+    "prediction_id": "prediction:0e98c21d12ca",
+    "prediction_mode": "autonomous",
+    "model_version_id": "model:prowl-baseline:4b9d8d8f34b1",
+    "inference_config_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "derivation_sha256": "0e98c21d12ca0e98c21d12ca0e98c21d12ca0e98c21d12ca0e98c21d12ca0e98",
+    "created_at": "2026-09-08T15:59:00Z",
+    "status": "completed_with_warnings",
+    "localization": {
+      "status": "localized",
+      "confidence": 0.82,
+      "box_voxel_xyzxyz": [140, 175, 60, 390, 340, 190]
+    },
+    "files": {
+      "pancreas_mask": {
+        "uri": "files/pancreas-prediction.nii.gz",
+        "media_type": "application/gzip",
+        "content_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "bytes": 65536,
+        "shape": [512, 512, 240],
+        "dtype": "uint8"
+      },
+      "lesion_mask": {
+        "uri": "files/lesion-prediction.nii.gz",
+        "media_type": "application/gzip",
+        "content_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "bytes": 32768,
+        "shape": [512, 512, 240],
+        "dtype": "uint8"
+      },
+      "display_manifest": {
+        "uri": "files/display-manifest.json",
+        "media_type": "application/json",
+        "content_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "bytes": 2048
+      }
+    },
+    "failure_code": null
+  },
+  "measurements": {
+    "lesion_present": true,
+    "lesion_count": 1,
+    "lesion_volume_mm3": 5420.0,
+    "pancreas_volume_mm3": 78300.0,
+    "maximum_lesion_diameter_mm": 21.8,
+    "review_score": 0.73,
+    "review_score_method": "baseline_probability_volume_v1",
+    "component_measurements_uri": "files/lesion-components.json"
+  },
+  "structured_finding": {
+    "anatomy": "pancreas",
+    "suspected_lesion": true,
+    "location": "pancreatic head",
+    "maximum_diameter_mm": 21.8,
+    "contrast_phase": "portal venous",
+    "measurement_source": "model_prediction"
+  },
+  "warnings": [
+    {
+      "code": "LOCALIZATION_MODERATE_CONFIDENCE",
+      "severity": "caution",
+      "message": "The predicted pancreas region should be reviewed before accepting the contours."
+    }
+  ],
+  "reference": {
+    "available": true,
+    "reveal_required": true,
+    "annotation_ids": [
+      "pants:annotation:PanTS_00009005-pancreas-v1",
+      "pants:annotation:PanTS_00009005-lesion-v1"
+    ],
+    "files": {
+      "pancreas_mask": {
+        "uri": "files/reference-pancreas.nii.gz",
+        "media_type": "application/gzip",
+        "content_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "bytes": 65536,
+        "shape": [512, 512, 240],
+        "dtype": "uint8"
+      },
+      "lesion_mask": {
+        "uri": "files/reference-lesion.nii.gz",
+        "media_type": "application/gzip",
+        "content_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "bytes": 32768,
+        "shape": [512, 512, 240],
+        "dtype": "uint8"
+      }
+    },
+    "evaluation_id": "evaluation:6ae20a9c5164"
+  },
+  "evidence_response_ids": [],
+  "lineage": {
+    "source_snapshot_id": "snapshot:pants:123456789abc",
+    "manifest_id": "manifest:unified:222222222222",
+    "cohort_id": "cohort:capstone-test:v1",
+    "model_run_id": "run:10d1c56e-9e36-4a1e-9ca4-c9a4f26b787e",
+    "model_content_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "code_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "dirty_source_sha256": null
+  }
+}
