@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prowl.local/schemas/annotation-record/2.0.0",
+  "title": "PROWL original-source annotation with measured encoding and provenance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "annotation_id", "study_id", "source_snapshot_id", "source", "structure", "source_structure", "file", "annotation_version", "method", "validation_status", "allowed_uses", "label_encoding", "provenance", "status", "issue_ids"],
+  "properties": {
+    "schema_version": {"const": "2.0.0"},
+    "annotation_id": {"$ref": "https://prowl.local/schemas/annotation-record/1.0.0#/$defs/annotationId"},
+    "study_id": {"$ref": "https://prowl.local/schemas/annotation-record/1.0.0#/$defs/studyId"},
+    "source_snapshot_id": {"$ref": "https://prowl.local/schemas/annotation-record/1.0.0#/$defs/snapshotId"},
+    "source": {"$ref": "https://prowl.local/schemas/annotation-record/1.0.0#/$defs/sourceKey"},
+    "structure": {"enum": ["pancreas", "lesion"]},
+    "source_structure": {"type": "string", "minLength": 1},
+    "file": {"$ref": "#/$defs/file"},
+    "annotation_version": {"type": "string", "minLength": 1},
+    "method": {"enum": ["human_manual", "human_validated", "machine_generated", "unknown"]},
+    "validation_status": {"enum": ["source_asserted", "project_verified", "unverified", "rejected"]},
+    "allowed_uses": {"type": "array", "uniqueItems": true, "items": {"enum": ["training_target", "crop_reference", "evaluation_reference", "display_reference"]}},
+    "status": {"enum": ["eligible", "excluded", "quarantined"]},
+    "issue_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "https://prowl.local/schemas/annotation-record/1.0.0#/$defs/issueId"}},
+    "label_encoding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["representation", "audit_file", "audit_source_sha256", "values_basis", "value_counts", "voxel_count", "stored_range", "effective_scaling", "mapping"],
+      "properties": {
+        "representation": {"const": "original_source"},
+        "audit_file": {"$ref": "#/$defs/file"},
+        "audit_source_sha256": {"$ref": "#/$defs/hash"},
+        "values_basis": {"enum": ["stored", "nifti_scaled_semantic"]},
+        "value_counts": {"type": "array", "minItems": 1, "maxItems": 1024, "items": {
+          "type": "object", "additionalProperties": false, "required": ["value", "count"],
+          "properties": {"value": {"type": "number"}, "count": {"type": "integer", "minimum": 1}}
+        }},
+        "voxel_count": {"type": "integer", "minimum": 1},
+        "stored_range": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+        "effective_scaling": {
+          "type": "object", "additionalProperties": false, "required": ["slope", "intercept"],
+          "properties": {"slope": {"type": "number", "not": {"const": 0}}, "intercept": {"type": "number"}}
+        },
+        "mapping": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "object", "additionalProperties": false,
+             "required": ["status", "policy_id", "policy_sha256", "input_basis", "kind", "absolute_tolerance", "relative_tolerance", "canonical_foreground", "approval_file"],
+             "properties": {
+               "status": {"enum": ["proposed", "approved"]},
+               "policy_id": {"type": "string", "minLength": 1},
+               "policy_sha256": {"$ref": "#/$defs/hash"},
+               "input_basis": {"const": "nifti_scaled_semantic"},
+               "kind": {"const": "binary_zero_one_endpoints"},
+               "absolute_tolerance": {"type": "number", "minimum": 0, "exclusiveMaximum": 0.5},
+               "relative_tolerance": {"const": 0},
+               "canonical_foreground": {"enum": [1, 2]},
+               "approval_file": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/file"}]}
+             }}
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "evidence_files", "release_applicability", "allowed_use_decision_file"],
+      "properties": {
+        "scope": {"enum": ["unknown", "publisher_protocol", "per_file_review"]},
+        "evidence_files": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/file"}},
+        "release_applicability": {"enum": ["unresolved", "confirmed"]},
+        "allowed_use_decision_file": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/file"}]}
+      }
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file": {"$ref": "https://prowl.local/schemas/annotation-record/1.0.0#/$defs/fileReference"}
+  }
+}

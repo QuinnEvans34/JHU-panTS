@@ -1,0 +1,697 @@
+{
+  "format": "prowl-git-checkpoint-review-v1",
+  "base_commit": "f4d7109b466fc12854be4a86c9893750399a0672",
+  "remote": "https://github.com/QuinnEvans34/JHU-panTS",
+  "visibility": "public",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 47661,
+      "sha256": "11830fb78a6d421e1b42d2f8792d5f87d468d196e6413cca09d05612eb9fcfec",
+      "change": "modified"
+    },
+    {
+      "path": "configs/local/roots.example.yaml",
+      "bytes": 1967,
+      "sha256": "2fac7e4696da0601313794416c3c38928add9e14309bd5343ac8bb2250c8d9d1",
+      "change": "modified"
+    },
+    {
+      "path": "configs/local/roots.schema.json",
+      "bytes": 3752,
+      "sha256": "89c44a791273b043898eb04d6749e868caae11e965317b1dba2c41166afbb6cf",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/CODEX-HANDOFF-2026-09-28.md",
+      "bytes": 9405,
+      "sha256": "2e82a8955ce390713aafcef6880d839e79c59fd69784db8b3f36ba1dbd23031d",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/DECISIONS.md",
+      "bytes": 57337,
+      "sha256": "04ba0dff9af23fdc0842ae15f6d2dbe96bb3c81444f6d0e9d667b3a62afd5d82",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/IMPLEMENTATION-START.md",
+      "bytes": 19713,
+      "sha256": "c27d8973d8625bf953b98b4b0774f167b692175fcc5ffcb68f0b17f6279a269a",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/README.md",
+      "bytes": 13260,
+      "sha256": "3933de772b2ba3eba658518fe20e637723799984e71dab446bd0f23c599d6b2b",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/contracts/VALIDATION.md",
+      "bytes": 2645,
+      "sha256": "7d2dc6fba51b064dbdbfe0ae992d9c9e2cc0d8bbaa772a843a7ee9eddb5f9fc7",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/contracts/annotation-record-v2.schema.json",
+      "bytes": 4703,
+      "sha256": "215e18b3537a17bc63ecb4006a75da9f4e7c286c2553b2722876ccaa4afd79f4",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/contracts/manifest-v2.schema.json",
+      "bytes": 5261,
+      "sha256": "dfcdbfe789d90477ccdd6b18535ceeeb8ff03cea914b266b5531573ced1bee06",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/ANNOTATION-ASSESSMENT-2026-09-28.md",
+      "bytes": 3865,
+      "sha256": "fd4ad07fafa10ee4cc80d6f31db98b0267fb0940818c8bbfedda9ce0fc4751db",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/ANNOTATION-CONTRACT-V2-2026-09-28.md",
+      "bytes": 5242,
+      "sha256": "6a88cfea60d3bba6758f2800ba646bc4719f40e9f1dc44fa11f8602b501b1da1",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/BINARY-DECODING-APPROVAL-2026-09-28.md",
+      "bytes": 2217,
+      "sha256": "3929e0e359d1aa1d4a5cc5a0066285699821ed648bbe87bfdcbc2bc2bead6de3",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/BINARY-POLICY-LINEAGE-2026-09-28.md",
+      "bytes": 6146,
+      "sha256": "5d58c9dcd761d5380a32b2f67ab11f9555723b89c9b7c169d3b177754718196c",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/CASE78-COVERAGE-REVIEW-2026-09-28.md",
+      "bytes": 3174,
+      "sha256": "d5ac2b95a4b60f523ea4b75a25863d2b2473f314fe2c3df910f79ec30d43dbdc",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/LAYOUT-INVENTORY-2026-09-22.md",
+      "bytes": 4901,
+      "sha256": "4a32da51b3c2cba15a4be154f771985f077fe44581fdfda716f9c649eccd6f33",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/LINKED-ASSESSMENTS-2026-09-28.md",
+      "bytes": 4474,
+      "sha256": "85bad8ac02923398c3bc4472f954467be9623965b99f1ab32ff36eee591fb091",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/MANIFEST-ASSEMBLY-2026-09-28.md",
+      "bytes": 3527,
+      "sha256": "3e0e2d76e457fac3e8b6913dbccfa2cdc45079aacfc6dbab44282faef3f366db",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/MANIFEST-SLICE-2026-09-28.md",
+      "bytes": 5030,
+      "sha256": "40db8702b104ba01b70e4ec9a2d180d6380f52a5eec74194526f97715d089961",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/MANIFEST-V2-SLICE-2026-09-28.md",
+      "bytes": 4991,
+      "sha256": "976f5804ec56a84b3930f2df36b057b9ccaef9172902d89b58a5596e29d99dcf",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/METADATA-ADAPTER-2026-09-28.md",
+      "bytes": 2698,
+      "sha256": "4f7ac1a72d6880506f1279089963d5718e3c5fa525088816f24d4f9cd971779c",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/OBSERVED-LAYOUT-2026-09-28.md",
+      "bytes": 11973,
+      "sha256": "29a5c783c920bcd0e6c407df447a7647dcbd2e916d7265d7e74ec4a9cf92b774",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/PANTS-ANNOTATION-REVIEW-2026-09-28.md",
+      "bytes": 6683,
+      "sha256": "9d95e327160d6f6dc82e94abc73b53537779572fa48bc82b3e1a7576ffe2345a",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/PANTS-PUBLISHER-EMAIL-DRAFT-2026-09-28.md",
+      "bytes": 3980,
+      "sha256": "e681b217c672d90c30bff9f76945c892c05becf4f7e01b8e7a806380d7af2fd8",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/PANTS-SOURCE-USE-REVIEW-2026-09-28.md",
+      "bytes": 5842,
+      "sha256": "4da0024993134d17552fd999b4fd1f45c3e436d814f2f4ae7922abfc9b57e5b0",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/PLAN-02-IMPLEMENTATION-2026-09-28.md",
+      "bytes": 3399,
+      "sha256": "3b93146f1bcbe701128722a25572114d1d716c0b12518ff59044bc7b8b5b3440",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/PURPOSE-DISPOSITION-IMPLEMENTATION-2026-09-28.md",
+      "bytes": 6817,
+      "sha256": "dbf1e291e238c68199ac9fb1c6efa301c8ff7cf6e58e8f82b699ee0098be1bee",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/PURPOSE-ELIGIBILITY-DECISIONS-2026-09-28.md",
+      "bytes": 5680,
+      "sha256": "fc6d258b7767e9d03f28d1a6e990fe325db08f84043ce06314702d1e24ed66f2",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/SOURCE-EVIDENCE-2026-09-28.md",
+      "bytes": 3778,
+      "sha256": "acf8ef82b16d25b8ab1fa418b682fda67c97f54ae004370cd12175dc440a30ba",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/SPATIAL-UNITS-REVIEW-2026-09-28.md",
+      "bytes": 4401,
+      "sha256": "04a24b3e5d0ecce50f916f8fb3116ab9df7e7b6e20a987f9628b7f06aa1d57d2",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/UNIT-EVIDENCE-INVESTIGATION-2026-09-28.md",
+      "bytes": 9733,
+      "sha256": "44685e6a4760174bba166369100ab3c1c5d818b6b39747ed4783916ce46d7ac8",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/VOXEL-AUDIT-CLAUDE-HANDOFF.md",
+      "bytes": 11925,
+      "sha256": "9e0456859d67570136235709cd1ae07834172bc4cc5baf2bf7e07b3fe3478e07",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/VOXEL-AUDIT-CODEX-REVIEW-2026-09-28.md",
+      "bytes": 6526,
+      "sha256": "936dda94d85b8226efec536c4828f3cf11cf00dbeee437958a54244b1a38ebd1",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/VOXEL-AUDIT-DESIGN.md",
+      "bytes": 12567,
+      "sha256": "69b98ae6cfcffedc36a319aa04919292f80c9108d0b7e43267894da44685b963",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/VOXEL-FOLLOWUP-PLAN-2026-09-28.md",
+      "bytes": 7295,
+      "sha256": "881afc2ef9ea7102e2bbc8468ca811ed696247336b1ca441be7f1b93c61be11f",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/VOXEL-FOLLOWUP-RESULTS-2026-09-28.md",
+      "bytes": 5993,
+      "sha256": "0eb3d44dc252a39a25f92b87a7cf7a588978aa9cb5055048762fd73bf0c479ab",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/data/VOXEL-PILOT-2026-09-28.md",
+      "bytes": 3009,
+      "sha256": "dd179b371dc9093854c8fa16d1b67c8998522f1bc8899fa3b257c75edc856399",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/implementation/02-data-and-cohorts.md",
+      "bytes": 18905,
+      "sha256": "478f637ae97f9cdad979c76b01e35bcbec01c78db05f8b46cf612983f604fd81",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/implementation/07-literature-retrieval.md",
+      "bytes": 40219,
+      "sha256": "d596d9fa18c6185b93a3c8b5ab21aa361e3a58f7d44b80e59fc0b71e5fb7d7b6",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/implementation/10-reproducibility-and-operations.md",
+      "bytes": 47846,
+      "sha256": "1517a0057aec45939cae0b4a3e776062c15152fb0fbd0de86641bf3909bf4187",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/implementation/12-integration-and-delivery.md",
+      "bytes": 28741,
+      "sha256": "994aed7e34d48f19122d5f885ea2e1ef8e6b5e8d82eea992c76fc89482aebffb",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/operations/BACKUP-RETENTION-AND-RECOVERY.md",
+      "bytes": 13876,
+      "sha256": "285047aad7a171405ea704a1361df22392bb37ce0e4ad7157658521d90a0053f",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/operations/CLAUDE-PLAN07-FOUNDATION-PACKET-2026-09-28.md",
+      "bytes": 14454,
+      "sha256": "5ba792c45bf109978101b26c24151d392edf47a53621eb92a2423a38ab080546",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/CLAUDE-PLAN07-P3-PACKET-2026-09-28.md",
+      "bytes": 10064,
+      "sha256": "46fc390c0c443c283991aef4c0d40d38c56443e28ea5bd445b1e65ba8f333dc4",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/CLAUDE-VOXEL-AUDIT-HANDOFF-2026-09-28.md",
+      "bytes": 8032,
+      "sha256": "eb1611ed23d7f8d16f7e70759ca070b4c11d3f76b4812bd645aec5c39f5365fc",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/CURRENT-CHECKPOINT.md",
+      "bytes": 9820,
+      "sha256": "9a6048917a26f3c0d470db0ca3af0e840292fd1b823afdd56ea300809ba505b7",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/DATA-ACQUISITION-QUEUE.md",
+      "bytes": 8228,
+      "sha256": "38b3d4150755cc1fa210a49305841a02f831e81804a4dc5c285bb383729d4da1",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/operations/DRIVE-PREP-2026-09-21.md",
+      "bytes": 5918,
+      "sha256": "bc6496d7839e2575d20479c8b0a191951ca5c6e2e23506802d515552a17283d8",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/EXTRACTION-BUDGET-2026-09-22.md",
+      "bytes": 3705,
+      "sha256": "d12d12ac67caa3c293fa3db531c8c7531ff4c0b50784831478e2865b530afdcb",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/EXTRACTION-DESIGN-2026-09-22.md",
+      "bytes": 14373,
+      "sha256": "db690596a6887c71e144d35a4d720ea2407dc8e08ee90523d93b2a3ef75a5bfd",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/EXTRACTION-REVIEW-2026-09-28.md",
+      "bytes": 9692,
+      "sha256": "a1792ed5815db10309631d3996442361778839cd3cb54d5a71836c32c4e95940",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/EXTRACTION-RUN-2026-09-22.md",
+      "bytes": 8018,
+      "sha256": "384fd9efbdd2b9ceb09c3178e6374c98e8ed4ac540d2e5d6d3636911389c54d8",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/FIRST-EXPERIMENT-READINESS-2026-09-28.md",
+      "bytes": 9674,
+      "sha256": "2b95fb6ce9d27675832b07b5e84d05ad8098aaec0d5e4e9aa697d3533083362d",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/GIT-CHECKPOINT-REVIEW-2026-09-28.md",
+      "bytes": 5498,
+      "sha256": "8f0ab9bbef04ced0cc9ea7581c189c118f4410663bc2dc159fb0e9fd62e2d94d",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/GIT-CHECKPOINT-SCOPE-2026-09-28.md",
+      "bytes": 16611,
+      "sha256": "9231b8c6089ee147574f6a099cddeb4801d353393dc5689220115866655e876e",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/PLAN07-CODEX-DECISION-RESPONSE-2026-09-28.md",
+      "bytes": 14232,
+      "sha256": "c5abac5436d1477259132466830595ee4aa976047ac6d658773c524eb09ffda7",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/PLAN07-INTEGRATION-HANDOFF-2026-09-28.md",
+      "bytes": 4836,
+      "sha256": "d80d3093fc99dabd7317683e515f6d3dffe2b9dc13f200bd12634c0e8f9b7b11",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/POSTGRES-PGVECTOR-DECISION-2026-09-28.md",
+      "bytes": 3557,
+      "sha256": "e792de0ea0e418ca2378ac67f6b44fbc93764b75163b7d47c7369017fcbb0461",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/STORAGE-ROOTS-AND-ARTIFACTS.md",
+      "bytes": 13032,
+      "sha256": "1cf218a2457c624de3b5212cb0ce5205528e106b53b01ed53167933992723d22",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/operations/TEAM-STATUS-2026-09-28.md",
+      "bytes": 9348,
+      "sha256": "4bbaee15da7aa00ffa6808c09dc587a00828c92be57f2726b023cbe321dc997a",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/operations/TODAY-2026-09-28.md",
+      "bytes": 14149,
+      "sha256": "14953f313af52a111c1575956568e18a7e0b67cc1016133b18c724d68e605c7b",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/retrieval/CORPUS-AND-RIGHTS.md",
+      "bytes": 10706,
+      "sha256": "6e31487428db7bc790fa9a598f2c17c61ff98137ea26824e2890f02f462cde0f",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/retrieval/QUERY-AND-RETRIEVAL.md",
+      "bytes": 7407,
+      "sha256": "5bd35e1822d694d98a7176527fba23776a24fa2d307318b0347d7ad7d0ef1b33",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/retrieval/QUESTION-SET-AND-EVALUATION.md",
+      "bytes": 11443,
+      "sha256": "7ada29f1560a96c85da8460551c2b4693ee0510baf56a58621525a6b935f428b",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/retrieval/README.md",
+      "bytes": 4122,
+      "sha256": "f41e1808e565e032dfd394bceea9ea57bfc9518d42eba625c6b1325783f1f693",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/retrieval/TOOL-SELECTION.md",
+      "bytes": 9200,
+      "sha256": "26b5439227ac000ddd705d0eb99c0124648135101d0a7775aabf450f92c23f74",
+      "change": "modified"
+    },
+    {
+      "path": "docs/capstone/retrieval/planning/ACQUISITION-PLAN.md",
+      "bytes": 12545,
+      "sha256": "39e3752005907483d60667603a520ab549f9219dcb17d213f9c6de4f9e99fd2d",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/retrieval/planning/INFORMATION-NEEDS.md",
+      "bytes": 9759,
+      "sha256": "d71577c27cebd5d54f516a7b2120273c3afba7dc077be3799bae4ccecbde8ac0",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/retrieval/planning/PHASES.md",
+      "bytes": 20393,
+      "sha256": "b4abe42d9d1b43504087175ab8f168356fd16356e6868402713ada862d1da4ca",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/retrieval/planning/RUNNING-LOG.md",
+      "bytes": 28422,
+      "sha256": "b9eb342c6b680dda352a41c7c5535c8cc63adb975b8b3c1726654116dee6d845",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/retrieval/planning/SCOPE.md",
+      "bytes": 33944,
+      "sha256": "ca9a0de192cf5d6b241c17ca1796f02b7c39b006e2e9d872afc1c3b767861672",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/retrieval/planning/SEARCH-AND-SELECTION.md",
+      "bytes": 12194,
+      "sha256": "bcddbb4b78ba6ab50be059936ecb606fb145b9a1db81f1ab58761edd30c0728c",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/retrieval/planning/SEED-SET.md",
+      "bytes": 5214,
+      "sha256": "39ee09bc8327c6bccc9f15f859ebf041345bde68385d4a3639134aa6f8f66d81",
+      "change": "new"
+    },
+    {
+      "path": "docs/capstone/weeks/WEEK-01.md",
+      "bytes": 9660,
+      "sha256": "f398ea54458556e727bb9d35c1c7104bc7569eca7f27a842466cd6a49a7727c2",
+      "change": "modified"
+    },
+    {
+      "path": "scripts/acquisition/extract_sources.py",
+      "bytes": 18650,
+      "sha256": "f5f98af94cd232e29ba7f283c132540eaceb1888c43c367190d4ff0555bbd4f2",
+      "change": "new"
+    },
+    {
+      "path": "scripts/acquisition/member_safety.py",
+      "bytes": 3642,
+      "sha256": "68f53a4ec8e8e777321667a7344edc3076674dd5c05b2ea8f319cd2b5dcb8902",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/audit_voxels.py",
+      "bytes": 37156,
+      "sha256": "f18a1a129a0fa24660241b5cb8770d2ac6807768799dd153004775eea25d1353",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/build_manifest_slice.py",
+      "bytes": 10736,
+      "sha256": "adde7757aeb5cd010bb6ef9880367e2f44b328dcfbf9347cfaa9fc1d0d481575",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/build_manifest_v2_slice.py",
+      "bytes": 10302,
+      "sha256": "d25db22f0c786edf007261723e8cc9f19283b247b4187d1a4ca21562f125b3c6",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/check_case78_coverage.py",
+      "bytes": 4647,
+      "sha256": "1ef1ebb86be8d127be2c089e4d3e1e41c9a48fa94f2dfb38ca3b23f66c5bd573",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/followup_voxel_audit.py",
+      "bytes": 11444,
+      "sha256": "9f38010c63128a569e81950dc7c5667e6b1e7afe0bcc6a745e1751d8708e835b",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/inventory_sources.py",
+      "bytes": 23904,
+      "sha256": "193cb2e751646dfe1f79ea28830c55026985294b67a11da42579d0d6473e7141",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/link_annotation_assessments.py",
+      "bytes": 3427,
+      "sha256": "8cafad84d271b124e1101f83495a62cefd5cf89f41aa362ba7999e70e5d2b709",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/pilot_voxel_audit.py",
+      "bytes": 5378,
+      "sha256": "7434cd329c9f9f7f1c972c0fc936d1e0360241528e997c3b214654bf41045874",
+      "change": "new"
+    },
+    {
+      "path": "scripts/diagnostics/scan_pants_archives.py",
+      "bytes": 7513,
+      "sha256": "e47e71073fcb30f6e394e8c3fc4acce350db6ffe442dc3f0576469bf1f4456a8",
+      "change": "new"
+    },
+    {
+      "path": "src/data/annotation_assessment.py",
+      "bytes": 4670,
+      "sha256": "a755f72813e2eb90dc6a8b6fd495eacc8190885235fc45fc0fbd7b18b64293ca",
+      "change": "new"
+    },
+    {
+      "path": "src/data/annotation_contract_v2.py",
+      "bytes": 7461,
+      "sha256": "47939ed9e02638bd91672bbb331640220354331d92442f0c50a52946729724e7",
+      "change": "new"
+    },
+    {
+      "path": "src/data/annotation_v2_records.py",
+      "bytes": 2544,
+      "sha256": "4f33bf17ee0fcaf677c79eda3a0023011e4257369c1f2232397a25887dcf3d8e",
+      "change": "new"
+    },
+    {
+      "path": "src/data/audit_assessment_link.py",
+      "bytes": 8547,
+      "sha256": "e79132dd466a973862e2d008a0ca606f0a7cd539732923a7cc3e8892647d7d6e",
+      "change": "new"
+    },
+    {
+      "path": "src/data/binary_label_policy.py",
+      "bytes": 1666,
+      "sha256": "ecdbe3e887c4b791f1079e81dcb22d804fda2e8c4b661c341ae422d90e6f4407",
+      "change": "new"
+    },
+    {
+      "path": "src/data/manifest_records.py",
+      "bytes": 7187,
+      "sha256": "090dabfc1fd7ea5879bed4d8fcc77e4b465bef210ee0652d2a6fb18daf10d5e7",
+      "change": "new"
+    },
+    {
+      "path": "src/data/manifest_records_v2.py",
+      "bytes": 7564,
+      "sha256": "b2697d9479bcfb6210a9e49a252e95d05fd18bdf72ccd3b857a88d9a4a67a4d1",
+      "change": "new"
+    },
+    {
+      "path": "src/data/pants_metadata.py",
+      "bytes": 6320,
+      "sha256": "b809e77cc97253a2ace927bbddca1dc9be5d480b1c83419ad77b7bb1ca55b4eb",
+      "change": "new"
+    },
+    {
+      "path": "src/data/protected_identity.py",
+      "bytes": 4096,
+      "sha256": "833dc2dcb2d08d355810dca23232d220d458fcb1c837cd402bbd77b8c8e5b755",
+      "change": "new"
+    },
+    {
+      "path": "src/data/source_evidence.py",
+      "bytes": 8732,
+      "sha256": "54fe5b2c5fe56696149be57ba3bd2f498e73c3144b88f90472b809306ef8433c",
+      "change": "new"
+    },
+    {
+      "path": "tests/fixtures/contracts/README.md",
+      "bytes": 1171,
+      "sha256": "b7f3735ad4394d543476d0ad85c94774035b531b8580b8298ba3cdb26a01f7fd",
+      "change": "modified"
+    },
+    {
+      "path": "tests/test_annotation_assessment.py",
+      "bytes": 3604,
+      "sha256": "c616e3ee4546a90556f236b86f57f4cf7bb8d8b52704c6da035b382a7b844cc8",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_annotation_contract_v2.py",
+      "bytes": 12043,
+      "sha256": "8eb91dfd2f981b210b9635fe2927e9bcea14cde238d26c206916e5129921a737",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_archive_scan.py",
+      "bytes": 3081,
+      "sha256": "5343274521b39bde619df4f8968ee4e270234b51169bf491a9787b1e80173d43",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_audit_assessment_link.py",
+      "bytes": 6093,
+      "sha256": "0567c97ce170538dbc23546c3b42a2fe5744ef04ebde8a3c81a7f775e9131d5a",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_binary_label_policy.py",
+      "bytes": 2696,
+      "sha256": "6a352d9e77241294356d5514aaeac6de6e3a151df589c0188b216f593ac863a4",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_case78_coverage.py",
+      "bytes": 958,
+      "sha256": "54521e03f2591384d62994aef455a7467faae39780eb361dcc9780dbc0fafd93",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_extraction.py",
+      "bytes": 17238,
+      "sha256": "68b3756e561ab079b4d455545de030a3c43846e40c72db389ec6188b5655a3c2",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_followup_voxel_audit.py",
+      "bytes": 4533,
+      "sha256": "8368f85b355e049d2dcbbf2ea452aa69f2420aadf7609ac95cc1e5549ba294c7",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_inventory.py",
+      "bytes": 17848,
+      "sha256": "d4f25f94aa877f481e620510569e73ebc0d9b37ca42e6f314a7559f77283a3ed",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_manifest_records.py",
+      "bytes": 3424,
+      "sha256": "444ec366e9b5bdaf78a261ae7e92d6c0f99928740362cdf334ec26a1ab6d5459",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_manifest_slice.py",
+      "bytes": 3249,
+      "sha256": "6fbafdcd3955a045979e7965ffef3dd2237b511241af91b1fb138ab845f7a31a",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_manifest_v2.py",
+      "bytes": 4566,
+      "sha256": "b1921dbc7af7cf6744f769bdee3fbf0d0b1a8e5f19d5b90269280b300522b039",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_member_safety.py",
+      "bytes": 6172,
+      "sha256": "3eb755632441096debd88c12293a190634fa9d32a3de668bdceab3672d41c3bd",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_pants_metadata.py",
+      "bytes": 4679,
+      "sha256": "4dc2143ffbb809e2227116843b3fcdbc5a4cd29e18244f5e9b3bec45fa707e1b",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_protected_identity.py",
+      "bytes": 2470,
+      "sha256": "bbd6a1a462920556ccb83ff5ece2440d2a03f485a28e164fad179e69e8dcce18",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_source_evidence.py",
+      "bytes": 5333,
+      "sha256": "7143f39c27706c259d9b1bc06398ce7bd2b12e99c4bde984df4fad879f481bb2",
+      "change": "new"
+    },
+    {
+      "path": "tests/test_storage_registry.py",
+      "bytes": 2425,
+      "sha256": "57f48e1a9430431ab535d6261b47f5fd56a45215999f5f36f74914cc17e6f748",
+      "change": "modified"
+    },
+    {
+      "path": "tests/test_voxel_audit.py",
+      "bytes": 36272,
+      "sha256": "b5829217402b8667cbf43b5e3e37106535bfa6b4fc72fd7a73b0cb916e18694b",
+      "change": "new"
+    }
+  ],
+  "control_file": "docs/capstone/operations/GIT-CHECKPOINT-FILES-2026-09-28.json",
+  "control_self_hash_excluded": true,
+  "excludes_active_retrieval_implementation": true,
+  "committed": false,
+  "pushed": false
+}

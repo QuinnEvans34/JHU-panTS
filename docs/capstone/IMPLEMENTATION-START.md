@@ -1,5 +1,15 @@
 # PROWL implementation start and prerequisite review
 
+## Latest execution checkpoint — September 28
+
+Read [CURRENT-CHECKPOINT](operations/CURRENT-CHECKPOINT.md) for live ownership and evidence.
+The non-retrieval native Python suite passes 587 tests. The bounded five-study diagnostic
+manifest remains quarantined; source qualification, frozen cohorts and training remain gated.
+Plan 07 planning reconciliation/P1 are complete and Claude is working on P3. The
+[first-experiment readiness checklist](operations/FIRST-EXPERIMENT-READINESS-2026-09-28.md)
+defines R0–R8; its earlier audit counts and next-action prose are historical. Older dated
+checkpoints below preserve history and are not current download/test/ownership status.
+
 **Status:** Scoped Python/storage and UI build/synthetic tests passed; archives acquired; extraction/source validation and full G0 pending
 
 **Status reconciled:** 2026-09-20 (earlier prerequisite review retained below)
@@ -12,6 +22,13 @@ It does not claim a full code audit, verified drive health, clean-environment qu
 ready-to-run model. The approved proposal/appendix and owning component plans remain authoritative.
 
 ## Review outcome
+
+### September 21 drive preparation
+
+Local Git checkpoint `f4d7109` preserves the planning/test foundation. The returned drive's identity,
+capacity, archive sizes, and receipts were rechecked; PANORAMA ZIP directory checks passed.
+See [drive preparation](operations/DRIVE-PREP-2026-09-21.md). Next data step: sequential PanTS
+member/expanded-size scan and combined extraction budget. No extraction or source activation yet.
 
 ### Current checkpoint — September 20
 
@@ -27,8 +44,8 @@ The checkpoints below preserve the earlier sequence and counts.
 Latest: [Priority 4 contract/metric foundation](testing/CONTRACT-METRICS-2026-09-20.md) added 42
 synthetic checks; the full Python fast suite now passes **147 tests** with two upstream warnings.
 Four deliberate in-memory metric mistakes were caught. Production code/schemas are unchanged;
-cross-record validation and the full capstone evaluator remain open. Next: Plan 04 walkthrough,
-not orchestration implementation. Earlier checkpoints below retain their historical counts.
+cross-record validation and the full capstone evaluator remain open. The Plan 04 walkthrough was
+subsequently accepted on September 20 (D-045); orchestration implementation remains unauthorized. Earlier checkpoints below retain their historical counts.
 
 Later September 20: the [UI foundation](testing/UI-FOUNDATION-2026-09-20.md) passed the unchanged
 build, 18 unit/component tests, and one synthetic Chromium control flow. No production UI code
@@ -45,7 +62,7 @@ four workspace tests. These results do not close full G0, G1/G2, or training rea
 
 See [the reconciled evidence and pending gates](operations/STATUS-2026-09-20.md).
 Notion setup is complete. After this documentation pass, work proceeds one item at a time:
-UI baseline/test foundation, additional contract/metric tests, Plan 04 walkthrough, and stakeholder
+UI baseline/test foundation, additional contract/metric tests, and stakeholder
 preparation. No UI implementation or Plan 04 code was started by this pass. A reviewed Git
 checkpoint remains pending and must not include unrelated files or secrets.
 

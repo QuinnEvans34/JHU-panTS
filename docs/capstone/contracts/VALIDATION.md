@@ -43,4 +43,4 @@ Thirty schema/format checks now run in `.venv-prowl` via `tests/test_contracts.p
 37 unchanged historical tests. See [the foundation record](../testing/FOUNDATION-2026-09-19.md).
 This adds repeatable checks for ten existing contracts and hand-authored cohort/review fixtures;
 it does not establish runtime producer/consumer, cross-record, or transport conformance. No schema
-was changed. Plan 04 run-manifest code/tests remain outside this slice pending its walkthrough.
+was changed. Plan 04 run-manifest code/tests remain outside this slice pending its coding authorization.

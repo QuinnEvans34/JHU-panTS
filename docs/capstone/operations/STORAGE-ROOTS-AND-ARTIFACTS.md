@@ -34,6 +34,8 @@ Changing content, source snapshot, relevant configuration, or component version 
 |---|---|---|---|
 | `pants_source` | Frozen PanTS imaging, labels, metadata, and source controls | Read-only to workflows | Fresh pinned acquisition on `PROWL-Data`; old-drive recovery optional |
 | `panorama_source` | Frozen eligible PANORAMA imaging/labels/metadata and source controls | Read-only to workflows | New 4 TB after source snapshot verification |
+| `literature_source` | Frozen PubMed baseline/updates, MeSH and permitted PMC source bytes | Unavailable until signed acquisition and verified snapshot; then read-only | PROWL-Data, `external_primary`; D-261/D-263 |
+| `prowl_literature_db` | Derived PostgreSQL data/index/WAL and scoped recovery instance | Disabled pending P4a layout and separate execution approval; controlled DB writer thereafter | PROWL-Data, same `external_primary` as canonical literature; D-263 |
 | `prowl_artifacts` | Published manifests, cohorts, models, predictions, evaluations, retrieval, case packages, reviews, tests, releases | Controlled writer; immutable after publication except append-only event container | New 4 TB candidate |
 | `prowl_scratch` | Run-scoped temporary/cache/download-in-progress content | Controlled read/write; never scientific authority | New 4 TB candidate; bounded internal scratch only by explicit config |
 | `prowl_backup` | Verified Tier A/B copies and backup catalogs | Backup writer only; separate failure domain required for “backup” claim | Internal SSD under D-258: 20 GiB cap, 100 GiB free-space floor; old drive excluded |
@@ -41,6 +43,16 @@ Changing content, source snapshot, relevant configuration, or component version 
 One physical drive can host multiple aliases, but the root registry records the shared failure-domain
 ID. `prowl_backup` cannot resolve to the same physical failure domain as `prowl_artifacts` for a
 record to claim independent backup status.
+
+September 28: literature aliases are defined in this design and as optional disabled
+entries in the setup-only schema/example. The ignored real `roots.yaml` is not activated
+or changed by planning reconciliation. An actual path/UUID/layout binding requires the
+appropriate signed acquisition or approved platform trial. Canonical/derived literature
+artifacts use `prowl_artifacts/literature/`; database state is never canonical.
+Both new aliases share `external_primary`, so a second folder there is not a backup.
+No global Docker disk relocation is implied. Quinton must approve any such change after
+cross-project inventory. Tier 1 and database+recovery each have provisional 100 GiB
+ceilings, not reserved capacity or permission to write. D-258 backup allocation remains shared.
 
 ## Local root registry
 

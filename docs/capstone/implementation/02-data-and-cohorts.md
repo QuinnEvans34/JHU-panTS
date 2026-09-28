@@ -7,6 +7,10 @@
 **Source requirements:** Approved Appendix A1–A4; protected split requirements  
 **Last reviewed:** 2026-09-08
 
+**Implementation checkpoint (2026-09-28):** Identity/migration guard slice implemented;
+277 Python tests pass and approved base-list hashes/counts reverified. G1 remains open.
+See [implementation evidence and remaining sequence](../data/PLAN-02-IMPLEMENTATION-2026-09-28.md).
+
 ## Outcome
 
 PROWL will have a source-independent imaging manifest and immutable cohort packages. Every imaging

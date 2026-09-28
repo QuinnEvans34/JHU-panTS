@@ -30,6 +30,19 @@ roots:
     access: unavailable_until_snapshot_verified
     source_snapshot_id: null
     failure_domain: external_primary
+  # Optional planning aliases; no runtime/service or acquisition activation.
+  literature_source:
+    path: null
+    acquisition_parent: /example/external/PROWL/sources/literature
+    role: source
+    access: unavailable_until_snapshot_verified
+    source_snapshot_id: null
+    failure_domain: external_primary
+  prowl_literature_db:
+    path: null
+    role: derived_database
+    access: unavailable_until_platform_approved
+    failure_domain: external_primary
   prowl_artifacts:
     path: /example/external/PROWL/artifacts
     role: artifact

@@ -1,5 +1,18 @@
 # Corpus, acquisition, identity, and rights
 
+September 28: D-261/D-264 approve the intended baseline/update and PMC Cloud routes.
+The approved [acquisition plan](planning/ACQUISITION-PLAN.md) keeps S/A/B unsigned.
+[Selection](planning/SEARCH-AND-SELECTION.md) is local and versioned; its provisional
+settings are recorded in D-265. No corpus download is authorized by this document.
+
+> Route verification, September 28, 2026: the legacy PMC OA Web Service and legacy FTP/
+> Cloud article packages have been retired. Plan current PMC retrieval through anonymous
+> HTTPS/S3 objects from pmc-oa-opendata, with per-article/version JSON rights and frozen
+> content hashes. Article version alone is not immutable content identity. This does not
+> retire PubMed baseline distribution or authorize a corpus download. See the official
+> [PMC Cloud documentation](https://pmc.ncbi.nlm.nih.gov/tools/pmcaws/) and
+> [Codex's D1–D8 response](../operations/PLAN07-CODEX-DECISION-RESPONSE-2026-09-28.md).
+
 **Status:** Approved Plan 07 design baseline  
 **Version:** 0.1 planning draft  
 **Owner:** Quinton Evans  
@@ -39,7 +52,13 @@ The exact search strings and inclusion decisions are versioned, not embedded in 
 
 ### PubMed
 
-- Use NCBI E-utilities endpoints for search and record fetch.
+- Primary route: NLM 2026 baseline plus ordered updates to a pinned cutoff and matching MeSH.
+- Retain raw file checksums and ordered source-file/ordinal add/replace/delete events. A revision
+  uses canonical record-content identity, not bibliographic version alone. Repeated content keeps
+  its revision ID but every event is retained. Reject gaps/order violations; replay deterministically.
+- Sizing-only samples create neither a snapshot nor production event state; selection refuses them.
+- Apply PROWL's own versioned two-stage selection; missing MeSH never silently excludes records.
+- E-utilities remain for bounded search/record checks. The following API rules apply to those calls:
 - Record exact query, NCBI translation, database, dates, history/query identifiers where used,
   retrieval time, page/batch, response hash, tool, and contact configuration.
 - Follow the current no-key/key rate and large-job guidance at execution time.
@@ -52,7 +71,7 @@ abstract is not assumed redistributable simply because EFetch returns it.
 ### PMC
 
 - Confirm membership in the PMC Open Access Subset or another explicitly permitted dataset route.
-- Fetch systematic content only through approved PMC Article Dataset/API services.
+- Fetch selected permitted XML through PMC Cloud pmc-oa-opendata under signed run B; retain per-article JSON rights and exact object-byte hashes. Do not use retired legacy routes.
 - Prefer structured XML for stable sections/paragraphs and exclude figures/supplementary media unless
   specifically rights-reviewed.
 - Capture the article's exact license statement/identifier and retrieval route.

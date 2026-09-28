@@ -1,7 +1,7 @@
 # Fresh data acquisition queue
 
-**Status:** PanTS/PANORAMA archives acquired; extraction and source reconciliation pending; drive currently unavailable  
-**Updated:** 2026-09-20  
+**Status:** Archives acquired; drive reverified September 21; extraction and source reconciliation pending  
+**Updated:** 2026-09-21  
 **Authority:** Quinton's direction; D-257/D-258; approved Plans 02, 03, and 10
 
 ## Decision
@@ -56,6 +56,12 @@ baseline that meets its own prerequisites.
   Its archive is acquired opaquely, not opened for model selection; no source alias is enabled.
 
 ## Current operational facts
+
+September 21 update: [drive preparation](DRIVE-PREP-2026-09-21.md) reverified the registered mount,
+about 3.44 TB free space, all 17 download-file sizes, and terminal receipts. PANORAMA central-directory
+checks passed with about 195.7 GB declared expanded output. PanTS streaming member review and the
+combined extraction budget remain pending. No extraction, fresh full-payload hashing, or source
+activation occurred. Statements below about drive unavailability describe the September 20 checkpoint.
 
 Quinton approved the scoped setup under D-258. The folders and ignored registry now exist, the
 filesystem checks and initial independent synthetic restore passed, and six retained controls were

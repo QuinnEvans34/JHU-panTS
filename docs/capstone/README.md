@@ -1,5 +1,11 @@
 # PROWL capstone documentation hub
 
+Current execution/ownership summary: [CURRENT-CHECKPOINT](operations/CURRENT-CHECKPOINT.md).
+Read it before older status prose below. The latest approved database amendment is
+[D-260](operations/POSTGRES-PGVECTOR-DECISION-2026-09-28.md), supplemented by D-261–D-265.
+Plan 07 reconciliation and P1 freeze are complete; Quinton confirmed Claude is working on P3.
+Historical download/test counts below are not live status.
+
 **Project:** Pancreatic Review and Outlining Workflow for Lesions (PROWL)  
 **Status:** All twelve designs approved; scoped Python/storage and UI build/synthetic checks passed; archives acquired; source validation/full G0 pending  
 **Planning baseline date:** 2026-09-07  

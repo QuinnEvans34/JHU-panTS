@@ -12,6 +12,17 @@ Recheck the cap/free-space floor on every future copy; never automatically delet
 
 ## Purpose
 
+September 28 literature amendment (D-262/D-263/D-264): canonical literature and live
+PostgreSQL share the external failure domain. Rebuilding the DB only works if canonical
+inputs survive. Raw baseline/updates have no independent-copy commitment; future upstream
+availability and unchanged PMC bytes are not guaranteed. P6 must measure the Tier 1 rebuild
+set and propose an allocation within the shared 20 GiB cap or another approved target.
+Do not silently take imaging backup capacity. Protect held-out material in encrypted
+images on both devices; never put its questions/labels in Git. Development labels and
+small permitted manifests/configs can join a reviewed Git checkpoint, but a local commit
+is not an independent remote copy. Lost frozen embeddings require a new identity if
+regenerated. See [approved inventory and lifecycle](../retrieval/planning/SCOPE.md).
+
 Preserve the evidence that cannot be replaced, retain the expensive artifacts that matter, and allow
 large rebuildable work to be reclaimed safely. This policy avoids two unhelpful extremes: attempting
 to mirror every terabyte, or assuming an ignored local directory is safe.

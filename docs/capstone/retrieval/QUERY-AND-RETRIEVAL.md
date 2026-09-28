@@ -1,5 +1,10 @@
 # Query and retrieval contract
 
+September 28 engine amendment: D-260/D-264 select literature-only PostgreSQL + pgvector
+with a versioned ts_rank_cd full-text lexical control (not BM25). All branches use an
+explicit published corpus/build and embedding configuration, with shared rights/notice
+filters. Frozen files/embeddings remain authoritative. See [tool trial](TOOL-SELECTION.md).
+
 **Status:** Approved Plan 07 design baseline  
 **Version:** 0.1 planning draft  
 **Owner:** Quinton Evans  
@@ -73,14 +78,14 @@ be versioned/evaluated against the deterministic baseline.
 
 ### Lexical
 
-- Search passage text plus configured title/section/MeSH/keyword fields.
+- Use PostgreSQL FTS with ts_rank_cd over configured passage/title/section/MeSH fields; pin text-search configuration and dictionary identities.
 - Record raw score/rank and exact query representation.
 - Deterministic tokenization/stemming/stopwords and field weights.
 - Serves as the control and fallback.
 
 ### Dense
 
-- Embed the configured dense query representation with the same pinned embedding family as passages.
+- Use pgvector with an explicit embedding configuration and its matched query/article encoder roles. Equal dimensions or a family name alone do not prove compatibility.
 - Record query vector identity/model/hash, normalization, distance/similarity metric, raw score/rank.
 - Apply metadata filters in a documented pre/post stage and record exclusions.
 - Prefer exact search for a small corpus unless measured latency requires approximate indexing.
@@ -104,7 +109,10 @@ Minimum filters:
 - language/version compatibility.
 
 Filters are semantic policy, not a vector-store convenience. The same policy must be implementable in
-every D-202 candidate or enforced and tested in the retriever adapter.
+each lexical/dense/hybrid branch through the published-build view and tested adapter.
+Compare restrictive filters against exact search; if approximate search under-returns,
+use a tested iterative/exact fallback. Return up to min(k, eligible_count), with an explicit
+reason/count when fewer eligible records exist.
 
 ## Ranked passage record
 

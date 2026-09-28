@@ -175,7 +175,8 @@ designs; nulls, failures, and limitations remain equally visible.
    and the full release-critical restore/exclusion checks. Week 9 remains stabilization-only and
    Week 10 delivery-only.
 
-The Plan 04 walkthrough and explicit implementation authorization remain prerequisites to its code
+Explicit Plan 04 implementation authorization remains a prerequisite to its code (the walkthrough
+was accepted 2026-09-20, D-045)
 or Prefect spike. Plan 10 approval does not waive any scientific, holdout, or operational gate.
 
 ## Intended storage topology

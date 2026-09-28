@@ -21,6 +21,8 @@
       "properties": {
         "pants_source": {"$ref": "#/$defs/pendingSource"},
         "panorama_source": {"$ref": "#/$defs/pendingSource"},
+        "literature_source": {"$ref": "#/$defs/pendingSource"},
+        "prowl_literature_db": {"$ref": "#/$defs/pendingDatabase"},
         "prowl_artifacts": {"$ref": "#/$defs/writer"},
         "prowl_scratch": {"$ref": "#/$defs/writer"},
         "prowl_backup": {"$ref": "#/$defs/backup"}
@@ -43,6 +45,15 @@
         "path": {"type": "null"}, "acquisition_parent": {"type": "string", "pattern": "^/"},
         "role": {"const": "source"}, "access": {"const": "unavailable_until_snapshot_verified"},
         "source_snapshot_id": {"type": "null"}, "failure_domain": {"const": "external_primary"}
+      }
+    },
+    "pendingDatabase": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "role", "access", "failure_domain"],
+      "properties": {
+        "path": {"type": "null"}, "role": {"const": "derived_database"},
+        "access": {"const": "unavailable_until_platform_approved"},
+        "failure_domain": {"const": "external_primary"}
       }
     },
     "writer": {

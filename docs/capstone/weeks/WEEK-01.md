@@ -29,7 +29,8 @@ will have a binary start gate.
       schema design; executable schemas/fixtures remain Plan 09 work.
 - [x] PANORAMA identity, exclusion, label-remap, annotation-quality, and duplicate-control design.
 - [x] Workflow stage graph, state model, retry/idempotency rules, and provisional tool selection;
-      implementation remains gated on Quinton's walkthrough and the bounded spike.
+      implementation remains gated on explicit coding authorization and the bounded spike; the
+      walkthrough was accepted 2026-09-20 (D-045).
 - [x] Autonomous input/output, localization, spatial-transform, model-lineage, and failure design.
 - [x] Evaluation metric, failure-denominator, holdout, experiment, continuous-training, and reporting
       design; Plan 06 is approved and Plan 09 executable fixtures remain.

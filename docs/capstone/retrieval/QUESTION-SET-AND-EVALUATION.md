@@ -55,6 +55,13 @@ unsupported corpus topics, missing evidence, patient-record requests, and prompt
 
 ## Question record
 
+September 28: approved SCOPE 5.8 and PHASES P7 specify span-based labels and protected
+held-out storage. Label spans address immutable normalized representations by ID/hash
+and half-open Unicode code-point offsets. Store grade and required-concept IDs; direct
+passage relevance requires complete containment of a direct span, not partial overlap.
+Normalization changes require new representation/label versions. Keep the required
+second consistency pass; a repeat sample is optional and does not replace it.
+
 - question ID/version;
 - split and answerability/out-of-scope label;
 - family/difficulty/authorship source;
@@ -102,7 +109,20 @@ inter-rater agreement.
 - Avoid one article being the only gold support for most held-out questions.
 - Freeze split membership/ordering, question text, structured fixtures, gold labels, and hashes before
   development retrieval begins.
-- Held-out relevance files are inaccessible to tuning/config comparison paths.
+- Held-out relevance files are excluded from tuning/config comparison paths by the
+  protected-store procedure below; this is not OS-level isolation while mounted.
+
+### Protected held-out lifecycle (approved design; not yet created)
+
+Quinton authors in a separate encrypted image, creates a new frozen image with image
+and content-manifest hashes, and verifies an independent encrypted backup by image hash.
+Evaluation uses a logged read-only mount, then unmounts. Mounts are outside agent-connected
+folders; agents receive neither mount path nor passphrase. Log stage, purpose, owner,
+image hashes and result hash. While mounted, other processes running as the same user
+could technically read plaintext: the access boundary is procedural. This is not
+drive-wide encryption and does not change D-256. Git contains schemas, synthetic fixtures,
+development labels and frozen held-out hashes/counts, never held-out questions/labels.
+The D-258 backup cap is shared; allocation and actual image creation remain gated.
 
 Corpus content is frozen before the split. If the corpus changes to answer a development failure, both
 index and question-label compatibility are versioned; held-out results from the old corpus cannot be
@@ -119,6 +139,21 @@ MRR = mean reciprocal_rank(q)
 ```
 
 Report source-level and passage-level versions separately where gold labels support both.
+
+PHASES P7 defines a 50-passage ranked list (or all eligible items when fewer exist,
+with explicit count/reason). Tie-breaking records score direction then passage ID.
+Source ranks keep first occurrence per canonical work and renumber before scoring.
+Passage recall compares only within one chunking configuration; source-level metrics
+can compare across configurations against frozen source labels. A no-hit RR is zero.
+
+**Proposed D-085 addition, not yet official:** span-hit recall@k counts each direct gold
+span once if completely contained in a top-k passage. Separately report delivered-span
+recall, delivered concept coverage and token count under the provisional 2,000-token
+context budget. Pin/name the tokenizer; pack whole passages in rank order, skipping
+those that do not fit and continuing. Skipped or partial spans get no delivered credit.
+Changing to the selected generator tokenizer requires re-reporting. Official D-085
+recall/MRR remains unchanged. P3 may implement synthetic demonstrations of the proposal;
+production adoption as a selection/release metric requires Quinton's decision.
 
 Minimum report:
 

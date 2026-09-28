@@ -13,4 +13,4 @@ Negative tests change one field or remove one required value after checking the 
 Expected rejection comes from the approved contract, not from a production serializer. Cross-record
 patient overlap, true content/derivation hashes, cohort ancestry, durable review writing, and
 static/API parity need application tests when their implementations exist. No Plan 04 workflow
-implementation or run-manifest test is added before the required walkthrough/authorization.
+implementation or run-manifest test is added before the required coding authorization.

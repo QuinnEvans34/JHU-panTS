@@ -1,5 +1,13 @@
 # Literature retrieval and grounded response
 
+September 28 amendment: D-260 through D-265 and the approved
+[planning scope](../retrieval/planning/SCOPE.md) and [phases](../retrieval/planning/PHASES.md)
+govern current execution. PostgreSQL + pgvector is selected for literature only, with
+canonical files and frozen embeddings authoritative. P3 is a separately dispatched
+synthetic packet; P4a platform work and P4b contract-bound integration are separate.
+Design approval does not sign acquisition runs or authorize installs/model pulls/Plan 04.
+The additional span-hit/delivered-evidence metric amendment remains proposed.
+
 **Status:** Approved design — live acquisition, index implementation, and evaluation remain gated  
 **Owner:** Quinton Evans  
 **Design week:** 1  
@@ -10,8 +18,8 @@ Appendix v3.1 evidence pipeline, corpus, retrieval, grounding, and fallback boun
 **Last reviewed:** 2026-09-18 (approved handoff status reconciliation)
 
 Quinton approved P07-01 through P07-16 on 2026-09-09. This approves the corpus, retrieval,
-evaluation, and grounded-response design. It does not select the final vector implementation:
-D-202 remains open until the bounded local spike produces the required evidence.
+evaluation, and grounded-response design. D-260 now selects PostgreSQL + pgvector;
+D-202 remains open for measured index configuration and embedding selection.
 
 ## Outcome
 
@@ -115,7 +123,7 @@ This plan therefore treats retrieval as a small scientific system:
 - No source/document/passage/query/retrieval/response schemas exist yet.
 - No local lexical baseline, embedding pipeline, vector store, hybrid retriever, or evaluation engine
   exists.
-- D-202 has not selected the embedding/index stack.
+- D-260 selects the engine; D-202 has not selected the measured embedding/index configuration.
 - D-209 has not frozen the reviewer question families or evaluation set.
 - No claim-level grounding or refusal implementation exists.
 - No generation-provider/privacy/cost choice exists; Plan 10 must own that boundary.
@@ -157,12 +165,12 @@ and generation prompt contain public literature plus bounded non-identifying con
 | P07-02 | Limit the initial corpus to general CT pancreas/lesion imaging, contour/measurement interpretation, annotation/review workflow, and relevant AI limitations. Diagnosis, subtype, prognosis, and treatment questions are out of scope and included as refusal tests. | These families support the annotation-assist task without expanding into clinical decision support. | A broad pancreatic-cancer corpus would make search easier to demo but harder to evaluate and more likely to answer unsafe questions. |
 | P07-03 | Build queries only from an allowlisted non-identifying structured finding plus reviewer question. Initial allowed context is modality, anatomy/task, model warning category, and coarse measurement/count bins; no image, mask, source report, patient ID, dates, institution, or free model-generated diagnosis enters. | The assistant needs enough context to retrieve useful technical evidence without turning patient data or an unvalidated inference into a clinical prompt. | Passing the whole case package creates privacy/claim risk and encourages the generator to overinterpret model output. |
 | P07-04 | Use PubMed bibliographic records and available abstracts as the broad base; add full text only from the PMC Open Access Subset or another record whose exact license permits the intended local use. Store text locally/off-Git and publish manifests/citations rather than restricted content. | Not everything visible in PubMed/PMC is freely redistributable, and per-article license terms vary. | “Free to read” is not a sufficient rights decision; including unverified text risks an unusable release. |
-| P07-05 | Acquire records only through approved NCBI services with registered tool/email, batching, cache/retry, and current rate-limit policy. Keep any API key in environment/secret storage. Never automate downloads from article web pages. | This respects service rules, makes acquisition repeatable, and prevents accidental credential commits or blocking. | Ad hoc browser scraping is fragile, non-reproducible, and can violate systematic-download restrictions. |
+| P07-05 | Use the NLM baseline plus ordered updates and local selection under D-261; retain E-utilities for bounded checks with tool/email and current rate rules. PMC uses approved Cloud XML objects with per-article rights. | Reproducible acquisition with retained event/source hashes, bounded retries and explicit run records. | No article-page scraping; design approval does not sign runs S/A/B. |
 | P07-06 | Give every source/document a rights record with access route, license text/identifier, local-index permission, redistribution flag, required attribution, and review state. Unknown rights exclude full text but may retain bibliographic metadata/link. | Corpus construction needs a machine-enforced decision, not a vague “open access” label. | One corpus-wide license assumption can contaminate the entire deliverable. |
 | P07-07 | Freeze a versioned search protocol and cutoff date, exact query translations/IDs, inclusion/exclusion criteria, source inventory, retrieval timestamps, and content hashes. `pubmed_samples.xml` begins as an unapproved exploratory fixture only. | Search results and article versions change. A frozen snapshot is necessary for deterministic passage IDs, index rebuilds, and Week 6 metrics. | A live corpus underneath evaluation makes recall and citations non-reproducible. |
 | P07-08 | Resolve duplicate/version identity across PMID, PMCID, DOI, corrections/retractions, and content hashes. Keep one canonical bibliographic work with separately identified abstract/full-text/version representations and visible notices. | The same article can arrive through several routes; corrections/retractions materially affect evidence. | Indexing duplicates inflates recall and ranking, while hiding retractions can surface unreliable evidence. |
 | P07-09 | Normalize text without paraphrasing and create section/sentence-aware passages with exact document/section/paragraph/offset locators and content hashes. Passage size/overlap is tuned on development questions and creates a new corpus version. | Citations must resolve to stable supporting text, and chunking materially changes retrieval. | Opaque token windows without locators cannot be audited or displayed responsibly. |
-| P07-10 | Establish a lexical baseline first, then evaluate a local embedded vector store. The first D-202 candidate is LanceDB because it can persist locally and support vector, full-text/hybrid, and metadata filtering; compare it with a simple SQLite FTS baseline and retain Chroma or FAISS-plus-sidecar as fallbacks if the bounded spike fails. | This satisfies the vector-retrieval objective while preserving file-first reproducibility and a meaningful non-vector control. | Choosing a managed service or complex server adds operational burden; using only vector search gives no proof embeddings improve retrieval. |
+| P07-10 | Use literature-only PostgreSQL + pgvector under D-260, with PostgreSQL FTS ranked by ts_rank_cd as the lexical prototype control. P4a tests exact search and representative HNSW; P4b proves contract integration; P8/P9 select embeddings/retrieval configurations. | Canonical files and frozen embeddings remain rebuild authority. | If acceptance fails, stop and review measured options; no automatic switch to another engine. |
 | P07-11 | Pin a locally runnable embedding model/version/hash and record normalization, vector dimension, distance metric, device, batch, and library versions. External embedding calls are not the baseline. | Local embeddings make index rebuilds controllable, keep source text off third-party services, and avoid per-query API dependence. | An external embedding API may be tested later only if it solves a measured quality/compute problem and Plan 10 records cost/privacy/version limits. |
 | P07-12 | Retrieve lexical and dense candidates separately, apply metadata/rights filters before display, cap duplicate passages per source, and evaluate deterministic rank fusion/reranking on development questions. Store component scores and final rank. | Hybrid retrieval often protects exact terminology while retaining semantic matching; separate scores make failures diagnosable. | A single opaque similarity score makes it impossible to tell whether query, embedding, filtering, or fusion failed. |
 | P07-13 | Resolve D-209 with a frozen 60-question evaluation set: 30 development and 30 held-out; each split contains 20 answerable and 10 unanswerable/out-of-scope questions balanced across the approved families. Label relevant sources/passages and difficulty with a written rubric before index tuning. | This is large enough to test retrieval/refusal across multiple families but still feasible for careful solo labeling. | A larger noisy set or a tiny handpicked set would provide less trustworthy evidence. The number can be revised only before labeling/results and with a recorded workload rationale. |
@@ -170,7 +178,7 @@ and generation prompt contain public literature plus bounded non-identifying con
 | P07-15 | Generate a short structured answer as atomic claims, each mapped to one or more retrieved passage IDs. A deterministic evidence-sufficiency gate handles empty/weak/out-of-scope/conflicting evidence. Any unsupported displayed claim is a defect; the safe fallback is ranked passages or refusal. | Citation presence alone does not prove support. Claim-level mapping and a non-generative fallback make cite-or-refuse enforceable. | A free-form prompt plus end-of-paragraph references can fabricate claims while looking scholarly. |
 | P07-16 | Score response groundedness, citation precision/support, answer completeness on answerable questions, and refusal accuracy on unanswerable/adversarial questions using frozen rubrics. Groundedness/citation integrity are release gates, not averages traded for fluency. | The assistant should be useful only when it remains faithful to retrieved evidence. | A fluent answer with one unsupported clinical claim is not an acceptable partial success. |
 
-P07-10 names the first bounded candidate rather than locking D-202 before installation/rebuild tests.
+P07-10 follows D-260; D-202 configuration selection still requires measured evidence.
 P07-13 proposes the concrete D-209 evaluation boundary. A user-approved question set resolves D-209;
 the exact article count, passage size, embedding model, fusion, sufficiency thresholds, and generation
 model remain measured configuration/tool decisions.
@@ -220,9 +228,10 @@ selected, receive an additional Plan 10 privacy review.
 ## Corpus and rights pipeline
 
 1. Freeze question families and search protocol version.
-2. Run PubMed searches through E-utilities; record exact query translation/history identifiers,
-   retrieval window, tool/email, count, and response hashes.
-3. Batch-fetch bibliographic/abstract records within current NCBI rate and timing guidance.
+2. After signed sizing/acquisition runs, acquire the pinned NLM baseline, ordered updates and
+   MeSH; retain file checksums, cutoff and add/replace/delete event provenance.
+3. Replay the ordered events and apply the versioned local selection policy. This is not
+   PubMed automatic term mapping. E-utilities remain available for separately bounded checks.
 4. Resolve PMID/PMCID/DOI relationships, duplicate works, corrections, retractions, and publication
    types.
 5. Apply topical/source-type/language/date inclusion/exclusion with reason counts.
@@ -359,35 +368,19 @@ required-refusal diagnosis/treatment prompt fails the release gate regardless of
 
 ## Implementation sequence
 
-1. Approve or revise P07-01 through P07-16.
-2. Freeze question families, allowed structured fields, refusal boundary, and proposed 60-question
-   labeling plan; resolve D-209.
-3. Freeze source/document/passage/corpus/index/query/retrieval/claim/response/evaluation documentation
-   contracts.
-4. Register `pubmed_samples.xml` as an exploratory parser fixture or move it later under the approved
-   non-destructive cleanup plan; do not treat it as corpus evidence.
-5. Write search/acquisition/rights configuration and synthetic PubMed/PMC fixtures before live fetch.
-6. Implement PubMed XML parsing, canonical IDs, duplicate/version/notice handling, and rights records.
-7. Execute a small bounded acquisition using approved NCBI routes and validate rate/retry/cache/
-   attribution behavior.
-8. Freeze the corpus search cutoff and build the first complete source/document inventory.
-9. Implement section-aware normalization/passage identity and deterministic rebuild tests.
-10. Author/label/freeze the 30-question development and 30-question held-out set before index tuning.
-11. Implement/evaluate the SQLite FTS lexical baseline.
-12. Run the bounded D-202 LanceDB local persistence/vector/metadata/rebuild spike with one pinned local
-    embedding candidate; choose LanceDB or a contract-compatible fallback.
-13. Evaluate dense retrieval and then deterministic hybrid/reranking candidates on development only.
-14. Select/freeze corpus, chunking, embedding, index, query, filtering, fusion, and top-k policies.
-15. Run the selected retriever once on the held-out answerable set; publish recall@k/MRR and failure
-    analysis.
-16. Implement evidence sufficiency, structured claim/citation response, post-validation, and
-    extractive/refusal fallback.
-17. Select the generation model/provider only after Plan 10 privacy/cost/reproducibility review;
-    create a deterministic fixture adapter first.
-18. Evaluate groundedness, citation integrity/completeness, adversarial behavior, and refusal on the
-    frozen response set.
-19. Run the complete literature DAG through Plan 04, inject failures, and prove rebuild/resume.
-20. Publish G6 evidence and hand representative cited/refusal response artifacts to Plan 08.
+The approved [PHASES](../retrieval/planning/PHASES.md) defines dependencies and acceptance:
+
+1. P0 scope/decisions; P1 Quinton freezes needs; P2 search/seed/acquisition protocols.
+2. P3 synthetic records/passages/query/labels/metrics after packet dispatch; stop for contract review.
+3. P4a separately authorized platform trial; P4b depends on reviewed P3 contracts and driver approval.
+4. P5 sizing then full acquisition, each under its own tested tool packet and signed run record.
+5. P6 local selection/rights/frozen corpus; P7 human labels, consistency pass and protected freeze.
+6. P8 frozen embeddings/build; P9 retrieval development; P10 response development.
+7. P11 freeze the complete configuration, then run held-out retrieval and response evaluation once.
+8. P12 integration/G6 with separate Plan 04 coding authorization. X1 Tier 2 remains separately gated.
+
+Synthetic rankings in P3 are fixtures, not a retriever. No installation or live acquisition
+is implied by this sequence. Week 9 is stabilization; Week 10 is delivery.
 
 ## Test matrix
 
@@ -449,7 +442,7 @@ trigger a new “better” chunk size or embedding within the same evaluation ve
 | Live source changes | Search count/content hash differs | Snapshot/cutoff/version identity and cache | Create new source/corpus version; preserve previous metrics |
 | Duplicate works dominate | Same DOI/PMID/PMCID appears repeatedly | Canonical work mapping and per-source cap | Rebuild corpus/index; invalidate affected rankings |
 | Chunking breaks citations | Passage crosses sections or cannot resolve locator | Section/sentence-aware construction | Revise chunk policy on development and rebuild version |
-| Vector database becomes the project | Spike exceeds time or contracts require invasive work | Bounded D-202 acceptance criteria | Use SQLite FTS plus simple local FAISS/sidecar or another contract-compatible fallback |
+| Vector database becomes the project | Trial exceeds budget or fails requirements | P4a/P4b acceptance and stop rules | Stop and bring measured options for a new decision; keep imaging independent |
 | Dense search underperforms | Recall/MRR below lexical | Lexical control and per-query diagnostics | Keep lexical or hybrid; do not force vector-only headline |
 | Held-out set is tuned | Labels/results appear in configuration decision | Split access audit and frozen manifests | New evaluation version/untouched set; prior result labeled development |
 | Gold labels are weak | Low adjudication confidence or relevant corpus gaps | Written rubric and bounded careful set | Reduce/fix set before freeze rather than scale noise |
@@ -487,7 +480,7 @@ Plan 07 may move to `Ready` when:
 - [x] Approved Plan 09 accepts schema/golden/adversarial-test ownership; executable evidence remains pending.
 - [ ] Plan 10 confirms storage, secrets, environment, permitted model/provider, cost, and corpus-release
       boundaries.
-- [x] D-202 remains open until the bounded local tool spike, with fallback named; no tool is selected yet.
+- [x] D-260 selects the engine; D-202 configuration/embedding evidence remains open.
 
 Plan 07 can be design-approved before corpus acquisition. Live NCBI retrieval, vector-library
 installation, embedding download, or generation-provider use waits for the relevant Plan 09/10 gates.
@@ -497,7 +490,7 @@ installation, embedding download, or generation-provider use waits for the relev
 - [ ] Search protocol, cutoff, acquisition route, rights policy, and corpus manifest are versioned.
 - [ ] Every indexed passage maps to a rights-approved document/source and exact locator.
 - [ ] Corpus/index rebuild, count, identity, and query-parity tests pass.
-- [ ] D-202 records the selected local index/vector stack and measured fallback rationale.
+- [ ] D-202 records the selected pgvector/embedding configuration and measured rationale.
 - [ ] Frozen 30-development/30-held-out question set and relevance/refusal labels exist.
 - [ ] Lexical and dense/vector retrieval are measured; hybrid is used only if development evidence
       supports it.
@@ -515,8 +508,9 @@ installation, embedding download, or generation-provider use waits for the relev
 
 - If PMC full-text rights are uncertain, use PubMed metadata/available abstracts and link out; do not
   ingest ambiguous full text.
-- If the selected vector store fails installation, rebuild, filtering, or portability gates, use the
-  simplest contract-compatible local vector/index option and retain SQLite FTS as the control.
+- If the approved platform fails installation, rebuild, filtering, or portability gates, stop and
+  review measured options; retain PostgreSQL lexical output only if independently valid. No engine
+  replacement is preauthorized.
 - If dense retrieval does not beat/complement lexical search, keep lexical or measured hybrid rather
   than forcing a vector-only result.
 - If 60 labels exceed the manual budget, revise and freeze a smaller balanced high-quality set before
@@ -552,8 +546,7 @@ installation, embedding download, or generation-provider use waits for the relev
 - [PMC copyright notice](https://pmc.ncbi.nlm.nih.gov/about/copyright/) distinguishes free access from
   reusable open-access content and prohibits systematic download from article web pages.
 - [LanceDB vector-search documentation](https://docs.lancedb.com/search/vector-search) describes the
-  local candidate's vector and metadata-filter behavior; the bounded spike, not documentation alone,
-  decides D-202.
+  historical candidate. Retained for decision history only; D-260 supersedes that selection path.
 
 ## Handoff
 

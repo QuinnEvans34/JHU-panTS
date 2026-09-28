@@ -1,5 +1,10 @@
 # Literature retrieval design package
 
+Current: D-260–D-265 and the approved [scope](planning/SCOPE.md) /
+[phases](planning/PHASES.md). [Revised P3 packet](../operations/CLAUDE-PLAN07-P3-PACKET-2026-09-28.md)
+is issued for Quinton dispatch. Additional span/delivered metrics remain a proposed
+D-085 amendment; models and execution permissions remain separately gated.
+
 **Status:** Approved Plan 07 design baseline; implementation dependencies remain  
 **Version:** 0.1 planning draft  
 **Owner:** Quinton Evans  
@@ -33,7 +38,7 @@ with claim-level support or refuse.
 8. Every passage resolves to exact source identity and locator.
 9. Corpus/chunk changes create new corpus/passage identities; index changes do not rewrite corpus.
 10. Lexical retrieval is the control; vector/hybrid must be measured.
-11. D-202 selects a local embedded option only after persistence/rebuild/filter/latency/evaluation tests.
+11. D-260 selects PostgreSQL + pgvector; D-202 selects configurations after platform, rebuild, filter and evaluation evidence.
 12. Development questions tune; held-out questions do not.
 13. Every displayed claim cites one or more retrieved passages that support it.
 14. Unsupported, conflicting, weak, out-of-scope, or unavailable evidence produces limits/refusal.
@@ -68,4 +73,5 @@ No existing text file is promoted merely because it is already in the repository
 ## Next review
 
 Quinton approved P07-01 through P07-16 on 2026-09-09. The design and question-set boundary are
-locked; the D-202 tool decision remains bounded by the implementation spike.
+approved; September 28 amendments govern current engine, acquisition, storage and phase choices.
+D-202 configuration evidence and P1/P2 human review remain open.

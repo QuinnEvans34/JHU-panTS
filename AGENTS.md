@@ -1,5 +1,126 @@
 # AGENTS.md — Agent Context
 
+> **START HERE — current handoff:** Read
+> `docs/capstone/operations/CURRENT-CHECKPOINT.md` before acting on any status below.
+> D-260 approves literature-only PostgreSQL + pgvector with canonical files authoritative.
+> Plan 07 planning approved and reconciled under D-261–D-265; P1 frozen and Quinton
+> confirms Claude is working on P3. Its allowlisted retrieval paths remain reserved.
+> See operations/PLAN07-INTEGRATION-HANDOFF-2026-09-28.md for the earlier issuance record.
+> Binary rule D-259 approved, eligibility not promoted. Latest native baseline: 587 passes.
+> Older successive checkpoint paragraphs below are historical, not current tasks.
+
+> **Current September 28 decisions/status:** Quinton approved strict binary normalization;
+> D-259 and data/BINARY-DECODING-APPROVAL-2026-09-28.md record the narrow scope. Explicit
+> approved policy ID exists; no training/rewriting or eligibility promotion. Claude is
+> PLANNING ONLY and reports no implementation files; prior "working" notes did not establish
+> coding. The foundation packet is on hold. Read operations/PLAN07-CODEX-DECISION-RESPONSE-2026-09-28.md
+> under docs/capstone for planning allowlist and recommendations, not new bulk-job approval.
+
+> **Latest source review:** `docs/capstone/data/PANTS-SOURCE-USE-REVIEW-2026-09-28.md`.
+> Official pinned release/archive linkage checked; NC-ND vs NC-SA discrepancy persists.
+> Separate local research from release clearance; no permission/eligibility promotion.
+> Narrow strict-binary decoding policy is recommended, awaiting explicit Quinton approval.
+> No new software tests in this documentation pass; last verified baseline 545.
+
+> **Latest v2 manifest checkpoint:** `docs/capstone/data/MANIFEST-V2-SLICE-2026-09-28.md`.
+> New five-study package contains 10 quarantined v2 annotations and 20 blocking holds;
+> zero eligibility, no decoder activation. Exact persisted replay and 25 package hashes
+> verified; 545 native tests pass. V1 and Claude's retrieval files untouched. Next:
+> release-specific provenance/terms and mapping-policy review, then purpose dispositions.
+
+> **Latest annotation contract checkpoint:** Separate v2 original-source schema and explicit
+> validator implemented; read `docs/capstone/data/ANNOTATION-CONTRACT-V2-2026-09-28.md`.
+> 532 native tests pass. V1 schemas/assembler and Claude's retrieval lane untouched.
+> No v2 manifest integration, real annotation promotion or decoder activation yet.
+> Next: explicit versioned manifest path and quarantined v2 records from verified evidence.
+
+> **Latest saved-evidence checkpoint:** `docs/capstone/data/LINKED-ASSESSMENTS-2026-09-28.md`.
+> Ten diagnostic records published from existing bounded audits; all allowed uses empty.
+> Case 78 coverage review linked provisionally, not adjudicated. 505 native tests pass.
+> No source reads/changes, schema migration or training. Next: production encoding contract.
+
+> **Current September 28 checkpoint:** Quinton confirms Claude is working on Plan 07;
+> respect the packet's retrieval reservations. Codex added non-promoting annotation
+> assessment helpers; read `docs/capstone/data/ANNOTATION-ASSESSMENT-2026-09-28.md`.
+> 480 native tests pass. No schema migration, real assessment publication, source changes,
+> eligibility promotion or training. Next: verify audit/coverage evidence links.
+
+> **Current parallel boundary (September 28):** Quinton requested the Plan 07 synthetic
+> foundation packet at `docs/capstone/operations/CLAUDE-PLAN07-FOUNDATION-PACKET-2026-09-28.md`.
+> Its allowlisted new retrieval files are reserved for Claude after Quinton dispatches it;
+> start is not yet confirmed. Codex retains voxel/data/cohort work. Old voxel reservations
+> below are closed. Read the current TEAM-STATUS header; 452 native tests reverified.
+> No live corpus, vector/provider selection, drive work or shared-file edits in Claude's packet.
+
+> **Case 78 visual follow-up:** `docs/capstone/data/CASE78-COVERAGE-REVIEW-2026-09-28.md`
+> supports pelvic/hip coverage, not upper abdomen, consistent with metadata. Do not call
+> the empty pancreas corrupt or use it as a trusted pancreas-present target. Formal cohort
+> disposition remains pending; original membership unchanged. 452 native tests pass.
+
+> **Annotation follow-up:** Read `docs/capstone/data/PANTS-ANNOTATION-REVIEW-2026-09-28.md`.
+> Candidate strict binary decoder is tested but NOT activated (450 native tests pass).
+> Case 78 metadata says ct hip right; do not call its empty pancreas corrupt or a trusted
+> negative without coverage review. Encoding schema/provenance reconciliation remains open.
+
+> **Latest measured checkpoint:** Five-case follow-up completed (17 files, 12 pairs),
+> 424 native tests pass. `docs/capstone/data/VOXEL-FOLLOWUP-RESULTS-2026-09-28.md`
+> records scaled foreground in lesion masks 26/31 and empty pancreas in case 78.
+> Case 266 units remain unknown. Next: annotation provenance/decoding policy and targeted
+> empty-pancreas investigation. Earlier not-started follow-up wording is historical.
+
+> **Bounded follow-up prepared:** `docs/capstone/data/VOXEL-FOLLOWUP-PLAN-2026-09-28.md`
+> pins five training cases, 17 files/12 pairs, sampling limits and execution budget.
+> Selection/preflight only; voxel run not started. Next: tested bounded runner then exact run.
+
+> **Next-action checklist:** `docs/capstone/operations/FIRST-EXPERIMENT-READINESS-2026-09-28.md`
+> consolidates the exact first-training gates. Daily item 5 is documented, not training-ready.
+> Next: bounded positive-case/anomaly audit selection and resource budget. No CAP-EXP launched.
+
+> **Latest ownership/status:** Quinton transferred Claude's voxel-audit lane to Codex.
+> R1–R3 fixed; 410 native Python tests pass, two upstream warnings. Four-pair pilot on
+> two approved training cases completed; case 2 physical units remain unresolved.
+> Read `docs/capstone/data/VOXEL-PILOT-2026-09-28.md`. Earlier Claude file reservations,
+> awaiting-handback and held-pilot wording below are historical. No full scan or training.
+
+> **Today's execution plan:** `docs/capstone/operations/TODAY-2026-09-28.md` is the
+> active checklist. Claude is now working on its reserved voxel-audit lane, confirmed
+> by Quinton. Follow the ownership boundaries; do not treat earlier not-dispatched
+> wording as current status. Metadata adapter and diagnostic two-study slice now verified
+> (333 Python tests); annotation qualification still pending. See
+> `docs/capstone/data/MANIFEST-SLICE-2026-09-28.md`. Next: Claude handback review when
+> available, otherwise the first-experiment prerequisite checklist. No training authorization.
+
+> **Parallel-work checkpoint (2026-09-28):** Read
+> `docs/capstone/operations/TEAM-STATUS-2026-09-28.md` and the scoped Claude voxel-audit
+> packet before editing. Claude's four-file lane is reserved; Codex owns Plan 02 integration.
+> Shared data-layer interfaces stay stable until coordinated handback. Packet preparation
+> is not dispatch; no real-data audit/training or autonomous loop authorized by that packet.
+
+> **September 28 review checkpoint:** Extraction receipts record 15 completed archives
+> (300,608 files; 565,327,340,747 bytes); publisher test images remain unextracted.
+> The first extraction safety corrections are implemented with synthetic regressions.
+> Full integrity revalidation and source readiness remain open. Treat the observed-layout
+> conclusions as provisional; file sizes do not prove label quality or field of view.
+> Read `docs/capstone/operations/EXTRACTION-REVIEW-2026-09-28.md` before further extraction
+> or Plan 02 implementation. Older acquisition status below is historical.
+
+> Follow-up: 257 Python tests pass. All 2,242 expected extracted PANORAMA package
+> files match pinned Git blobs; 58 sampled PanTS training-label files match the archive.
+> The complete retained PanTS label archive passed the corrected scanner and matches
+> its prior local SHA-256. Full extracted-data/voxel qualification is still pending;
+> next is Plan 02 protected inventory, not training. Promotion is macOS-qualified only.
+
+> Plan 02 has now started: internal identity/migration guards and 20 new synthetic
+> checks are implemented (277 total Python passes). Approved local base split hashes
+> and 7,200/1,800/901 counts pass. No frozen cohorts or consumer migration yet; G1
+> remains open. See `docs/capstone/data/PLAN-02-IMPLEMENTATION-2026-09-28.md`.
+
+> Latest Plan 02 checkpoint: manifest assembler and read-only file/header adapter
+> implemented; 301 Python tests pass. Two approved training studies sampled (six
+> files); four have unknown NIfTI spatial units, so mm geometry remains unresolved.
+> Read `docs/capstone/data/SOURCE-EVIDENCE-2026-09-28.md`. No real frozen cohorts,
+> source activation or training authorization; metadata joins still pending.
+
 > **Plan 04 update — 2026-09-20:** Quinton accepted the orchestration and Prefect/alternatives
 > walkthrough. Explanation is no longer pending; explicit coding authorization remains required.
 > Prefect-first four-hour evaluation with a repository-runner fallback is reaffirmed; tested
@@ -44,9 +165,10 @@ Reviews are append-only **review events** tied to immutable prediction versions;
 means a correction is needed and does not promise browser voxel editing. See
 `docs/capstone/DECISIONS.md`, `docs/capstone/architecture/`, and `docs/capstone/contracts/`.
 
-**Current planning state:** Plans 01–03 are Ready. Plan 04's tool-independent design is approved, but
-it is not Ready for implementation: explain the function of Plan 04 to Quinton in plain language and
-receive his explicit authorization before writing any Plan 04 code or running the Prefect spike. Plan
+**Current planning state:** Plans 01–03 are Ready. Plan 04's tool-independent design is approved and
+its explanation gate was satisfied on 2026-09-20 (D-045), but it is not Ready for implementation:
+explicit coding authorization is still required before writing any Plan 04 code or running the
+Prefect spike. Plan
 10 must also confirm the storage/environment boundaries; D-201 remains open until the bounded spike
 selects Prefect or the repository runner. Plan 05's design and P05-01 through P05-13 are approved;
 implementation remains gated on the Plan 06 handoff and Plan 10 boundaries. Training and
@@ -71,7 +193,7 @@ Plan 10's P10-01 through P10-24 and staged-readiness design were approved on 202
 passed under D-258 on September 19; production preflight, verified source aliases, real-artifact
 restore, and complete environment evidence remain pending. Foundation setup, individual experiment
 readiness, and full pre-G8 reproduction are separate gates; early imaging does not require a finished
-retrieval/UI system. The Plan 04 explanation/authorization requirement is unchanged.
+retrieval/UI system. The Plan 04 explanation gate is satisfied (D-045, 2026-09-20); explicit coding authorization is not.
 `docs/experiments.md` is the continuing living notebook, not only an archive. Before every experiment,
 write its game plan; record every run/attempt and outcome, including failures/nulls; then explain the
 evidence, retained settings, and changed factors motivating the next experiment. New `CAP-EXP-NNN`
@@ -118,7 +240,7 @@ No workflow code, capstone training, release, or submission has been produced. A
 is a separately authorized operational step, not Plan 04 implementation or model experimentation.
 Next: reviewed Git checkpoint, supported Node/UI baseline and remaining core cross-record tests,
 with fresh acquisition and subsequent safe extraction/source reconciliation in parallel.
-The Plan 04 walkthrough/explicit coding authorization is still mandatory. Quinton explicitly chose
+The Plan 04 walkthrough is complete (D-045); explicit coding authorization is still mandatory. Quinton explicitly chose
 to keep `PROWL-Data` unencrypted on 2026-09-18 (D-256); no encryption/reformat action or further
 encryption decision is needed. The scoped independent backup target/budget is resolved under D-258;
 routine backup automation and later keeper/release restore qualification remain work to implement.

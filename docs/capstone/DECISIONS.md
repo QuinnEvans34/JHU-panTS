@@ -98,7 +98,7 @@ This register prevents exploratory notes and older drafts from silently becoming
 | D-079 | Corpus builds freeze search protocol, cutoff, query translation, selection rules, retrieval time, source inventory, and content hashes. | Quinton approval of P07-07, 2026-09-09 | Search drift cannot silently change passage IDs, evaluation, or citations. |
 | D-080 | Canonical work identity reconciles PMID, PMCID, DOI, content versions, duplicates, corrections, and retractions while preserving representation-level provenance. | Quinton approval of P07-08, 2026-09-09 | Duplicate indexing cannot inflate retrieval, and material notices remain visible. |
 | D-081 | Passages are normalized without paraphrase and carry stable section/sentence/offset locators and content hashes; a chunking change creates a new corpus version. | Quinton approval of P07-09, 2026-09-09 | Every citation can resolve to the exact supporting source text. |
-| D-082 | Retrieval establishes SQLite FTS as a lexical control and evaluates LanceDB as the first local vector candidate under a bounded spike, with Chroma and FAISS-plus-sidecar fallbacks. | Quinton approval of P07-10, 2026-09-09 | D-202 remains open until measured persistence, filtering, rebuild, resource, adapter, and retrieval-quality evidence selects the implementation. |
+| D-082 | Historical September 9 direction: SQLite FTS control and LanceDB first, with Chroma/FAISS fallbacks. Superseded for Plan 07 by D-260 and D-264. | Quinton approval of P07-10, 2026-09-09; September 28 amendments below | Current engine is literature-only PostgreSQL + pgvector; the prototype lexical control is PostgreSQL FTS with ts_rank_cd. |
 | D-083 | The baseline embedding model runs locally and is pinned by model/version/hash with complete vector-recipe and environment identity. | Quinton approval of P07-11, 2026-09-09 | An external embedding service is optional only after a measured need and Plan 10 boundary review. |
 | D-084 | Lexical and dense candidates remain separately observable; rights/metadata filters, per-source caps, deterministic fusion/reranking, component scores, and final rank are recorded. | Quinton approval of P07-12, 2026-09-09 | Retrieval failures can be attributed instead of hidden behind one opaque score. |
 | D-085 | Retrieval reports recall@1/3/5/10 and MRR on labeled answerable questions plus latency, empty-result, duplicate-source, and source-diversity diagnostics; development selects and held-out verifies. | Quinton approval of P07-14, 2026-09-09 | Generated prose cannot substitute for direct retriever evaluation. |
@@ -219,11 +219,11 @@ production Plan 04 code, and full operations qualification remain outside that c
 | ID | Question | Options to evaluate | Required evidence | Deadline |
 |---|---|---|---|---|
 | D-201 | What runs the workflow DAG? | Small in-repo runner; Prefect; another local orchestrator | Required stages, retry/state semantics, setup cost, testability, provenance, resume behavior | End of Week 1 |
-| D-202 | What vector index/embedding stack is used? | LanceDB local first candidate; Chroma local; SQLite FTS plus exact FAISS/sidecar; another contract-compatible local option | Apple Silicon install, license, local persistence/reopen, metadata/rights filtering, full export/count validation, deterministic/tolerance rebuild, latency/memory/bytes, adapter size, and development recall/MRR | Bounded Plan 07 spike before index build |
+| D-202 | Which pgvector configuration and embedding configuration meet Plan 07 requirements? | Exact search plus representative HNSW first; expansion to other index/precision settings only on measured triggers; named embedding candidates still need approval | P4a platform/resource/filter/exact-reference evidence, P4b contract/rebuild evidence and P8/P9 embedding/retrieval evaluation; D-260 already selects the engine | Before published index build and configuration freeze |
 | D-205 | Which model comparison is run in Week 6? | Architecture, initialization, cascade choice, false-alarm method, ensemble/distillation if justified | Week 5 baseline error analysis and preregistered decision bar | After G4, before compute |
 | D-208 | What is the reviewer ordering score? | Calibrated lesion probability, volume/probability rule, learned gate, composite | Baseline curve, calibration, interpretability, user need | After Week 5 baseline |
 | D-210 | Is rented/cloud compute needed? | Local MPS; available CUDA machine; rented GPU | End-to-end timing, upload/storage burden, reproducibility, cost ceiling | Before first run local estimates cannot support |
-| D-211 | What measured condition would justify adding relational persistence? | Remain file-first; SQLite; PostgreSQL | Concurrent writers, integrity/query needs, or review volume that the versioned file layer cannot meet safely | Revisit only if such a condition occurs; no later than Week 7 |
+| D-211 | Literature persistence answered by D-260; any broader relational scope remains unapproved | Literature: rebuildable PostgreSQL operational layer. Imaging remains file-first | Broader scope requires a new measured need and explicit decision; D-401 remains intact | Revisit broader scope only if justified |
 
 ## Deferred work
 
@@ -249,6 +249,43 @@ production Plan 04 code, and full operations qualification remain outside that c
 | D-407 | Apache Airflow as the capstone workflow orchestrator | Quinton explicitly rejected Airflow on 2026-09-08. The proposal requires DAG behavior, not this product; Plan 04 evaluates Prefect locally with a small repository runner fallback. |
 
 ## How to add a decision
+
+### September 28 literature database approval
+
+| ID | Decision | Authority | Boundary |
+|---|---|---|---|
+| D-260 | PostgreSQL + pgvector for Plan 07 literature only; canonical versioned files remain authoritative and the database is rebuildable. | Quinton's explicit architecture approval and accepted handoff; operations/POSTGRES-PGVECTOR-DECISION-2026-09-28.md | Supersedes earlier SQLite/LanceDB engine direction, not imaging file-first contracts or D-401's project-wide boundary. Planning approved; no installation, acquisition, Tier 2 expansion or implementation launch. |
+
+### September 28 explicit binary-decoding approval
+
+| ID | Decision | Authority | Boundary |
+|---|---|---|---|
+| D-259 | Approve `pants-semantic-binary-atol1e-6-v1`: after NIfTI scaling, validate every voxel within absolute 1e-6 of 0/1, relative tolerance zero, and return a new binary array; reject all other/nonfinite values. | Quinton's explicit September 28 approval; see data/BINARY-DECODING-APPROVAL-2026-09-28.md | Originals preserved. No automatic allowed uses, disease negatives, training launch, bulk rewrite or release authorization. Historical candidate policy remains distinct for replay. |
+
+### September 28 Plan 07 planning-set approval and integration
+
+Authority: Quinton confirmed the approved planning set in the integration conversation and
+directed Codex to execute the handoff in the final approval entry of
+[`retrieval/planning/RUNNING-LOG.md`](retrieval/planning/RUNNING-LOG.md).
+[`SCOPE.md section 12`](retrieval/planning/SCOPE.md) groups A/B are approved as labelled;
+group C execution permissions are not granted. This supplements D-260, not the historical
+proposal/appendix. The exact reviewed planning hashes are in the integration handoff.
+
+| ID | Decision | Authority | Boundary |
+|---|---|---|---|
+| D-261 | Approve NLM 2026 PubMed baseline plus ordered updates to a pinned cutoff as the intended acquisition route, followed by local versioned selection; retain E-utilities for bounded checks. | L-03, confirmed by Quinton September 28 | Clarifies D-077 approved services. Add/replace/delete event provenance and replay required; no run S/A/B signed, no download authorized. |
+| D-262 | Freeze embedding arrays as canonical hashed artifacts; rebuild the operational store by loading those exact artifacts. | L-08, confirmed by Quinton September 28 | Regeneration after loss creates a new artifact/build identity and affected evaluation must be reverified. No model selected or pull authorized. |
+| D-263 | Approve external PROWL-Data literature database placement as a direction to test under P4a, with the shared-failure-domain and backup limits in SCOPE 5.7. | L-09, confirmed by Quinton September 28 | Live DB and canonical literature share external_primary. No mount/root activation or storage-layout selection yet. Shared 20 GiB backup cap/100 GiB internal floor unchanged; literature allocation awaits measurement/approval. |
+| D-264 | Approve the revised Plan 07 design and phases, PMC Cloud XML route with per-article rights, Docker and PostgreSQL ts_rank_cd prototype candidates, two-stage selection/confirmation reserve/inspected-PMID ledger, and the separate encrypted held-out-container lifecycle. | SCOPE 12A and L-04/L-10/L-11/L-12/L-15, Quinton September 28 | Files authoritative; imaging unchanged; no global Docker change, installation, database start, container creation, acquisition, dependency or Plan 04 coding permission. P3 needs the revised packet and Quinton dispatch. L-13/L-14 models remain proposed. P1 needs and P2 seeds remain Quinton's work. |
+| D-265 | Approve SCOPE 12B as provisional experimental controls: English with missing-language retention/flag; 2000–cutoff with missing dates retained/flagged; WORKFLOW cap 500 after hard exclusions; seed recall >=90%; confirmation/census >=60% relevant+partial and >=40% relevant; 3 policy revisions, 2 confirmation rounds; starting context budget 2,000 tokens; Tier 1 and database+recovery ceilings 100 GiB each. | SCOPE 12B, Quinton September 28 | Change by recorded decision. Ceilings are not reservations/expected sizes or run signatures. Runtime <=15% of recorded RAM (~9.6 GiB), synthetic hybrid p95 <=500 ms at 100k passages, <=10% synthetic MPS slowdown remain proposed trial bars to measure in P4a, as explicitly qualified in the approved table. |
+
+**Proposed D-085 amendment — decision pending:** add span-hit recall@k and separately
+reported delivered-span recall, concept coverage and token count under a named/pinned
+tokenizer and context budget. Source/passage recall@1/3/5/10 and MRR remain official.
+Span coordinates use immutable normalized representation hashes and half-open Unicode
+code-point offsets; direct credit requires complete containment. Synthetic implementation
+may demonstrate the proposal under the dispatched P3 packet, but cannot promote these
+metrics to official selection/release criteria. See PHASES P7 and SCOPE section 10.
 
 Add the question before implementing the choice. Record the selected option, evidence, date, affected
 plans, and migration impact. If a locked decision appears wrong, stop and reconcile it with the

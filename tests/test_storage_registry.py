@@ -49,3 +49,21 @@ def test_backup_policy_cannot_be_silently_relaxed(field, value):
     data, validator = registry_and_validator()
     data["roots"]["prowl_backup"][field] = value
     assert list(validator.iter_errors(data))
+
+
+def test_existing_setup_registry_without_literature_aliases_remains_valid():
+    data, validator = registry_and_validator()
+    del data['roots']['literature_source']
+    del data['roots']['prowl_literature_db']
+    validator.validate(data)
+
+
+@pytest.mark.parametrize('alias', ['literature_source', 'prowl_literature_db'])
+@pytest.mark.parametrize(('field', 'value'), [
+    ('path', '/example/active'), ('access', 'controlled_write'),
+    ('failure_domain', 'internal_backup'), ('role', 'artifact'),
+])
+def test_literature_planning_aliases_cannot_activate_or_claim_independent_storage(alias, field, value):
+    data, validator = registry_and_validator()
+    data['roots'][alias][field] = value
+    assert list(validator.iter_errors(data))

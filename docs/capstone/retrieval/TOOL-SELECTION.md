@@ -1,3 +1,63 @@
+# PostgreSQL + pgvector configuration trial
+
+Status: approved engine and trial design; no installation/execution permission.
+D-260 selects the literature-only engine. D-263/D-264 and approved PHASES P4a/P4b
+supersede the historical engine bake-off retained below. D-202 remains open for measured
+index/embedding configuration, not a second engine. Files and frozen embeddings are authoritative.
+
+## P4a: platform trial
+
+Separate runtime/image/extension authorization is required. Inventory shared Docker state
+before proposing any global change. Compare a PROWL bind mount and dedicated runtime/VM
+first; global disk-image relocation requires explicit approval. Record internal footprint,
+external filesystem/UUID, versions, image digest, stop signal, grace period and resource budget.
+Use disposable synthetic instances only; never unplug the shared drive as a test.
+
+Test exact vector search and representative HNSW at defaults, including restrictive filters
+and iterative/exact fallback. Expand to IVFFlat, half precision or tuned HNSW only if latency,
+approximate recall (<0.95 at k=10 against exact), or memory triggers justify it. Vector recall
+is separate from relevance recall/MRR. The lexical control is PostgreSQL FTS ts_rank_cd,
+with pinned dictionaries/configuration; it is not BM25.
+
+Proposed P4a bars from the approved planning set: VM memory <=15% of physical RAM
+(~9.6 GiB on the recorded 64 GiB Mac), hybrid p95 <=500 ms at 100k synthetic passages,
+and <=10% synthetic MPS throughput reduction. These require measurement; no real imaging
+job is authorized. Define the trial duration and disk/time caps in its execution packet.
+
+Rehearse clean start/stop, process-crash recovery and synthetic dump/restore. A container
+kill proves neither USB-loss nor power-loss durability. Preserve failed instances and logs;
+rebuild into a new instance, verify, then switch. Deletion is separately reviewed.
+Quinton approves the measured layout. If limits fail, stop and present options.
+
+## P4b: contract-bound integration
+
+Requires P4a exit, Codex review of P3 contracts, and explicit psycopg dependency approval.
+Map constraints to SQL, transaction, query or tests: parent references, logical uniqueness,
+rights/notices, dimensions, encoder compatibility, staging visibility and atomic publication.
+All retrieval branches use the same eligible published-build scope. Under-return checks
+compare with exact eligible search; fewer than k eligible records gets a count/reason.
+
+Reload canonical records and frozen vectors. Compare IDs, relationships, counts, per-record
+content hashes and per-row embedding checksums exactly. Approximate search equivalence uses
+declared tolerances. No database-only corpus edits. Missing/corrupt/unverified stores yield
+an honest unavailable state and never block imaging.
+
+## D-202 evidence and later selection
+
+Record platform/root versions, fixture identities, resource measurements, filter/restore
+results, limitations, adapter size and selected configuration. P8 names and authorizes each
+embedding candidate before any pull; P9 measures relevance on development questions.
+Freeze retrieval and response together before P11 held-out evaluation. Model identities are
+still proposed/open. Another vector engine requires a new decision, not automatic fallback.
+
+## Historical September 9 tool-selection plan (superseded)
+
+The following text preserves the earlier rationale only. Its install, engine-selection,
+fixture-size, four-hour and fallback instructions are not the current execution packet.
+
+<details>
+<summary>Superseded local-engine comparison</summary>
+
 # Local retrieval tool selection
 
 **Status:** Approved bounded design for D-202; no tool selected yet  
@@ -130,3 +190,5 @@ not prove vector search improves recall/MRR.
 Reconsider D-202 only if measured corpus scale, metadata filters, query latency, persistence failure,
 library support, or portability breaks a requirement. A new popular vector product is not by itself a
 reason to migrate.
+
+</details>

@@ -386,7 +386,7 @@ implementation; no code, schema, candidate, scientific result, or submission is 
 Design approval and the focused prerequisite review are recorded. Follow
 [`../IMPLEMENTATION-START.md`](../IMPLEMENTATION-START.md), protect the planning/source work
 through a reviewed Git checkpoint, and hold the first-experiment strategy session. Foundation setup
-and early experiments follow their scoped prerequisites; Plan 04 still needs its walkthrough.
+and early experiments follow their scoped prerequisites; Plan 04's walkthrough is complete (D-045); it still needs explicit coding authorization.
 
 After actual delivery, record the exact submitted package/version, date, destination, and any known
 limitations. Preserve the capstone evidence and historical artifacts. Future enhancements begin as
