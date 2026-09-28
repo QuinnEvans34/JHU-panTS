@@ -1,6 +1,6 @@
 # Current PROWL checkpoint
 
-Updated September 28, 2026 during the scoped Git review and next data-slice planning.
+Updated September 28, 2026 after publishing the reviewed Git checkpoint.
 This is the current navigation/status summary. Earlier dated checkpoints retain their
 historical evidence, not current authorization. Read component plans and evidence before
 acting; this summary does not waive gates or supersede Quinton's latest instructions.
@@ -40,8 +40,12 @@ acting; this summary does not waive gates or supersede Quinton's latest instruct
   checkpoint reuse. Official course begins October 5; week 9 buffer, week 10 delivery.
 - This checkpoint did not access the external drive. Recheck identity and authorization
   before any future operation; do not infer mount/process state from this document.
-- The working tree contains extensive existing modified/untracked work. No staging,
-  commit, push or cleanup occurred. A Git revision alone cannot reproduce this checkpoint.
+- Quinton approved committing/pushing the reviewed snapshot. Commit
+  `cb1145a1cb9fb6ac1111b1ae387ed5d3fd6ecc71` preserves 115 reviewed files and was pushed
+  to public origin main; `git ls-remote` verified that exact revision. See
+  `GIT-CHECKPOINT-PUBLISHED-2026-09-28.md`. Other untracked work remains preserved;
+  Claude's active P3 implementation and ignored data/evidence outputs were excluded.
+  Git does not replace the separate data/evidence backup requirement.
 
 ## Ownership and latest architecture
 
@@ -87,8 +91,10 @@ receipts passed all 26 file-hash checks; no raw data accessed. A precise publish
 question is drafted but not sent. A standalone sendable message, including the separate
 release-license clarification, is now in `../data/PANTS-PUBLISHER-EMAIL-DRAFT-2026-09-28.md`.
 Quinton will send it himself in a couple of days; no contact or reminder automation occurred.
-The [Git review](GIT-CHECKPOINT-REVIEW-2026-09-28.md) prepares a specific public-repository
-checkpoint for agreement before commit/push. Claude's active implementation is excluded.
+The [Git review](GIT-CHECKPOINT-REVIEW-2026-09-28.md) led to the approved and published
+checkpoint recorded above. Its manifest remains a historical pre-commit byte inventory,
+not a requirement that future documentation never changes. Claude's active implementation
+was excluded.
 The next data slice is specified in
 `../data/PURPOSE-DISPOSITION-IMPLEMENTATION-2026-09-28.md`: tested purpose-specific
 rejection using existing issues, followed by qualification/cohort/run prerequisites.
@@ -138,5 +144,6 @@ Suggested new-conversation prompt:
 
 AGENTS.md and several hubs still contain accumulated historical status prose. The explicit
 current pointers avoid treating it as current; a later scoped consolidation should preserve
-history while making AGENTS.md a shorter rules/index document. Notion reconciliation and a
-reviewed Git checkpoint also remain pending. Do not mark either complete from this handoff.
+history while making AGENTS.md a shorter rules/index document. Notion reconciliation and
+further checkpoints for excluded work remain pending. The scoped September 28 checkpoint
+is published; it does not mean every local file or ignored evidence artifact is backed up.
